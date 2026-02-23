@@ -1,6 +1,6 @@
 [build]
-  command = "npm install -g pnpm --force && pnpm install && pnpm run build:libs && pnpm run build:employee"
-  publish = "apps/employee-pwa/dist"
+  command = "npm install -g pnpm --force && pnpm install && pnpm run build:libs && pnpm run build:landing"
+  publish = "apps/landing-page/dist"
   base = ""
 
 [build.environment]
