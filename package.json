@@ -11,6 +11,7 @@
     "dev:landing": "pnpm --filter landing-page dev",
     "dev:api": "pnpm --filter @ai-hr/api dev",
     "build": "run-p build:*",
+    "build:libs": "pnpm --filter \"./packages/**\" build",
     "build:landing": "pnpm --filter landing-page build",
     "build:employee": "pnpm --filter employee-pwa build",
     "build:manager": "pnpm --filter manager-dashboard build",
