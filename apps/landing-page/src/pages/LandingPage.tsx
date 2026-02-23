@@ -44,7 +44,7 @@ const LandingPage = () => {
                     <div className="container mx-auto px-6">
                         <div className="max-w-4xl mx-auto">
                             <div className="text-center mb-12">
-                                <h2 className="text-4xl font-black mb-4">انضم إلى قائمة <span className="text-indigo-600">النخبة</span> <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">LANDING PAGE</span></h2>
+                                <h2 className="text-4xl font-black mb-4">انضم إلى قائمة <span className="text-indigo-600">النخبة</span></h2>
                                 <p className="text-slate-500 font-bold">ابدأ تجربتكم المجانية اليوم واكتشف قوة الذكاء الاصطناعي</p>
                             </div>
                             <motion.div
