@@ -1,0 +1,3 @@
+[build]
+  command = "cd ../../ && npm install -g pnpm --force && pnpm install && pnpm run build:libs && pnpm run build:manager"
+  publish = "dist"
