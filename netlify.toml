@@ -1,8 +1,3 @@
-[build]
-  command = "npm install -g pnpm --force && pnpm install && pnpm run build:libs && pnpm run build:landing"
-  publish = "apps/landing-page/dist"
-  base = ""
-
 [build.environment]
   NPM_FLAGS = "--no-audit --no-fund"
   PNPM_FLAGS = "--shamefully-hoist"
