@@ -105,7 +105,7 @@ export const login = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 company: user.company,
-                dashboardUrl: dashboardUrls[user.role] || 'http://localhost:3000'
+                dashboardUrl: dashboardUrls[user.role] || ''
             }
         });
     } catch (error) {
@@ -221,9 +221,9 @@ export const register = async (req, res, next) => {
         );
 
         const dashboardUrls = {
-            'SUPER_ADMIN': process.env.SUPER_ADMIN_DASHBOARD_URL || 'http://localhost:3004',
-            'MANAGER': process.env.MANAGER_DASHBOARD_URL || 'http://localhost:3002',
-            'EMPLOYEE': process.env.EMPLOYEE_DASHBOARD_URL || 'http://localhost:3001'
+            'SUPER_ADMIN': process.env.SUPER_ADMIN_DASHBOARD_URL,
+            'MANAGER': process.env.MANAGER_DASHBOARD_URL,
+            'EMPLOYEE': process.env.EMPLOYEE_DASHBOARD_URL
         };
 
         res.cookie('token', token, COOKIE_OPTIONS);
@@ -248,7 +248,7 @@ export const register = async (req, res, next) => {
                 email: result.email,
                 role: result.role,
                 company: result.company,
-                dashboardUrl: dashboardUrls[result.role] || 'http://localhost:3000'
+                dashboardUrl: dashboardUrls[result.role] || ''
             },
         }); // 214? Standard is 201 created. I will stick to 201.
     } catch (error) {
