@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import app from './app.js';
 import { startDeadlineChecker } from './jobs/deadlineChecker.js';
 import { QueueService } from './services/queue.service.js';

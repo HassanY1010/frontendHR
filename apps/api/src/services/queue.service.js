@@ -17,8 +17,6 @@ const getRedisConnection = () => {
     };
 };
 
-const connection = getRedisConnection();
-
 const QUEUE_NAME = 'background-jobs';
 
 /**
@@ -32,7 +30,10 @@ export const QueueService = {
     init: () => {
         if (QueueService.queue) return;
 
-        logger.info('🚀 Initializing Job Queue...');
+        const connection = getRedisConnection();
+        logger.info('🚀 Initializing Job Queue...', {
+            host: typeof connection === 'string' ? 'URL' : connection.host
+        });
 
         // 1. Create Producer Queue
         QueueService.queue = new Queue(QUEUE_NAME, { connection });

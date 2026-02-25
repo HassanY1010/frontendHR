@@ -29,7 +29,6 @@ import searchRoutes from './routes/search.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { checkKillSwitch } from './middlewares/governance.middleware.js';
 
-dotenv.config();
 
 const app = express();
 
