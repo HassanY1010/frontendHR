@@ -85,9 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await authService.logout()
     setUser(null)
-    // Redirect to Landing Page
-    const landingUrl = (import.meta as any).env.VITE_LANDING_PAGE_URL || window.location.origin
-    window.location.href = landingUrl
+    // Redirect to Production Landing Page
+    window.location.href = 'https://hr-full-stack-landing-page-h4ku.vercel.app/'
   }
 
   return (
