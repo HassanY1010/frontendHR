@@ -10,7 +10,7 @@ const getApiBaseUrl = () => {
   if (typeof process !== 'undefined' && process.env?.VITE_API_BASE_URL) {
     return process.env.VITE_API_BASE_URL
   }
-  return 'http://localhost:4000/api'
+  return '' // Required VITE_API_BASE_URL must be provided in production
 }
 
 const getMockMode = () => {
@@ -107,12 +107,10 @@ export class ApiClient {
             localStorage.removeItem('access_token')
             localStorage.removeItem('user')
 
-            // Derive landing page origin dynamically if possible, or use a safe fallback
-            const landingOrigin = window.location.origin.includes('localhost')
-              ? 'http://localhost:3005'
-              : window.location.origin;
+            // Derive landing page origin from environment variable
+            const landingOrigin = env?.VITE_LANDING_PAGE_URL || window.location.origin;
 
-            window.location.href = `${landingOrigin}?mode=login`
+            window.location.href = `${landingOrigin}/login`
           }
         }
 

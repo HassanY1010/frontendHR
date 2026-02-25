@@ -78,9 +78,9 @@ export const login = async (req, res, next) => {
         });
 
         const dashboardUrls = {
-            'SUPER_ADMIN': process.env.SUPER_ADMIN_DASHBOARD_URL || 'http://localhost:3004',
-            'MANAGER': process.env.MANAGER_DASHBOARD_URL || 'http://localhost:3002',
-            'EMPLOYEE': process.env.EMPLOYEE_DASHBOARD_URL || 'http://localhost:3001'
+            'SUPER_ADMIN': process.env.SUPER_ADMIN_DASHBOARD_URL,
+            'MANAGER': process.env.MANAGER_DASHBOARD_URL,
+            'EMPLOYEE': process.env.EMPLOYEE_DASHBOARD_URL
         };
 
         res.cookie('token', token, COOKIE_OPTIONS);

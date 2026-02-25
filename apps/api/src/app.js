@@ -41,7 +41,7 @@ app.use(helmet({
             scriptSrc: ["'self'", "'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             imgSrc: ["'self'", "data:", "blob:", "https://*"],
-            connectSrc: ["'self'", "https://api.openai.com", "https://*.render.com", "http://localhost:*"],
+            connectSrc: ["'self'", "https://api.openai.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: [],
@@ -125,7 +125,7 @@ app.get('/', (req, res) => {
         version: '1.0.0',
         documentation: '/api/docs',
         status: 'UP',
-        landingPage: process.env.LANDING_PAGE_URL || 'http://localhost:3005'
+        landingPage: process.env.LANDING_PAGE_URL || ''
     });
 });
 
