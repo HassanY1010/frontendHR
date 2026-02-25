@@ -2,16 +2,15 @@
 
 import Redis from 'ioredis';
 import logger from './logger.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import 'dotenv/config';
 
 const cache = new Map();
 let redis = null;
 
-if (process.env.REDIS_URL) {
+const url = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
+if (url) {
     try {
-        redis = new Redis(process.env.REDIS_URL, {
+        redis = new Redis(url, {
             maxRetriesPerRequest: 1,
             retryStrategy: () => null // Don't keep retrying if Redis is down
         });

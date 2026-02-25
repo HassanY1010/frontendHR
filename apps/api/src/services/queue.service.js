@@ -11,7 +11,7 @@ const getRedisConnection = () => {
     if (url) return url;
 
     return {
-        host: process.env.REDISHOST || process.env.REDIS_HOST || 'localhost',
+        host: process.env.REDISHOST || process.env.REDIS_HOST,
         port: parseInt(process.env.REDISPORT || process.env.REDIS_PORT || '6379'),
         password: process.env.REDISPASSWORD || process.env.REDIS_PASSWORD,
     };
