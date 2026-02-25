@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Queue, Worker } from 'bullmq';
 import { aiService } from '../ai/ai-service.js';
 import { auditService } from './audit.service.js';
@@ -8,23 +9,32 @@ import logger from '../utils/logger.js';
 // Redis Connection Options
 const getRedisConnection = () => {
     const url = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
-    if (url) {
-        logger.info('🔗 Redis: Using URL for connection');
+    if (url && url !== 'undefined') {
+        logger.info('🔗 Redis: Initializing BullMQ with URL');
         return url;
     }
 
     const host = process.env.REDISHOST || process.env.REDIS_HOST;
-    const isProd = process.env.NODE_ENV === 'production';
+    const port = process.env.REDISPORT || process.env.REDIS_PORT;
+    const password = process.env.REDISPASSWORD || process.env.REDIS_PASSWORD;
+
+    const isProd = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT;
 
     if (isProd && (!host || host === 'localhost' || host === '127.0.0.1')) {
-        logger.error('❌ Redis: Missing or invalid host in production', { host });
-        return { host: 'DUMMY_TO_PREVENT_LOCALHOST', port: 6379 }; // Force a clear failure if env is broken
+        logger.error('❌ Redis: Missing or invalid host in production environment', {
+            host,
+            hasPassword: !!password,
+            nodeEnv: process.env.NODE_ENV,
+            railwayEnv: process.env.RAILWAY_ENVIRONMENT
+        });
+        // We return a host that will clearly fail DNS rather than connecting to localhost
+        return { host: 'DUMMY_PRODUCTION_REDIS_FAILURE', port: 6379 };
     }
 
     return {
         host: host || 'localhost',
-        port: parseInt(process.env.REDISPORT || process.env.REDIS_PORT || '6379'),
-        password: process.env.REDISPASSWORD || process.env.REDIS_PASSWORD,
+        port: parseInt(port || '6379'),
+        password: password,
     };
 };
 
