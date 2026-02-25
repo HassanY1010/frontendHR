@@ -7,7 +7,7 @@ import logger from '../utils/logger.js';
 
 // Redis Connection Options
 const connection = {
-    host: process.env.REDIS_HOST || 'localhost',
+    host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT || 6379,
 };
 

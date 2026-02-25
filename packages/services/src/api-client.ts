@@ -2,30 +2,25 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 import { logger } from '@hr/utils'
 
-const getApiBaseUrl = () => {
-  const env = (import.meta as any).env
-  if (env?.VITE_API_BASE_URL) {
-    return env.VITE_API_BASE_URL
+const getEnv = () => {
+  const envObj: any = {}
+  if (typeof process !== 'undefined' && process.env) {
+    Object.assign(envObj, process.env)
   }
-  if (typeof process !== 'undefined' && process.env?.VITE_API_BASE_URL) {
-    return process.env.VITE_API_BASE_URL
+  try {
+    const metaEnv = (import.meta as any).env
+    if (metaEnv) {
+      Object.assign(envObj, metaEnv)
+    }
+  } catch (e) {
+    // import.meta might not be available in CJS
   }
-  return '' // Required VITE_API_BASE_URL must be provided in production
+  return envObj
 }
 
-const getMockMode = () => {
-  const env = (import.meta as any).env
-  if (env?.VITE_MOCK_MODE) {
-    return env.VITE_MOCK_MODE === 'true'
-  }
-  if (typeof process !== 'undefined' && process.env?.VITE_MOCK_MODE) {
-    return process.env.VITE_MOCK_MODE === 'true'
-  }
-  return false
-}
-
-const API_BASE_URL = getApiBaseUrl()
-const MOCK_MODE = getMockMode()
+const env = getEnv()
+const API_BASE_URL = env.VITE_API_BASE_URL || ''
+const MOCK_MODE = env.VITE_MOCK_MODE === 'true'
 
 export class ApiClient {
   private client = axios.create({
@@ -108,7 +103,7 @@ export class ApiClient {
             localStorage.removeItem('user')
 
             // Derive landing page origin from environment variable
-            const landingOrigin = env?.VITE_LANDING_PAGE_URL || window.location.origin;
+            const landingOrigin = env.VITE_LANDING_PAGE_URL || window.location.origin;
 
             window.location.href = `${landingOrigin}/login`
           }

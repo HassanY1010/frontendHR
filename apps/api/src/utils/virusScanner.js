@@ -27,7 +27,7 @@ export const initClamAV = async () => {
             scanLog: null,
             debugMode: false,
             clamdscan: {
-                host: process.env.CLAMAV_HOST || 'localhost',
+                host: process.env.CLAMAV_HOST,
                 port: process.env.CLAMAV_PORT || 3310,
                 timeout: 60000,
                 localFallback: true,
