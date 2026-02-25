@@ -6,10 +6,18 @@ import prisma from '../config/db.js';
 import logger from '../utils/logger.js';
 
 // Redis Connection Options
-const connection = {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT || 6379,
+const getRedisConnection = () => {
+    const url = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
+    if (url) return url;
+
+    return {
+        host: process.env.REDISHOST || process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDISPORT || process.env.REDIS_PORT || '6379'),
+        password: process.env.REDISPASSWORD || process.env.REDIS_PASSWORD,
+    };
 };
+
+const connection = getRedisConnection();
 
 const QUEUE_NAME = 'background-jobs';
 
