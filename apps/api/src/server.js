@@ -15,7 +15,7 @@ initClamAV().catch(err => {
 });
 
 app.listen(PORT, () => {
-    logger.info(`🚀 Server is running on http://localhost:${PORT}`);
+    logger.info(`🚀 Server is running on port ${PORT}`);
     startDeadlineChecker();
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
