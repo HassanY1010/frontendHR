@@ -8,10 +8,21 @@ import logger from '../utils/logger.js';
 // Redis Connection Options
 const getRedisConnection = () => {
     const url = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
-    if (url) return url;
+    if (url) {
+        logger.info('🔗 Redis: Using URL for connection');
+        return url;
+    }
+
+    const host = process.env.REDISHOST || process.env.REDIS_HOST;
+    const isProd = process.env.NODE_ENV === 'production';
+
+    if (isProd && (!host || host === 'localhost' || host === '127.0.0.1')) {
+        logger.error('❌ Redis: Missing or invalid host in production', { host });
+        return { host: 'DUMMY_TO_PREVENT_LOCALHOST', port: 6379 }; // Force a clear failure if env is broken
+    }
 
     return {
-        host: process.env.REDISHOST || process.env.REDIS_HOST,
+        host: host || 'localhost',
         port: parseInt(process.env.REDISPORT || process.env.REDIS_PORT || '6379'),
         password: process.env.REDISPASSWORD || process.env.REDIS_PASSWORD,
     };

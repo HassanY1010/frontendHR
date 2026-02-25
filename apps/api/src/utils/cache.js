@@ -10,13 +10,20 @@ let redis = null;
 const url = process.env.REDIS_PUBLIC_URL || process.env.REDIS_URL;
 if (url) {
     try {
+        logger.info('🔗 Cache: Initializing Redis from URL');
         redis = new Redis(url, {
             maxRetriesPerRequest: 1,
             retryStrategy: () => null // Don't keep retrying if Redis is down
         });
         redis.on('error', (err) => logger.warn('Redis Cache Error', { error: err.message }));
     } catch (e) {
-        logger.warn('Failed to connect to Redis, falling back to memory cache');
+        logger.warn('Failed to connect to Redis, falling back to memory cache', { error: e.message });
+    }
+} else {
+    if (process.env.NODE_ENV === 'production') {
+        logger.error('❌ Cache: No REDIS_URL found in production, using memory fallback');
+    } else {
+        logger.info('📦 Cache: Using local memory fallback (Dev)');
     }
 }
 
