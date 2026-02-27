@@ -674,7 +674,7 @@ export const completeTraining = async (req, res, next) => {
 export const updateEmployee = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { name, email, department, position, status, riskLevel, performanceScore } = req.body;
+        const { name, email, department, position, status, riskLevel, performanceScore, phone, bio, avatar } = req.body;
         const companyId = req.user.companyId;
 
         logger.info('updateEmployee called', { id, body: req.body });
@@ -691,13 +691,16 @@ export const updateEmployee = async (req, res, next) => {
 
         const result = await prisma.$transaction(async (tx) => {
             // Update User fields if provided
-            if (name !== undefined || email !== undefined) {
+            if (name !== undefined || email !== undefined || phone !== undefined || bio !== undefined || avatar !== undefined) {
                 logger.info('Updating user for employee', { id });
                 await tx.user.update({
                     where: { id: employee.userId },
                     data: {
                         ...(name !== undefined && { name }),
                         ...(email !== undefined && { email }),
+                        ...(phone !== undefined && { phone }),
+                        ...(bio !== undefined && { bio }),
+                        ...(avatar !== undefined && { avatar }),
                         updatedAt: new Date()
                     }
                 });
@@ -742,14 +745,38 @@ export const deleteEmployee = async (req, res, next) => {
 
         await prisma.$transaction(async (tx) => {
             const now = new Date();
+
+            // 1. Soft delete tasks
             await tx.task.updateMany({
                 where: { employeeId: id, deletedAt: null },
                 data: { deletedAt: now }
             });
+
+            // 2. Soft delete training assignments
+            await tx.trainingAssignment.updateMany({
+                where: { employeeId: id, deletedAt: null },
+                data: { deletedAt: now }
+            });
+
+            // 3. Soft delete check-in assessments
+            await tx.checkInAssessment.updateMany({
+                where: { employeeId: id, deletedAt: null },
+                data: { deletedAt: now }
+            });
+
+            // 4. Unassign from projects where they are the manager
+            await tx.project.updateMany({
+                where: { managerId: id },
+                data: { managerId: null }
+            });
+
+            // 5. Soft delete employee record
             await tx.employee.update({
                 where: { id },
                 data: { deletedAt: now }
             });
+
+            // 6. Soft delete user record
             await tx.user.update({
                 where: { id: employee.userId },
                 data: { deletedAt: now }
