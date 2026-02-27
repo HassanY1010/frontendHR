@@ -20,7 +20,10 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
         email: employee.email || employee.user?.email || '',
         department: employee.department || '',
         position: employee.position || '',
-        status: employee.status || 'active'
+        status: employee.status || 'active',
+        phone: employee.phone || employee.user?.phone || '',
+        bio: employee.bio || employee.user?.bio || '',
+        avatar: employee.user?.avatar || ''
     });
 
     // Sync form data with employee prop if it changes
@@ -32,6 +35,9 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                 department: employee.department || '',
                 position: employee.position || '',
                 status: employee.status || 'active',
+                phone: employee.phone || employee.user?.phone || '',
+                bio: employee.bio || employee.user?.bio || '',
+                avatar: employee.user?.avatar || '',
             });
         }
     }, [employee]);
@@ -52,7 +58,7 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+        if (!window.confirm('🚨 تحذير: سيتم حذف كافة بيانات الموظف (المهام، التدريبات، التقييمات) بشكل نهائي من اللوحات. هل أنت متأكد؟')) return;
 
         setIsDeleting(true);
         try {
@@ -152,6 +158,24 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                                     </div>
                                 )}
                             </div>
+
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 mb-1 block">رقم الهاتف</label>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 outline-none focus:border-blue-500"
+                                        placeholder="05xxxxxxx"
+                                    />
+                                ) : (
+                                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                                        <div className="w-4 h-4 text-blue-500 flex items-center justify-center font-bold text-[10px]">📞</div>
+                                        <span>{formData.phone || 'غير محدد'}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="space-y-4">
@@ -168,6 +192,23 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                                     <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                                         <Briefcase className="w-4 h-4 text-blue-500" />
                                         <span>{formData.department}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 mb-1 block">المسمى الوظيفي</label>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        value={formData.position}
+                                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 outline-none focus:border-blue-500"
+                                    />
+                                ) : (
+                                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                                        <div className="w-4 h-4 text-blue-500 flex items-center justify-center font-bold text-[10px]">💼</div>
+                                        <span>{formData.position}</span>
                                     </div>
                                 )}
                             </div>
@@ -192,6 +233,35 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    <div className="mt-6">
+                        <label className="text-xs font-semibold text-gray-500 mb-1 block">السيرة الذاتية / نبذة</label>
+                        {isEditing ? (
+                            <textarea
+                                value={formData.bio}
+                                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 outline-none focus:border-blue-500 min-h-[100px]"
+                                placeholder="اكتب نبذة عن الموظف..."
+                            />
+                        ) : (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl italic">
+                                {formData.bio || 'لا توجد نبذة تعريفية.'}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="mt-6">
+                        <label className="text-xs font-semibold text-gray-500 mb-1 block">رابط الصورة (Avatar URL)</label>
+                        {isEditing && (
+                            <input
+                                type="text"
+                                value={formData.avatar}
+                                onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 outline-none focus:border-blue-500"
+                                placeholder="https://example.com/image.jpg"
+                            />
+                        )}
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 grid grid-cols-3 gap-4">
