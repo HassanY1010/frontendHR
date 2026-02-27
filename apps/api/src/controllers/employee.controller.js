@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import bcrypt from 'bcryptjs';
 import { createNotification } from './notification.controller.js';
 import logger from '../utils/logger.js';
 
@@ -42,7 +43,7 @@ export const createEmployee = async (req, res, next) => {
                     data: {
                         name,
                         email,
-                        passwordHash: password || 'password123', // Use provided password or default
+                        passwordHash: await bcrypt.hash(password || 'password123', 12), // Hash the password
                         role: 'EMPLOYEE',
                         companyId,
                         managerId: req.user.id,
@@ -108,7 +109,7 @@ export const bulkCreateEmployees = async (req, res, next) => {
                             data: {
                                 name,
                                 email,
-                                passwordHash: password || 'password123',
+                                passwordHash: await bcrypt.hash(password || 'password123', 12),
                                 role: 'EMPLOYEE',
                                 companyId,
                                 managerId: req.user.id,
@@ -273,14 +274,16 @@ export const changePassword = async (req, res, next) => {
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
 
-        if (!user || user.passwordHash !== oldPassword) {
+        if (!user || !(await bcrypt.compare(oldPassword, user.passwordHash))) {
             return res.status(400).json({ status: 'error', message: 'كلمة المرور القديمة غير صحيحة' });
         }
+
+        const passwordHash = await bcrypt.hash(newPassword, 12);
 
         await prisma.user.update({
             where: { id: userId },
             data: {
-                passwordHash: newPassword,
+                passwordHash,
                 updatedAt: new Date()
             }
         });

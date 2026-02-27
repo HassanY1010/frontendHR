@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import bcrypt from 'bcryptjs';
 import logger from '../utils/logger.js';
 
 export const getMe = async (req, res, next) => {
@@ -48,7 +49,7 @@ export const updateMe = async (req, res, next) => {
         };
 
         if (password) {
-            data.passwordHash = password; // Still using plain text as per requested demo behavior
+            data.passwordHash = await bcrypt.hash(password, 12);
         }
 
         // Update User and optionally Employee
