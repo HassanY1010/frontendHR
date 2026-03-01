@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 
 import { useJobsStore } from '../store'
-import type { Job, EmploymentType, WorkMode, SeniorityLevel } from '@hr/types'
+import type { Job, WorkMode } from '@hr/types'
 import JobActionsMenu from '../components/JobActionsMenu'
 import JobAiChat from '../components/JobAiChat'
 import { recruitmentService } from '@hr/services'
