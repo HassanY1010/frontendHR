@@ -135,13 +135,13 @@ class RecruitmentService {
   }
 
   async createCandidate(data: Partial<Candidate>): Promise<Candidate & { interviewCode: string }> {
-    logger.info('Create candidate', { name: data.name })
+    logger.info('Create candidate', { name: data.fullName })
     const response = await apiClient.post<{ status: string, data: { candidateId: string, interviewCode: string } }>(`/recruitment/jobs/${data.jobId}/apply`, data)
     return { ...data, id: response.data.candidateId, interviewCode: response.data.interviewCode } as any
   }
 
   async updateCandidate(id: string, data: Partial<Candidate>): Promise<Candidate> {
-    logger.info('Update candidate', { id, name: data.name })
+    logger.info('Update candidate', { id, name: data.fullName })
     const response = await apiClient.put<{ status: string, data: { candidate: Candidate } }>(`/recruitment/candidates/${id}`, data)
     return response.data.candidate
   }
