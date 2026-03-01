@@ -168,7 +168,7 @@ const InterviewPage = () => {
         try {
             const interviewData = await recruitmentService.getInterviewByToken(t);
             setInterview(interviewData);
-            setCandidate(interviewData.candidate);
+            setCandidate(interviewData.candidate ?? null);
             setStep('auth-success');
 
             setTimeout(() => setStep('terms'), 800);
@@ -330,11 +330,11 @@ const InterviewPage = () => {
                         <div className="flex flex-col items-end">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">المرشح</span>
                             <span className="text-sm font-black text-slate-700">
-                                {candidate.fullName || candidate.name}
+                                {candidate.fullName}
                             </span>
                         </div>
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-indigo-50">
-                            {(candidate.fullName || candidate.name).charAt(0)}
+                            {candidate.fullName.charAt(0)}
                         </div>
                     </div>
                 )}
@@ -463,9 +463,9 @@ const InterviewPage = () => {
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.2 }}
                             >
-                                <h2 className="text-4xl font-black text-slate-900 mb-6">أهلاً بك م/ {candidate?.fullName || candidate?.name}</h2>
+                                <h2 className="text-4xl font-black text-slate-900 mb-6">أهلاً بك م/ {candidate?.fullName}</h2>
                                 <p className="text-xl text-slate-600 font-medium mb-10 leading-relaxed">
-                                    أنت الآن بصدد بدء <span className="font-bold text-indigo-600">المقابلة الذكية</span> لمنصب <span className="font-bold text-slate-800">{candidate?.recruitmentjob?.title}</span>.
+                                    أنت الآن بصدد بدء <span className="font-bold text-indigo-600">المقابلة الذكية</span> لمنصب <span className="font-bold text-slate-800">{(candidate as any)?.recruitmentjob?.title || (candidate as any)?.job?.title || 'الوظيفة'}</span>.
                                     <br />
                                     سنطرح عليك <span className="font-black text-indigo-600 underline decoration-indigo-200 underline-offset-4">5 أسئلة جوهرية</span>.
                                 </p>
@@ -537,7 +537,7 @@ const InterviewPage = () => {
                                             <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
                                             <span className="text-white font-black text-xs uppercase tracking-widest shadow-sm">بث حي ومؤمن</span>
                                         </div>
-                                        <h4 className="text-white text-xl font-bold truncate max-w-[200px]">{candidate?.fullName || candidate?.name}</h4>
+                                        <h4 className="text-white text-xl font-bold truncate max-w-[200px]">{candidate?.fullName}</h4>
                                     </div>
 
                                     {isRecording && (
