@@ -16,21 +16,23 @@ import {
     Heart,
     Star,
     AlertCircle,
-    FileText
+    FileText,
+    Eye
 } from 'lucide-react';
 import { recruitmentService } from '@hr/services';
 import { toast } from 'sonner';
 import { Candidate } from '@hr/types';
 
 const InterviewPage = () => {
-    const { code } = useParams<{ code: string }>();
+    const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
     const [candidate, setCandidate] = useState<Candidate | null>(null);
+    const [interview, setInterview] = useState<any>(null); // Keeping any for interview if it has extra frontend-only fields not in base Interview type, otherwise use Interview
     const [loading, setLoading] = useState(true);
 
     // Steps: auth -> terms -> privacy -> intro -> questions -> finishing -> feedback -> done
     const [step, setStep] = useState('auth');
-    const [inputCode, setInputCode] = useState(code || '');
+    const [inputToken, setInputToken] = useState(token || '');
 
     const [questions, setQuestions] = useState<string[]>([]);
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -53,15 +55,15 @@ const InterviewPage = () => {
     const [feedbackText, setFeedbackText] = useState('');
 
     useEffect(() => {
-        if (code) {
-            verifyCode(code);
+        if (token) {
+            verifyToken(token);
         } else {
             setLoading(false);
         }
         return () => {
             stopMediaStream();
         };
-    }, [code]);
+    }, [token]);
 
     // Timer Logic
     useEffect(() => {
@@ -143,9 +145,9 @@ const InterviewPage = () => {
     };
 
     const fetchQuestions = async () => {
-        if (!code) return;
+        if (!token) return;
         try {
-            const fetchedQuestions = await recruitmentService.getInterviewQuestions(code);
+            const fetchedQuestions: string[] = await recruitmentService.getInterviewQuestionsByToken(token);
             if (fetchedQuestions && fetchedQuestions.length > 0) {
                 setQuestions(fetchedQuestions);
             } else {
@@ -161,19 +163,18 @@ const InterviewPage = () => {
         }
     };
 
-    const verifyCode = async (c: string) => {
+    const verifyToken = async (t: string) => {
         setLoading(true);
         try {
-            const data = await recruitmentService.getCandidateByCode(c);
-            setCandidate(data);
-            setStep('auth-success'); // Intermediate state to decide next
+            const interviewData = await recruitmentService.getInterviewByToken(t);
+            setInterview(interviewData);
+            setCandidate(interviewData.candidate);
+            setStep('auth-success');
 
-            // If already accepted terms? For now, we ask every time for demo purposes
-            // Or assume New session -> Go to Terms
-            setTimeout(() => setStep('terms'), 500);
+            setTimeout(() => setStep('terms'), 800);
 
         } catch (error) {
-            toast.error('رمز المقابلة غير صحيح أو منتهي الصلاحية');
+            toast.error('رابط المقابلة غير صحيح أو منتهي الصلاحية');
             setStep('auth');
         } finally {
             setLoading(false);
@@ -283,7 +284,8 @@ const InterviewPage = () => {
             await recruitmentService.submitInterview({
                 candidateId: candidate.id,
                 videoUrl: videoUrl,
-                notes: allQuestionsNotes
+                notes: allQuestionsNotes,
+                token: token
             });
 
             toast.success('تم حفظ المقابلة بنجاح');
@@ -324,11 +326,16 @@ const InterviewPage = () => {
                     <span className="font-black text-slate-800 text-lg">المقابلة الذكية</span>
                 </div>
                 {candidate && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-500 font-bold">المرشح:</span>
-                        <span className="px-3 py-1 bg-slate-100 rounded-full text-sm font-bold text-slate-700">
-                            {candidate.name}
-                        </span>
+                    <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">المرشح</span>
+                            <span className="text-sm font-black text-slate-700">
+                                {candidate.fullName || candidate.name}
+                            </span>
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-indigo-50">
+                            {(candidate.fullName || candidate.name).charAt(0)}
+                        </div>
                     </div>
                 )}
             </div>
@@ -345,23 +352,24 @@ const InterviewPage = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="w-full max-w-md bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 text-center space-y-6"
                         >
-                            <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">
-                                <Lock className="w-10 h-10 text-indigo-600" />
+                            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-200 rotate-3">
+                                <Lock className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900">أدخل رمز الدخول</h2>
+                            <h2 className="text-3xl font-black text-slate-900">التحقق من الهوية</h2>
+                            <p className="text-slate-500 font-medium text-sm">أدخل رمز الدخول المرسل إليك عبر البريد الإلكتروني</p>
                             <input
                                 type="text"
-                                placeholder="X X X X"
-                                className="w-full text-center text-3xl font-black tracking-[0.5em] py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all uppercase"
-                                maxLength={8}
-                                value={inputCode}
-                                onChange={e => setInputCode(e.target.value)}
+                                placeholder="- - - - - -"
+                                className="w-full text-center text-3xl font-black tracking-[0.2em] py-5 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all uppercase placeholder:text-slate-200"
+                                maxLength={36}
+                                value={inputToken}
+                                onChange={e => setInputToken(e.target.value)}
                             />
                             <button
-                                onClick={() => verifyCode(inputCode)}
-                                className="btn-premium w-full py-4 text-lg"
+                                onClick={() => verifyToken(inputToken)}
+                                className="w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-lg shadow-lg shadow-indigo-200 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                دخول
+                                دخول للمقابلة
                             </button>
                         </motion.div>
                     )}
@@ -443,40 +451,61 @@ const InterviewPage = () => {
                     {step === 'intro' && (
                         <motion.div
                             key="intro"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="w-full max-w-3xl bg-white p-12 rounded-[2rem] shadow-xl border border-slate-100 text-center"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1.1 }}
+                            className="w-full max-w-3xl bg-white p-12 rounded-[3rem] shadow-2xl border border-slate-100 text-center relative overflow-hidden"
                         >
-                            <h2 className="text-4xl font-black text-slate-900 mb-6">أهلاً بك م/ {candidate?.name}</h2>
-                            <p className="text-xl text-slate-600 font-medium mb-10">
-                                سنطرح عليك <span className="font-bold text-indigo-600">5 أسئلة</span>.
-                                <br />
-                                لكل سؤال، سيكون لديك وقت للقراءة، ووقت للتفكير، ووقت للإجابة.
-                            </p>
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
-                            <div className="grid grid-cols-3 gap-6 mb-10">
-                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <div className="font-black text-2xl text-slate-800 mb-1">30 ثانية</div>
-                                    <div className="text-sm text-slate-500 font-bold">لقراءة السؤال</div>
-                                </div>
-                                <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                    <div className="font-black text-2xl text-indigo-600 mb-1">15 ثانية</div>
-                                    <div className="text-sm text-indigo-500 font-bold">للتفكير والتحضير</div>
-                                </div>
-                                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                                    <div className="font-black text-2xl text-emerald-600 mb-1">2 دقيقة</div>
-                                    <div className="text-sm text-emerald-500 font-bold">للإجابة (تسجيل)</div>
-                                </div>
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <h2 className="text-4xl font-black text-slate-900 mb-6">أهلاً بك م/ {candidate?.fullName || candidate?.name}</h2>
+                                <p className="text-xl text-slate-600 font-medium mb-10 leading-relaxed">
+                                    أنت الآن بصدد بدء <span className="font-bold text-indigo-600">المقابلة الذكية</span> لمنصب <span className="font-bold text-slate-800">{candidate?.recruitmentjob?.title}</span>.
+                                    <br />
+                                    سنطرح عليك <span className="font-black text-indigo-600 underline decoration-indigo-200 underline-offset-4">5 أسئلة جوهرية</span>.
+                                </p>
+                            </motion.div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                                <motion.div whileHover={{ y: -5 }} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
+                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                        <Eye className="w-6 h-6 text-slate-400" />
+                                    </div>
+                                    <div className="font-black text-2xl text-slate-800 mb-1">30ث</div>
+                                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">وقت القراءة</div>
+                                </motion.div>
+                                <motion.div whileHover={{ y: -5 }} className="p-6 bg-indigo-50 rounded-[2rem] border border-indigo-100 shadow-sm">
+                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                        <Brain className="w-6 h-6 text-indigo-500" />
+                                    </div>
+                                    <div className="font-black text-2xl text-indigo-600 mb-1">15ث</div>
+                                    <div className="text-xs text-indigo-500 font-bold uppercase tracking-wider">وقت التحضير</div>
+                                </motion.div>
+                                <motion.div whileHover={{ y: -5 }} className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 shadow-sm">
+                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                        <Video className="w-6 h-6 text-emerald-500" />
+                                    </div>
+                                    <div className="font-black text-2xl text-emerald-600 mb-1">2د</div>
+                                    <div className="text-xs text-emerald-500 font-bold uppercase tracking-wider">وقت الإجابة</div>
+                                </motion.div>
                             </div>
 
                             <button
                                 onClick={() => setStep('questions')}
-                                className="btn-premium w-full py-5 text-xl flex items-center justify-center gap-3"
+                                className="w-full py-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] hover:bg-right text-white rounded-[2rem] font-black text-xl flex items-center justify-center gap-4 shadow-xl shadow-indigo-200 transition-all duration-500 group"
                             >
-                                <Video className="w-6 h-6" />
-                                <span>ابدأ المقابلة والوصول للكاميرا</span>
+                                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                    <Video className="w-5 h-5 text-white" />
+                                </div>
+                                <span>ابدأ تجربة المقابلة الآن</span>
                             </button>
+
+                            <p className="mt-6 text-slate-400 text-sm font-medium">سيتم طلب الإذن للوصول للكاميرا والميكروفون عند البدء</p>
                         </motion.div>
                     )}
 
@@ -484,10 +513,12 @@ const InterviewPage = () => {
                     {step === 'questions' && (
                         <motion.div
                             key="questions"
-                            className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-start"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="w-full max-w-7xl grid lg:grid-cols-5 gap-8 items-stretch"
                         >
-                            {/* Camera Feed */}
-                            <div className="bg-black rounded-3xl overflow-hidden aspect-video relative shadow-2xl">
+                            {/* Camera Feed - 3/5 width */}
+                            <div className="lg:col-span-3 bg-slate-900 rounded-[3rem] overflow-hidden relative shadow-2xl border-4 border-white aspect-video lg:aspect-auto">
                                 <video
                                     ref={videoRef}
                                     autoPlay
@@ -495,96 +526,119 @@ const InterviewPage = () => {
                                     muted
                                     className="w-full h-full object-cover transform scale-x-[-1]"
                                 />
-                                <div className="absolute top-4 right-4 flex items-center gap-2">
-                                    {isRecording ? (
-                                        <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-white rounded-full" />
-                                            جاري التسجيل
+
+                                {/* Overlay AI Effect */}
+                                <div className="absolute inset-0 pointer-events-none border-[16px] border-white/10 rounded-[2.5rem]" />
+                                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                                <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+                                            <span className="text-white font-black text-xs uppercase tracking-widest shadow-sm">بث حي ومؤمن</span>
                                         </div>
-                                    ) : (
-                                        <div className="bg-black/50 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-slate-400 rounded-full" />
-                                            استعداد
+                                        <h4 className="text-white text-xl font-bold truncate max-w-[200px]">{candidate?.fullName || candidate?.name}</h4>
+                                    </div>
+
+                                    {isRecording && (
+                                        <div className="flex items-center gap-3 bg-red-600/90 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-red-400/30">
+                                            <div className="w-3 h-3 bg-white rounded-full animate-ping" />
+                                            <span className="text-white font-black text-sm uppercase tracking-tighter">REC • {timeLeft}s</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Question & Timer Panel */}
-                            <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 min-h-[500px] flex flex-col">
-                                <div className="flex justify-between items-center mb-8">
-                                    <span className="text-sm font-bold text-slate-400">
-                                        السؤال {currentQuestionIdx + 1} من {questions.length}
-                                    </span>
-                                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm ${phase === 'READING' ? 'bg-slate-100 text-slate-600' :
-                                        phase === 'PREPARING' ? 'bg-amber-100 text-amber-700' :
-                                            'bg-red-100 text-red-600'
-                                        }`}>
-                                        <Clock className="w-4 h-4" />
-                                        <span>
-                                            {phase === 'READING' && 'وقت القراءة'}
-                                            {phase === 'PREPARING' && 'وقت التفكير'}
-                                            {phase === 'ANSWERING' && 'وقت الإجابة'}
-                                        </span>
-                                        <span className="text-xl tabular-nums">{timeLeft}s</span>
+                            {/* Question & Timer Panel - 2/5 width */}
+                            <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 flex flex-col relative overflow-hidden">
+                                <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-50" />
+
+                                <div className="relative z-10 flex flex-col h-full">
+                                    <div className="flex justify-between items-center mb-10">
+                                        <div className="px-4 py-1.5 border border-slate-200 text-slate-500 font-bold rounded-full text-xs">
+                                            السؤال {currentQuestionIdx + 1} / {questions.length}
+                                        </div>
+
+                                        <div className={`p-3 rounded-2xl flex items-center justify-center ${phase === 'READING' ? 'bg-slate-100 text-slate-600' :
+                                            phase === 'PREPARING' ? 'bg-amber-100 text-amber-600' :
+                                                'bg-indigo-100 text-indigo-600'
+                                            }`}>
+                                            <Clock className="w-6 h-6" />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="flex-1 flex flex-col justify-center text-center space-y-8">
-                                    <h3 className="text-3xl font-black text-slate-800 leading-tight">
-                                        {questions[currentQuestionIdx]}
-                                    </h3>
-
-                                    {phase === 'READING' && (
-                                        <div className="text-slate-400 font-bold animate-pulse">
-                                            اقرأ السؤال جيداً...
-                                        </div>
-                                    )}
-                                    {phase === 'PREPARING' && (
-                                        <div className="text-amber-500 font-bold animate-pulse">
-                                            استعد للإجابة...
-                                        </div>
-                                    )}
-                                    {phase === 'ANSWERING' && (
-                                        <div className="text-red-500 font-bold animate-pulse flex flex-col items-center gap-2">
-                                            <Mic className="w-8 h-8" />
-                                            تحدث الآن...
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Progress Bar */}
-                                <div className="mt-8">
-                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="flex-1 flex flex-col justify-center text-center">
                                         <motion.div
-                                            className={`h-full ${phase === 'READING' ? 'bg-slate-300' :
-                                                phase === 'PREPARING' ? 'bg-amber-400' :
-                                                    'bg-indigo-500'
-                                                }`}
-                                            initial={{ width: "100%" }}
-                                            animate={{ width: "0%" }}
-                                            transition={{ duration: phase === 'READING' ? 30 : phase === 'PREPARING' ? 15 : 120, ease: "linear" }}
-                                            key={`${currentQuestionIdx}-${phase}`} // Reset on phase change
-                                        />
+                                            key={currentQuestionIdx}
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            className="space-y-6"
+                                        >
+                                            <h3 className="text-2xl font-black text-slate-800 leading-[1.3] min-h-[150px]">
+                                                {questions[currentQuestionIdx]}
+                                            </h3>
+
+                                            <div className="h-24 flex items-center justify-center">
+                                                {phase === 'READING' && (
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <span className="text-slate-400 font-bold uppercase tracking-widest text-sm">وقت القراءة</span>
+                                                        <span className="text-5xl font-black text-slate-800 tabular-nums">{timeLeft}</span>
+                                                    </div>
+                                                )}
+                                                {phase === 'PREPARING' && (
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <span className="text-amber-500 font-bold uppercase tracking-widest text-sm animate-pulse">استعد للإجابة</span>
+                                                        <span className="text-5xl font-black text-amber-500 tabular-nums">{timeLeft}</span>
+                                                    </div>
+                                                )}
+                                                {phase === 'ANSWERING' && (
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className="w-4 h-4 bg-indigo-500 rounded-full animate-bounce" />
+                                                            <span className="text-indigo-600 font-black uppercase tracking-widest text-sm">تحدث الآن</span>
+                                                        </div>
+                                                        <span className="text-5xl font-black text-indigo-600 tabular-nums">{timeLeft}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    </div>
+
+                                    <div className="mt-10 space-y-4">
+                                        <div className="h-3 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                                            <motion.div
+                                                className={`h-full bg-gradient-to-r ${phase === 'READING' ? 'from-slate-400 to-slate-500' :
+                                                    phase === 'PREPARING' ? 'from-amber-400 to-orange-500' :
+                                                        'from-indigo-500 to-purple-600'
+                                                    }`}
+                                                initial={{ width: "100%" }}
+                                                animate={{ width: "0%" }}
+                                                transition={{
+                                                    duration: phase === 'READING' ? 30 : phase === 'PREPARING' ? 15 : 120,
+                                                    ease: "linear"
+                                                }}
+                                                key={`${currentQuestionIdx}-${phase}`}
+                                            />
+                                        </div>
+
+                                        {phase === 'ANSWERING' ? (
+                                            <button
+                                                onClick={handleNext}
+                                                className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-3"
+                                            >
+                                                <span>تمت الإجابة</span>
+                                                <Send className="w-5 h-5" />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleTimerExpiry}
+                                                className="w-full py-5 border-2 border-slate-100 text-slate-400 rounded-2xl font-bold hover:bg-slate-50 hover:text-slate-600 transition-all"
+                                            >
+                                                تخطي الانتظار
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
-
-                                {phase === 'ANSWERING' && (
-                                    <button
-                                        onClick={handleNext}
-                                        className="mt-6 w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-colors"
-                                    >
-                                        انتهيت من الإجابة (إرسال)
-                                    </button>
-                                )}
-                                {phase !== 'ANSWERING' && (
-                                    <button
-                                        onClick={handleTimerExpiry}
-                                        className="mt-6 w-full py-4 text-slate-400 font-bold hover:text-slate-600 transition-colors"
-                                    >
-                                        تخطي الوقت
-                                    </button>
-                                )}
                             </div>
                         </motion.div>
                     )}

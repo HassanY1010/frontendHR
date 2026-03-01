@@ -18,6 +18,8 @@ import {
     uploadResume,
     generateAiJobDescription,
     getInterviewByCode,
+    getInterviewByToken,
+    getInterviewQuestionsByToken,
     submitInterviewAnswer,
     getInterviewQuestions,
     uploadInterviewVideo,
@@ -30,11 +32,14 @@ import {
     getCandidateResume,
     parseCV,
     getDailyRecruitmentAnalysis,
-    getSmartInterviewNotes
+    getSmartInterviewNotes,
+    handleInteractiveAiJobFlow,
+    getDepartments
 } from '../controllers/recruitment.controller.js';
 import { protect, authorize } from '../middlewares/auth.middleware.js';
 import { uploadResume as uploadResumeMiddleware, uploadVideo } from '../middlewares/multer.middleware.js';
 import { virusScanMiddleware } from '../utils/virusScanner.js';
+import { recruitmentPublicLimiter } from '../middlewares/rate-limit.middleware.js';
 
 const router = express.Router();
 
@@ -42,9 +47,11 @@ const router = express.Router();
 router.get('/jobs/public', getPublicJobs);
 router.get('/jobs/public/:id', getPublicJobDetails);
 router.post('/jobs/:id/apply', applyToJob);
-router.get('/interviews/code/:code', getInterviewByCode);
-router.get('/interviews/:code/questions', getInterviewQuestions);
-router.post('/interviews/submit', submitInterviewAnswer);
+router.get('/interviews/code/:code', recruitmentPublicLimiter, getInterviewByCode);
+router.get('/interviews/token/:token', recruitmentPublicLimiter, getInterviewByToken);
+router.get('/interviews/:code/questions', recruitmentPublicLimiter, getInterviewQuestions);
+router.get('/interviews/token/:token/questions', recruitmentPublicLimiter, getInterviewQuestionsByToken);
+router.post('/interviews/submit', recruitmentPublicLimiter, submitInterviewAnswer);
 router.post('/interviews/:interviewId/feedback', submitFeedback);
 router.post('/candidates/terms', acceptTerms);
 router.post('/interviews/upload-video', uploadVideo, virusScanMiddleware, uploadInterviewVideo);
@@ -64,7 +71,10 @@ router.post('/jobs/:id/publish', authorize('MANAGER', 'SUPER_ADMIN'), publishJob
 
 
 router.post('/ai/generate-description', authorize('MANAGER', 'SUPER_ADMIN'), generateAiJobDescription);
+router.post('/ai/interactive-flow', authorize('MANAGER', 'SUPER_ADMIN'), handleInteractiveAiJobFlow);
 router.get('/ai/daily-analysis', authorize('MANAGER', 'SUPER_ADMIN'), getDailyRecruitmentAnalysis);
+
+router.get('/departments', authorize('MANAGER', 'SUPER_ADMIN'), getDepartments);
 
 
 router.get('/candidates', authorize('MANAGER', 'SUPER_ADMIN'), getCandidates);

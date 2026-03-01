@@ -15,13 +15,17 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    MapPin
+    MapPin,
+    Brain
 } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
 import CandidateActionsMenu from '../components/CandidateActionsMenu'
 
 // تعريف الثوابت
 const CANDIDATE_STATUS = {
     NEW: { value: 'NEW', label: 'جديد', color: 'bg-blue-100 text-blue-700 border-blue-300' },
+    INTERVIEW_SENT: { value: 'INTERVIEW_SENT', label: 'تم إرسال المقابلة', color: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
+    INTERVIEW_COMPLETED: { value: 'INTERVIEW_COMPLETED', label: 'المقابلة مكتملة', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
     SCREENING: { value: 'SCREENING', label: 'مراجعة', color: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
     INTERVIEWING: { value: 'INTERVIEWING', label: 'مقابلات', color: 'bg-purple-100 text-purple-700 border-purple-300' },
     HIRED: { value: 'HIRED', label: 'مقبول', color: 'bg-green-100 text-green-700 border-green-300' },
@@ -33,11 +37,11 @@ const Card: React.FC<{ children: React.ReactNode, className?: string }> = ({ chi
     <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 overflow-hidden ${className}`}>{children}</div>
 )
 
-const CardHeader: React.FC<{ title: string, description?: React.ReactNode, Action?: React.ReactNode }> = ({ title, description, Action }) => (
+const CardHeader: React.FC<{ title: React.ReactNode, description?: React.ReactNode, Action?: React.ReactNode }> = ({ title, description, Action }) => (
     <div className="p-6 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between">
             <div className="flex-1">
-                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{title}</h3>
+                <div className="font-bold text-lg text-gray-900 dark:text-white">{title}</div>
                 {description && <div className="mt-1">{description}</div>}
             </div>
             {Action && <div>{Action}</div>}
@@ -100,9 +104,10 @@ const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: string, chi
 import { useCandidatesStore } from '../store';
 import { useJobsStore } from '../../jobs/store';
 import { toast } from 'sonner';
+import InterviewResultModal from '../components/InterviewResultModal';
 
 const CandidatesPage: React.FC = () => {
-    const { candidates, fetchCandidates, createCandidate, deleteCandidate, updateCandidate, isLoading: isCandidatesLoading } = useCandidatesStore();
+    const { candidates, fetchCandidates, createCandidate, deleteCandidate, updateCandidate, scheduleInterview, isLoading: isCandidatesLoading } = useCandidatesStore();
     const { jobs, fetchJobs } = useJobsStore();
     const [showAddModal, setShowAddModal] = useState(false)
     const [showProfileModal, setShowProfileModal] = useState(false)
@@ -111,6 +116,57 @@ const CandidatesPage: React.FC = () => {
     const [filterStatus, setFilterStatus] = useState('all')
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [showReviewModal, setShowReviewModal] = useState(false)
+    const [selectedInterview, setSelectedInterview] = useState<any>(null)
+    const [selectedIds, setSelectedIds] = useState<string[]>([])
+    const [isBatchSending, setIsBatchSending] = useState(false)
+
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        )
+    }
+
+    const toggleAll = () => {
+        if (selectedIds.length === filteredCandidates.length) {
+            setSelectedIds([])
+        } else {
+            setSelectedIds(filteredCandidates.map(c => c.id))
+        }
+    }
+
+    const handleBatchSendAiInterview = async () => {
+        if (selectedIds.length === 0) return;
+        setIsBatchSending(true);
+        let successCount = 0;
+        let failCount = 0;
+
+        toast.info(`جاري إرسال ${selectedIds.length} دعوة مقابلة ذكية...`);
+
+        for (const id of selectedIds) {
+            try {
+                await scheduleInterview({
+                    candidateId: id,
+                    type: 'AI_VIDEO'
+                });
+                successCount++;
+            } catch (error) {
+                console.error(`Failed to send AI interview to ${id}:`, error);
+                failCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            toast.success(`تم إرسال ${successCount} دعوة بنجاح`);
+        }
+        if (failCount > 0) {
+            toast.error(`فشل إرسال ${failCount} دعوة`);
+        }
+
+        setIsBatchSending(false);
+        setSelectedIds([]);
+        await fetchCandidates();
+    };
 
     // Get jobId from URL query parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -125,6 +181,8 @@ const CandidatesPage: React.FC = () => {
         const normalized = (status || 'NEW').toUpperCase()
         const statusMap: Record<string, any> = {
             'NEW': CANDIDATE_STATUS.NEW,
+            'INTERVIEW_SENT': CANDIDATE_STATUS.INTERVIEW_SENT,
+            'INTERVIEW_COMPLETED': CANDIDATE_STATUS.INTERVIEW_COMPLETED,
             'SCREENING': CANDIDATE_STATUS.SCREENING,
             'INTERVIEWING': CANDIDATE_STATUS.INTERVIEWING,
             'HIRED': CANDIDATE_STATUS.HIRED,
@@ -134,7 +192,7 @@ const CandidatesPage: React.FC = () => {
     }
 
     const filteredCandidates = (candidates || []).filter(c => {
-        const nameMatch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+        const nameMatch = ((c as any).name || c.fullName || '').toLowerCase().includes(searchTerm.toLowerCase())
         const positionMatch = (c.position || '').toLowerCase().includes(searchTerm.toLowerCase())
         const matchesSearch = nameMatch || positionMatch
         const matchesStatus = filterStatus === 'all' || (c.status as string).toLowerCase() === filterStatus.toLowerCase()
@@ -172,6 +230,31 @@ const CandidatesPage: React.FC = () => {
         }
     }
 
+    const handleReviewInterview = (candidate: any) => {
+        // Find the completed interview for this candidate
+        const interview = candidate.interviews?.find((i: any) => i.status === 'completed' || i.completed);
+        if (interview) {
+            setSelectedCandidate(candidate);
+            setSelectedInterview(interview);
+            setShowReviewModal(true);
+        } else {
+            toast.error('لم يتم العثور على بيانات المقابلة');
+        }
+    };
+
+    const handleSendAiInterview = async (candidate: any) => {
+        try {
+            await scheduleInterview({
+                candidateId: candidate.id,
+                type: 'AI_VIDEO'
+            });
+            toast.success(`تم إرسال دعوة المقابلة الذكية لـ ${candidate.fullName}`);
+        } catch (error) {
+            console.error('Failed to send AI interview:', error);
+            toast.error('فشل إرسال دعوة المقابلة');
+        }
+    };
+
     const handleAddCandidate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -180,12 +263,12 @@ const CandidatesPage: React.FC = () => {
 
         try {
             await createCandidate({
-                name: formData.get('name') as string,
+                fullName: formData.get('name') as string,
                 email: formData.get('email') as string,
                 phone: formData.get('phone') as string,
                 jobId: formData.get('jobId') as string,
                 location: formData.get('location') as string || 'الرياض',
-                status: 'new'
+                status: 'NEW'
             }, resumeFile.size > 0 ? resumeFile : undefined);
 
             toast.success('تم إضافة المتقدم بنجاح');
@@ -200,6 +283,42 @@ const CandidatesPage: React.FC = () => {
 
     return (
         <div className="space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen p-4 sm:p-6 transition-colors duration-300">
+            {/* Batch Actions Bar */}
+            <AnimatePresence>
+                {selectedIds.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 bg-white dark:bg-gray-900 shadow-2xl rounded-2xl border border-blue-100 dark:border-blue-900 p-4 flex items-center gap-6 min-w-[300px] max-w-[90vw]"
+                    >
+                        <div className="flex items-center gap-2 px-4 border-l border-gray-200 dark:border-gray-800">
+                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{selectedIds.length}</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">محدد</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="ai"
+                                size="sm"
+                                onClick={handleBatchSendAiInterview}
+                                disabled={isBatchSending}
+                                leftIcon={isBatchSending ? <Clock className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+                            >
+                                {isBatchSending ? 'جاري الإرسال...' : 'إرسال مقابلة ذكية للكل'}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedIds([])}
+                                className="text-gray-500"
+                            >
+                                إلغاء
+                            </Button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Header */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100 dark:border-gray-800">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
@@ -208,6 +327,15 @@ const CandidatesPage: React.FC = () => {
                         <p className="text-gray-600 dark:text-gray-400 mt-1">تتبع وتحليل طلبات التوظيف بالذكاء الاصطناعي</p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <input
+                                type="checkbox"
+                                checked={selectedIds.length === filteredCandidates.length && filteredCandidates.length > 0}
+                                onChange={toggleAll}
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">تحديد الكل</span>
+                        </div>
                         <Button variant="primary" leftIcon={<Plus />} onClick={() => setShowAddModal(true)}>إضافة متقدم</Button>
                     </div>
                 </div>
@@ -230,10 +358,10 @@ const CandidatesPage: React.FC = () => {
                         </div>
                     ))}
                 </div>
-            </motion.div>
+            </motion.div >
 
             {/* Filters */}
-            <Card>
+            < Card >
                 <CardContent className="flex flex-col md:flex-row gap-4 items-center justify-between">
                     <div className="relative flex-1 w-full max-w-md">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -260,108 +388,133 @@ const CandidatesPage: React.FC = () => {
                         </div>
                     </div>
                 </CardContent>
-            </Card>
+            </Card >
 
             {/* Candidates List */}
-            {isCandidatesLoading ? (
-                <div className="flex justify-center items-center py-20">
-                    <Clock className="h-10 w-10 text-blue-600 animate-spin" />
-                </div>
-            ) : filteredCandidates.length === 0 ? (
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 text-center shadow-sm border border-gray-100 dark:border-gray-800">
-                    <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">لا يوجد متقدمين</h3>
-                    <p className="text-gray-500 mt-2">لم نجد أي متقدمين يطابقون معايير البحث</p>
-                </div>
-            ) : (
-                <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' : 'space-y-4'}>
-                    {filteredCandidates.map((candidate, i) => (
-                        <motion.div key={candidate.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
-                            <Card className="hover:shadow-xl transition-all duration-300 border-0 group">
-                                <CardHeader
-                                    title={candidate.name}
-                                    description={
-                                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                                            <Badge variant="outline" className="text-[10px] py-0">{candidate.position || 'Unknown'}</Badge>
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getStatusConfig(candidate.status).color}`}>{getStatusConfig(candidate.status).label}</span>
-                                        </div>
-                                    }
-                                    Action={
-                                        <CandidateActionsMenu
-                                            candidate={candidate}
-                                            onUpdateStatus={handleUpdateStatus}
-                                        />
-                                    }
-                                />
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                <Mail className="h-4 w-4 text-blue-500" /> <span>{candidate.email}</span>
+            {
+                isCandidatesLoading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Clock className="h-10 w-10 text-blue-600 animate-spin" />
+                    </div>
+                ) : filteredCandidates.length === 0 ? (
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 text-center shadow-sm border border-gray-100 dark:border-gray-800">
+                        <User className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">لا يوجد متقدمين</h3>
+                        <p className="text-gray-500 mt-2">لم نجد أي متقدمين يطابقون معايير البحث</p>
+                    </div>
+                ) : (
+                    <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6' : 'space-y-4'}>
+                        {filteredCandidates.map((candidate, i) => (
+                            <motion.div key={candidate.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
+                                <Card className="hover:shadow-xl transition-all duration-300 border-0 group">
+                                    <CardHeader
+                                        title={
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(candidate.id)}
+                                                    onChange={() => toggleSelection(candidate.id)}
+                                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <span>{candidate.fullName}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                <Phone className="h-4 w-4 text-green-500" /> <span>{candidate.phone}</span>
+                                        }
+                                        description={
+                                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                <Badge variant="outline" className="text-[10px] py-0">{candidate.position || 'Unknown'}</Badge>
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getStatusConfig(candidate.status).color}`}>{getStatusConfig(candidate.status).label}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                <MapPin className="h-4 w-4 text-red-500" /> <span>{candidate.location || 'غير محدد'}</span>
+                                        }
+                                        Action={
+                                            <CandidateActionsMenu
+                                                candidate={candidate}
+                                                onUpdateStatus={handleUpdateStatus}
+                                            />
+                                        }
+                                    />
+                                    <CardContent>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                                    <Mail className="h-4 w-4 text-blue-500" /> <span>{candidate.email}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                                    <Phone className="h-4 w-4 text-green-500" /> <span>{candidate.phone}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                                    <MapPin className="h-4 w-4 text-red-500" /> <span>{candidate.location || 'غير محدد'}</span>
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <div className="pt-4 border-t dark:border-gray-800">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">تقييم الذكاء الاصطناعي</span>
-                                                <Badge variant="ai" className="font-bold">{candidate.aiScore || 0}%</Badge>
-                                            </div>
-                                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 italic leading-relaxed">
-                                                "{candidate.aiSummary || 'لا يوجد ملخص متاح حالياً للمرشح.'}"
-                                            </p>
+                                            <div className="pt-4 border-t dark:border-gray-800">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">تقييم الذكاء الاصطناعي</span>
+                                                    <Badge variant="ai" className="font-bold">{candidate.aiScore || 0}%</Badge>
+                                                </div>
+                                                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 italic leading-relaxed">
+                                                    "{candidate.aiSummary || 'لا يوجد ملخص متاح حالياً للمرشح.'}"
+                                                </p>
 
-                                            {candidate.aiAnalysisDetails && (() => {
-                                                try {
-                                                    const analysis = typeof candidate.aiAnalysisDetails === 'string'
-                                                        ? JSON.parse(candidate.aiAnalysisDetails)
-                                                        : candidate.aiAnalysisDetails;
-                                                    return (
-                                                        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-dashed dark:border-gray-800 pt-2">
-                                                            <div className="text-[11px]">
-                                                                <span className="font-bold text-gray-700 dark:text-gray-300 block mb-1">المهارات الرئيسية:</span>
-                                                                <div className="flex flex-wrap gap-1">
-                                                                    {analysis.skills?.slice(0, 3).map((s: string, idx: number) => (
-                                                                        <span key={idx} className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1 rounded">{s}</span>
-                                                                    ))}
+                                                {candidate.aiAnalysisDetails && (() => {
+                                                    try {
+                                                        const analysis = typeof candidate.aiAnalysisDetails === 'string'
+                                                            ? JSON.parse(candidate.aiAnalysisDetails)
+                                                            : candidate.aiAnalysisDetails;
+                                                        return (
+                                                            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-dashed dark:border-gray-800 pt-2">
+                                                                <div className="text-[11px]">
+                                                                    <span className="font-bold text-gray-700 dark:text-gray-300 block mb-1">المهارات الرئيسية:</span>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {analysis.skills?.slice(0, 3).map((s: string, idx: number) => (
+                                                                            <span key={idx} className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1 rounded">{s}</span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="text-[11px]">
+                                                                    <span className="font-bold text-gray-700 dark:text-gray-300 block mb-1">توصية النظام:</span>
+                                                                    <span className={`font-bold ${analysis.recommendation === 'hire' ? 'text-green-600' : analysis.recommendation === 'reject' ? 'text-red-500' : 'text-amber-500'}`}>
+                                                                        {analysis.recommendation === 'hire' ? 'توظيف فوري' : analysis.recommendation === 'reject' ? 'غير ملائم' : 'مقابلة معمقة'}
+                                                                    </span>
                                                                 </div>
                                                             </div>
-                                                            <div className="text-[11px]">
-                                                                <span className="font-bold text-gray-700 dark:text-gray-300 block mb-1">توصية النظام:</span>
-                                                                <span className={`font-bold ${analysis.recommendation === 'hire' ? 'text-green-600' : analysis.recommendation === 'reject' ? 'text-red-500' : 'text-amber-500'}`}>
-                                                                    {analysis.recommendation === 'hire' ? 'توظيف فوري' : analysis.recommendation === 'reject' ? 'غير ملائم' : 'مقابلة معمقة'}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                } catch (e) {
-                                                    return null;
-                                                }
-                                            })()}
-                                        </div>
+                                                        );
+                                                    } catch (e) {
+                                                        return null;
+                                                    }
+                                                })()}
+                                            </div>
 
-                                        <div className="flex gap-2 pt-2">
-                                            <Button variant="outline" size="sm" className="flex-1 shadow-sm" leftIcon={<Eye className="h-3 w-3" />} onClick={() => handleViewProfile(candidate)}>عرض الملف</Button>
-                                            {candidate.resumeUrl && (
-                                                <Button variant="secondary" size="sm" className="shadow-sm" onClick={() => window.open(candidate.resumeUrl, '_blank')}>
-                                                    <FileText className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            <Button variant="ghost" size="sm" className="hover:text-blue-600" onClick={() => handleSendEmail(candidate)}><Mail className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="sm" onClick={() => handleDeleteCandidate(candidate.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                                            <div className="flex gap-2 pt-2">
+                                                <Button variant="outline" size="sm" className="flex-1 shadow-sm" leftIcon={<Eye className="h-3 w-3" />} onClick={() => handleViewProfile(candidate)}>عرض الملف</Button>
+                                                {candidate.status === 'NEW' && (
+                                                    <Button variant="ai" size="sm" className="shadow-sm font-bold" leftIcon={<Briefcase className="h-3 w-3" />} onClick={() => handleSendAiInterview(candidate)}>ارسال اختبار AI</Button>
+                                                )}
+                                                {candidate.status === 'INTERVIEW_SENT' && (
+                                                    <div className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/50">
+                                                        <Clock className="w-4 h-4 text-indigo-500 animate-pulse" />
+                                                        <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">بانتظار الرد...</span>
+                                                    </div>
+                                                )}
+                                                {candidate.status === 'INTERVIEW_COMPLETED' && (
+                                                    <Button variant="ai" size="sm" className="shadow-lg font-bold animate-pulse" leftIcon={<Brain className="h-4 w-4" />} onClick={() => handleReviewInterview(candidate)}>مراجعة النتائج</Button>
+                                                )}
+                                                {candidate.resumeUrl && (
+                                                    <Button variant="secondary" size="sm" className="shadow-sm" onClick={() => window.open(candidate.resumeUrl, '_blank')}>
+                                                        <FileText className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                <Button variant="ghost" size="sm" className="hover:text-blue-600" onClick={() => handleSendEmail(candidate)}><Mail className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteCandidate(candidate.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                )
+            }
 
             {/* Add Modal */}
             <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="إضافة متقدم جديد" size="md">
@@ -423,7 +576,7 @@ const CandidatesPage: React.FC = () => {
                                 <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{selectedCandidate.name}</h3>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{selectedCandidate.fullName || selectedCandidate.name}</h3>
                                 <p className="text-gray-600 dark:text-gray-400">{selectedCandidate.recruitmentjob?.title || 'غير محدد'}</p>
                             </div>
                         </div>
@@ -473,7 +626,21 @@ const CandidatesPage: React.FC = () => {
                     </div>
                 )}
             </Modal>
-        </div>
+
+            {/* Interview Result Modal */}
+            <InterviewResultModal
+                isOpen={showReviewModal}
+                onClose={() => setShowReviewModal(false)}
+                candidate={selectedCandidate}
+                interview={selectedInterview}
+                onStatusUpdate={(newStatus) => {
+                    if (selectedCandidate) {
+                        handleUpdateStatus(selectedCandidate.id, newStatus);
+                        setShowReviewModal(false);
+                    }
+                }}
+            />
+        </div >
     )
 }
 

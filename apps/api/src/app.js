@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { globalLimiter, authLimiter } from './middlewares/rate-limit.middleware.js';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes.js';
 import checkInRoutes from './routes/check-in.routes.js';
@@ -81,26 +82,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: '10mb' })); // Increased limit for heavy AI analysis tasks
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
-const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 200, // Global limit
-    message: { status: 'error', message: 'Too many requests, please try again later' }
-});
-
-// Strict rate limiter for authentication endpoints (prevents brute force)
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Only 5 attempts per 15 minutes
-    skipSuccessfulRequests: true, // Don't count successful logins
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-        status: 'error',
-        message: 'عدد كبير جداً من محاولات تسجيل الدخول. يرجى المحاولة بعد 15 دقيقة'
-    }
-});
-
+// Use shared rate limiters
 app.use('/api/', globalLimiter);
 
 // Serve static files from uploads directory

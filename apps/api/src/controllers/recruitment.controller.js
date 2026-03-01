@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { getMimeTypeFromBuffer } from '../utils/magic-bytes.js';
 import { uploadFileToSupabase } from '../utils/supabase.js';
+import { emailService } from '../services/email.service.js';
 
 // Helper to check file security
 const validateFile = (fileInput) => {
@@ -190,6 +191,7 @@ export const getJobDetails = async (req, res, next) => {
                     include: { interviews: true },
                     orderBy: { aiScore: 'desc' }
                 },
+                departmentRel: true
             },
         });
 
@@ -200,6 +202,39 @@ export const getJobDetails = async (req, res, next) => {
         }
 
         res.status(200).json({ status: 'success', data: { job } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const handleInteractiveAiJobFlow = async (req, res, next) => {
+    try {
+        const { messages } = req.body;
+        const companyId = req.user.companyId;
+
+        if (!messages || !Array.isArray(messages)) {
+            const error = new Error('Messages array is required');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const aiResponse = await aiService.interactiveJobRecruiter(messages, companyId);
+
+        res.status(200).json({
+            status: 'success',
+            data: aiResponse
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getDepartments = async (req, res, next) => {
+    try {
+        const departments = await prisma.department.findMany({
+            where: { companyId: req.user.companyId }
+        });
+        res.status(200).json({ status: 'success', data: { departments } });
     } catch (error) {
         next(error);
     }
@@ -340,6 +375,76 @@ export const getInterviewByCode = async (req, res, next) => {
     }
 };
 
+export const getInterviewByToken = async (req, res, next) => {
+    try {
+        const { token } = req.params;
+        const interview = await prisma.interview.findUnique({
+            where: { token },
+            include: {
+                candidate: {
+                    include: { recruitmentjob: true }
+                }
+            }
+        });
+
+        if (!interview) {
+            const error = new Error('رابط المقابلة غير صالح');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Check expiration
+        if (interview.expiresAt && new Date() > new Date(interview.expiresAt)) {
+            const error = new Error('انتهت صلاحية رابط المقابلة');
+            error.statusCode = 410; // Gone
+            throw error;
+        }
+
+        res.status(200).json({ status: 'success', data: { interview } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getInterviewQuestionsByToken = async (req, res, next) => {
+    try {
+        const { token } = req.params;
+        const interview = await prisma.interview.findUnique({
+            where: { token },
+            include: {
+                candidate: {
+                    include: { recruitmentjob: true }
+                }
+            }
+        });
+
+        if (!interview || !interview.candidate) {
+            const error = new Error('المقابلة غير موجودة');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const candidate = interview.candidate;
+        let skills = [];
+        if (candidate.skills) {
+            skills = Array.isArray(candidate.skills) ? candidate.skills : JSON.parse(JSON.stringify(candidate.skills));
+        }
+
+        const questions = await aiService.generateInterviewQuestions(
+            candidate.recruitmentjob.title,
+            skills,
+            {
+                seniority: candidate.recruitmentjob.seniority || 'MID',
+                questionsCount: 5
+            }
+        );
+
+        res.status(200).json({ status: 'success', data: { questions } });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const getInterviewQuestions = async (req, res, next) => {
     try {
         const { code } = req.params;
@@ -377,21 +482,66 @@ export const getInterviewQuestions = async (req, res, next) => {
 
 export const submitInterviewAnswer = async (req, res, next) => {
     try {
-        const { candidateId, type, videoUrl, notes } = req.body;
+        const { candidateId, type, videoUrl, notes, token } = req.body;
 
-        const interview = await prisma.interview.create({
-            data: {
-                candidateId,
-                type: type || 'VIDEO',
-                videoUrl,
-                notes,
-                completed: true,
-                status: 'completed'
+        // 1. Validate Token if provided (New Security Layer)
+        let interview;
+        if (token) {
+            interview = await prisma.interview.findUnique({
+                where: { token },
+                include: { candidate: true }
+            });
+
+            if (!interview) {
+                return res.status(404).json({ status: 'error', message: 'رمز المقابلة غير صحيح' });
             }
-        });
 
+            if (interview.completed) {
+                return res.status(400).json({ status: 'error', message: 'تم إرسال هذه المقابلة مسبقاً' });
+            }
+
+            if (interview.expiresAt && new Date() > new Date(interview.expiresAt)) {
+                return res.status(400).json({ status: 'error', message: 'انتهت صلاحية رمز المقابلة' });
+            }
+        }
+
+        // 2. Fallback to candidate-based lookup if no token (backward compatibility)
+        if (!interview && candidateId) {
+            interview = await prisma.interview.findFirst({
+                where: { candidateId, completed: false },
+                orderBy: { createdAt: 'desc' }
+            });
+        }
+
+        if (!interview) {
+            // If still no interview, create a new one (legacy behavior)
+            interview = await prisma.interview.create({
+                data: {
+                    candidateId,
+                    type: type || 'VIDEO',
+                    videoUrl,
+                    notes,
+                    completed: true,
+                    status: 'completed'
+                }
+            });
+        } else {
+            // Update existing interview
+            interview = await prisma.interview.update({
+                where: { id: interview.id },
+                data: {
+                    videoUrl,
+                    notes,
+                    completed: true,
+                    status: 'completed',
+                    completedAt: new Date()
+                }
+            });
+        }
+
+        // 3. AI Evaluation
         const candidate = await prisma.candidate.findUnique({
-            where: { id: candidateId },
+            where: { id: interview.candidateId },
             include: { recruitmentjob: true }
         });
 
@@ -402,34 +552,44 @@ export const submitInterviewAnswer = async (req, res, next) => {
             questions,
             answers,
             candidate.recruitmentjob.companyId,
-            candidateId
+            interview.candidateId
         );
 
         // Fixed: Use real AI result or fallback to "Pending Review" - NO RANDOM NUMBERS
         const aiAnalysis = {
             communication: evaluationResult.score || 0,
-            technical: 0, // Cannot assess technical without specific technical questions
+            technical: 0,
             overall: evaluationResult.score || 0,
             strengths: evaluationResult.strengths || [],
             weaknesses: evaluationResult.weaknesses || [],
-            decision: evaluationResult.decision || 'review'
+            decision: evaluationResult.decision || 'review',
+            recommendation: evaluationResult.decision || 'review'
         };
 
-        if (evaluationResult.score === 0) {
-            aiAnalysis.decision = 'review'; // Force review if AI failed
-        }
+        const score = evaluationResult.score || 0;
+        const summary = evaluationResult.summary || 'تم إكمال المقابلة بنجاح وهي بانتظار المراجعة.';
 
         await prisma.interview.update({
             where: { id: interview.id },
-            data: { aiAnalysis: JSON.stringify(aiAnalysis) }
+            data: {
+                aiAnalysis: JSON.stringify(aiAnalysis),
+                aiScore: score,
+                aiSummary: summary,
+                completedAt: new Date(),
+                status: 'completed'
+            }
         });
 
         await prisma.candidate.update({
             where: { id: candidateId },
-            data: { status: 'INTERVIEWING' }
+            data: {
+                status: 'INTERVIEW_COMPLETED',
+                aiScore: score,
+                aiSummary: summary
+            }
         });
 
-        res.status(200).json({ status: 'success', data: { interview } });
+        res.status(200).json({ status: 'success', data: { interview: { ...interview, aiScore: score, aiSummary: summary, status: 'completed' } } });
     } catch (error) {
         next(error);
     }
@@ -443,7 +603,7 @@ export const createCandidate = async (req, res, next) => {
 
         const candidate = await prisma.candidate.create({
             data: {
-                name,
+                fullName: name,
                 email,
                 phone,
                 resumeUrl,
@@ -680,26 +840,57 @@ export const scheduleInterview = async (req, res, next) => {
     try {
         const { candidateId, type, scheduledAt, notes, interviewerName } = req.body;
 
+        const token = crypto.randomUUID();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        const candidate = await prisma.candidate.findUnique({
+            where: { id: candidateId }
+        });
+        if (!candidate) return res.status(404).json({ status: 'error', message: 'المرشح غير موجود' });
+
         const interview = await prisma.interview.create({
             data: {
                 candidateId,
+                jobId: candidate.jobId,
                 type: type || 'VIDEO',
                 interviewerName: interviewerName || null,
                 scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
                 notes,
                 status: 'scheduled',
-                completed: false
+                completed: false,
+                token,
+                expiresAt
             },
-            include: { candidate: true }
+            include: {
+                candidate: {
+                    include: { recruitmentjob: true }
+                }
+            }
         });
 
         await prisma.candidate.update({
             where: { id: candidateId },
             data: {
-                status: 'INTERVIEWING',
+                status: 'INTERVIEW_SENT',
                 updatedAt: new Date()
             }
         });
+
+        // Send Email
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const interviewLink = `${frontendUrl}/interview/${token}`;
+
+        try {
+            await emailService.sendInterviewInvitation(
+                interview.candidate,
+                interview.candidate.recruitmentjob,
+                interviewLink
+            );
+        } catch (emailError) {
+            console.error('Failed to send interview email:', emailError);
+            // Non-blocking error for email
+        }
 
         res.status(201).json({ status: 'success', data: { interview } });
     } catch (error) {

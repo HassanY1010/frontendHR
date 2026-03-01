@@ -19,7 +19,7 @@ function App() {
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/jobs" element={<JobsPage />} />
                     <Route path="/jobs/:id" element={<JobDetailsPage />} />
-                    <Route path="/interview/:code" element={<InterviewPage />} />
+                    <Route path="/interview/:token" element={<InterviewPage />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/cookies" element={<Cookies />} />

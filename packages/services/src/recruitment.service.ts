@@ -60,6 +60,28 @@ class RecruitmentService {
     return response.data.aiDescription
   }
 
+  async getAiJobConversationResponse(messages: any[]): Promise<{
+    nextQuestion: string | null
+    isComplete: boolean
+    jobData?: Partial<Job>
+  }> {
+    logger.info('Get AI Job Conversation Response')
+    const response = await apiClient.post<{
+      status: string,
+      data: {
+        nextQuestion: string | null,
+        isComplete: boolean,
+        jobData?: any
+      }
+    }>('/recruitment/ai/interactive-flow', { messages })
+    return response.data
+  }
+
+  async getDepartments(): Promise<any[]> {
+    const response = await apiClient.get<{ status: string, data: { departments: any[] } }>('/recruitment/departments')
+    return response.data.departments
+  }
+
   async getDailyRecruitmentAnalysis(): Promise<{
     cvAnalyzedToday: number
     highMatchCandidates: number
@@ -95,9 +117,20 @@ class RecruitmentService {
     return response.data.candidate
   }
 
+  async getInterviewByToken(token: string): Promise<Interview> {
+    const response = await apiClient.get<{ status: string, data: { interview: Interview } }>(`/recruitment/interviews/token/${token}`)
+    return response.data.interview
+  }
+
   async getInterviewQuestions(code: string): Promise<string[]> {
     logger.info('Get interview questions', { code })
     const response = await apiClient.get<{ status: string, data: { questions: string[] } }>(`/recruitment/interviews/${code}/questions`)
+    return response.data.questions
+  }
+
+  async getInterviewQuestionsByToken(token: string): Promise<string[]> {
+    logger.info('Get interview questions by token', { token })
+    const response = await apiClient.get<{ status: string, data: { questions: string[] } }>(`/recruitment/interviews/token/${token}/questions`)
     return response.data.questions
   }
 
@@ -201,8 +234,8 @@ class RecruitmentService {
     return response.data.interview
   }
 
-  async submitInterview(data: { candidateId: string, videoUrl?: string, notes?: string }): Promise<Interview> {
-    logger.info('Submit interview', { candidateId: data.candidateId })
+  async submitInterview(data: { candidateId: string, videoUrl?: string, notes?: string, token?: string }): Promise<Interview> {
+    logger.info('Submit interview', { candidateId: data.candidateId, token: data.token })
     const response = await apiClient.post<{ status: string, data: { interview: Interview } }>('/recruitment/interviews/submit', data)
     return response.data.interview
   }

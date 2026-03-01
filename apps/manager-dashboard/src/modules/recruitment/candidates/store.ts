@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Candidate } from '@hr/types';
+import type { Candidate, Interview } from '@hr/types';
 import { recruitmentService } from '@hr/services';
 
 interface CandidatesState {
@@ -10,6 +10,7 @@ interface CandidatesState {
     createCandidate: (data: Partial<Candidate>, resumeFile?: File) => Promise<void>;
     updateCandidate: (id: string, data: Partial<Candidate>) => Promise<void>;
     deleteCandidate: (id: string) => Promise<void>;
+    scheduleInterview: (data: Partial<Interview>) => Promise<void>;
 }
 
 export const useCandidatesStore = create<CandidatesState>((set) => ({
@@ -69,6 +70,18 @@ export const useCandidatesStore = create<CandidatesState>((set) => ({
             }));
         } catch (error) {
             set({ error: 'Failed to delete candidate', isLoading: false });
+        }
+    },
+    scheduleInterview: async (data: Partial<Interview>) => {
+        set({ isLoading: true, error: null });
+        try {
+            await recruitmentService.scheduleInterview(data);
+            // Refresh candidates to show updated status (INTERVIEW_SENT)
+            const updatedCandidates = await recruitmentService.getCandidates();
+            set({ candidates: updatedCandidates, isLoading: false });
+        } catch (error) {
+            set({ error: 'Failed to schedule interview', isLoading: false });
+            throw error;
         }
     },
 }));

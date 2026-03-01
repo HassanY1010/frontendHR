@@ -13,12 +13,15 @@ import {
     MapPin,
     DollarSign,
     Clock as ClockIcon,
-    XCircle
+    XCircle,
+    Sparkles
 } from 'lucide-react'
 
 import { useJobsStore } from '../store'
-import type { Job } from '@hr/types'
+import type { Job, EmploymentType, WorkMode, SeniorityLevel } from '@hr/types'
 import JobActionsMenu from '../components/JobActionsMenu'
+import JobAiChat from '../components/JobAiChat'
+import { recruitmentService } from '@hr/services'
 
 // Status config mapping
 const STATUS_CONFIG = {
@@ -181,16 +184,42 @@ const JobsPage: React.FC = () => {
     const [sortBy] = useState('createdAt')
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
+    const [showAiChat, setShowAiChat] = useState(false)
+    const [generatedJobData, setGeneratedJobData] = useState<Partial<Job> | null>(null)
+    const [dynamicDepartments, setDynamicDepartments] = useState<{ id: string, name: string }[]>([])
+
     React.useEffect(() => {
         fetchJobs()
+        loadDepartments()
     }, [fetchJobs])
 
-    const departments = ['الكل', 'التطوير', 'التصميم', 'الإدارة', 'المبيعات', 'الدعم', 'التسويق', 'الموارد البشرية', 'العمليات', 'المالية']
+    const loadDepartments = async () => {
+        try {
+            const depts = await recruitmentService.getDepartments()
+            setDynamicDepartments(depts)
+        } catch (error) {
+            console.error('Failed to load departments', error)
+        }
+    }
+
     const jobTypes = [
-        { value: 'full-time', label: 'دوام كامل' },
-        { value: 'part-time', label: 'دوام جزئي' },
-        { value: 'contract', label: 'عقد' },
-        { value: 'remote', label: 'عن بعد' }
+        { value: 'FULL_TIME', label: 'دوام كامل' },
+        { value: 'PART_TIME', label: 'دوام جزئي' },
+        { value: 'CONTRACT', label: 'عقد' },
+    ]
+
+    const workModes = [
+        { value: 'ONSITE', label: 'من المكتب' },
+        { value: 'HYBRID', label: 'هجين' },
+        { value: 'REMOTE', label: 'عن بعد' }
+    ]
+
+    const seniorityLevels = [
+        { value: 'JUNIOR', label: 'مبتدئ' },
+        { value: 'MID', label: 'متوسط' },
+        { value: 'SENIOR', label: 'خبير' },
+        { value: 'LEAD', label: 'قائد فريق' },
+        { value: 'MANAGER', label: 'مدير' }
     ]
 
     const getStatusConfig = (status: string) => {
@@ -252,16 +281,18 @@ const JobsPage: React.FC = () => {
 
         const newJobData: Partial<Job> = {
             title: formData.get('title') as string,
-            department: formData.get('department') as string,
+            departmentId: formData.get('departmentId') as string,
             location: formData.get('location') as string,
-            type: formData.get('type') as any,
-            salaryRange: {
-                min: Number(formData.get('salaryMin')),
-                max: Number(formData.get('salaryMax')),
-                currency: 'SAR'
-            },
+            city: formData.get('city') as string,
+            employmentType: formData.get('employmentType') as EmploymentType,
+            workMode: formData.get('workMode') as WorkMode,
+            seniorityLevel: formData.get('seniorityLevel') as SeniorityLevel,
+            yearsOfExperience: Number(formData.get('yearsOfExperience')),
+            salaryMin: Number(formData.get('salaryMin')),
+            salaryMax: Number(formData.get('salaryMax')),
             description: formData.get('description') as string,
-            requirements: (formData.get('requirements') as string)?.split('\n').filter(Boolean) || []
+            requirements: (formData.get('requirements') as string)?.split('\n').filter(Boolean) || [],
+            openingReason: (formData.get('openingReason') || 'NEW_ROLE') as any
         }
 
         // Only set these fields when creating a new job, not when updating
@@ -343,6 +374,14 @@ const JobsPage: React.FC = () => {
 
                     <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         <Button
+                            variant="ai"
+                            leftIcon={<Sparkles className="h-4 w-4" />}
+                            onClick={() => setShowAiChat(true)}
+                            className="px-4 sm:px-6 text-sm"
+                        >
+                            إنشاء بواسطة AI
+                        </Button>
+                        <Button
                             variant="primary"
                             leftIcon={<Plus />}
                             onClick={() => { setSelectedJob(null); setShowCreateModal(true); }}
@@ -413,9 +452,10 @@ const JobsPage: React.FC = () => {
                             onChange={(e) => setFilterDepartment(e.target.value)}
                             className="px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         >
-                            {departments.map(dept => (
-                                <option key={dept} value={dept === 'الكل' ? 'all' : dept}>
-                                    {dept}
+                            <option value="all">كل الأقسام</option>
+                            {dynamicDepartments.map(dept => (
+                                <option key={dept.id} value={dept.id}>
+                                    {dept.name}
                                 </option>
                             ))}
                         </select>
@@ -541,13 +581,13 @@ const JobsPage: React.FC = () => {
                                                         <div className="flex items-center justify-between text-sm">
                                                             <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1"><ClockIcon className="h-4 w-4" />نوع الوظيفة:</span>
                                                             <span className="font-medium text-sm text-gray-900 dark:text-gray-200">
-                                                                {job.type === 'full-time' ? 'دوام كامل' : job.type === 'part-time' ? 'دوام جزئي' : job.type === 'contract' ? 'عقد' : 'عن بعد'}
+                                                                {job.employmentType === 'FULL_TIME' ? 'دوام كامل' : job.employmentType === 'PART_TIME' ? 'دوام جزئي' : 'عقد'}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center justify-between text-sm">
                                                             <span className="text-gray-600 dark:text-gray-400 flex items-center gap-1"><DollarSign className="h-4 w-4" />الراتب:</span>
                                                             <span className="font-medium text-sm text-gray-900 dark:text-gray-200">
-                                                                {(job.salaryRange as any)?.min?.toLocaleString() || '0'} - {(job.salaryRange as any)?.max?.toLocaleString() || '—'} {(job.salaryRange as any)?.currency || 'SAR'}
+                                                                {job.salaryMin?.toLocaleString() || '0'} - {job.salaryMax?.toLocaleString() || '—'} SAR
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center justify-between text-sm">
@@ -588,61 +628,115 @@ const JobsPage: React.FC = () => {
                         size="lg"
                     >
                         <form onSubmit={handleCreateJob} className="space-y-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">عنوان الوظيفة</label>
-                                    <input
-                                        name="title"
-                                        type="text"
-                                        defaultValue={selectedJob?.title}
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
-                                        placeholder="مثال: مطور Frontend"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">القسم</label>
-                                    <select
-                                        name="department"
-                                        defaultValue={selectedJob?.department}
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
-                                    >
-                                        <option value="التطوير">التطوير</option>
-                                        <option value="التصميم">التصميم</option>
-                                        <option value="الإدارة">الإدارة</option>
-                                        <option value="المبيعات">المبيعات</option>
-                                        <option value="الدعم">الدعم</option>
-                                        <option value="التسويق">التسويق</option>
-                                        <option value="الموارد البشرية">الموارد البشرية</option>
-                                        <option value="العمليات">العمليات</option>
-                                        <option value="المالية">المالية</option>
-                                    </select>
-                                </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">عنوان الوظيفة</label>
+                                <input
+                                    name="title"
+                                    type="text"
+                                    defaultValue={selectedJob?.title || generatedJobData?.title}
+                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                    placeholder="مثال: مطور Frontend"
+                                    required
+                                />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">الموقع</label>
-                                    <input
-                                        name="location"
-                                        type="text"
-                                        defaultValue={selectedJob?.location}
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">القسم</label>
+                                    <select
+                                        name="departmentId"
+                                        defaultValue={selectedJob?.departmentId || generatedJobData?.departmentId}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
-                                        placeholder="الرياض، جدة، عن بعد"
-                                        required
+                                    >
+                                        <option value="">اختر القسم...</option>
+                                        {dynamicDepartments.map(dept => (
+                                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">سبب الفتح</label>
+                                    <select
+                                        name="openingReason"
+                                        defaultValue={selectedJob?.openingReason || generatedJobData?.openingReason || 'NEW_ROLE'}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                    >
+                                        <option value="NEW_ROLE">دور جديد</option>
+                                        <option value="EXPANSION">توسع</option>
+                                        <option value="REPLACEMENT">بديل</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">المدينة</label>
+                                    <input
+                                        name="city"
+                                        type="text"
+                                        defaultValue={selectedJob?.city || (generatedJobData as any)?.city}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        placeholder="الرياض"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">نوع الوظيفة</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">الموقع التفصيلي</label>
+                                    <input
+                                        name="location"
+                                        type="text"
+                                        defaultValue={selectedJob?.location || (generatedJobData as any)?.location}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        placeholder="حي الصحافة، الرياض"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">نمط العمل</label>
                                     <select
-                                        name="type"
-                                        defaultValue={selectedJob?.type}
+                                        name="workMode"
+                                        defaultValue={selectedJob?.workMode || (generatedJobData as any)?.workMode}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                    >
+                                        {workModes.map(mode => (
+                                            <option key={mode.value} value={mode.value}>{mode.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">نوع التوظيف</label>
+                                    <select
+                                        name="employmentType"
+                                        defaultValue={selectedJob?.employmentType || (generatedJobData as any)?.employmentType}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                                     >
                                         {jobTypes.map(type => (
                                             <option key={type.value} value={type.value}>{type.label}</option>
                                         ))}
                                     </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">المستوى الوظيفي</label>
+                                    <select
+                                        name="seniorityLevel"
+                                        defaultValue={selectedJob?.seniorityLevel || (generatedJobData as any)?.seniorityLevel}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                    >
+                                        {seniorityLevels.map(level => (
+                                            <option key={level.value} value={level.value}>{level.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">سنوات الخبرة</label>
+                                    <input
+                                        name="yearsOfExperience"
+                                        type="number"
+                                        defaultValue={selectedJob?.yearsOfExperience || (generatedJobData as any)?.yearsOfExperience}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        placeholder="3"
+                                    />
                                 </div>
                             </div>
 
@@ -652,7 +746,7 @@ const JobsPage: React.FC = () => {
                                     <input
                                         name="salaryMin"
                                         type="number"
-                                        defaultValue={selectedJob?.salaryRange?.min}
+                                        defaultValue={selectedJob?.salaryMin || (generatedJobData as any)?.salaryMin}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                                         placeholder="15000"
                                         required
@@ -663,7 +757,7 @@ const JobsPage: React.FC = () => {
                                     <input
                                         name="salaryMax"
                                         type="number"
-                                        defaultValue={selectedJob?.salaryRange?.max}
+                                        defaultValue={selectedJob?.salaryMax || (generatedJobData as any)?.salaryMax}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                                         placeholder="25000"
                                         required
@@ -676,7 +770,7 @@ const JobsPage: React.FC = () => {
                                     <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">الوصف الوظيفي</label>
                                     <textarea
                                         name="description"
-                                        defaultValue={selectedJob?.description}
+                                        defaultValue={selectedJob?.description || generatedJobData?.description}
                                         rows={4}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                                         placeholder="وصف الوظيفة..."
@@ -687,7 +781,7 @@ const JobsPage: React.FC = () => {
                                     <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">المتطلبات (كل سطر متطلب جديد)</label>
                                     <textarea
                                         name="requirements"
-                                        defaultValue={Array.isArray(selectedJob?.requirements) ? selectedJob?.requirements.join('\n') : ''}
+                                        defaultValue={Array.isArray(selectedJob?.requirements) ? selectedJob?.requirements.join('\n') : Array.isArray(generatedJobData?.requirements) ? generatedJobData?.requirements.join('\n') : ''}
                                         rows={4}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                                         placeholder="المتطلبات..."
@@ -708,6 +802,27 @@ const JobsPage: React.FC = () => {
                                 </Button>
                             </div>
                         </form>
+                    </Modal>
+                )}
+            </AnimatePresence>
+
+            {/* AI Chat Modal */}
+            <AnimatePresence>
+                {showAiChat && (
+                    <Modal
+                        isOpen={showAiChat}
+                        onClose={() => setShowAiChat(false)}
+                        title="إنشاء وصف وظيفي بالذكاء الاصطناعي"
+                        size="md"
+                    >
+                        <JobAiChat
+                            onComplete={(jobData) => {
+                                setGeneratedJobData(jobData)
+                                setShowAiChat(false)
+                                setShowCreateModal(true)
+                            }}
+                            onCancel={() => setShowAiChat(false)}
+                        />
                     </Modal>
                 )}
             </AnimatePresence>
