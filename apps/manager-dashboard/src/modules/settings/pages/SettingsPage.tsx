@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, Suspense, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@hr/ui'
-import { settingsService, fileService } from '@hr/services'
+import { settingsService, fileService, recruitmentService } from '@hr/services'
 import { toast } from 'sonner'
 import {
   User,
@@ -15,7 +15,11 @@ import {
   CheckCircle,
   Camera,
   Edit3,
-  Check
+  Check,
+  Building2,
+  Plus,
+  Trash2,
+  Edit2
 } from 'lucide-react'
 
 // ==================== أنواع TypeScript محسنة ====================
@@ -664,6 +668,165 @@ const AppearanceSettings: React.FC<{
 
 // SecuritySettings component removed
 
+const DepartmentsSettings: React.FC = () => {
+  const [departments, setDepartments] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAdding, setIsAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const [formData, setFormData] = useState({ name: '', description: '' })
+
+  const loadDepartments = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const depts = await recruitmentService.getDepartments()
+      setDepartments(depts)
+    } catch (error) {
+      console.error('Failed to load departments:', error)
+      toast.error('فشل تحميل الأقسام')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadDepartments()
+  }, [loadDepartments])
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast.error('اسم القسم مطلوب')
+      return
+    }
+
+    try {
+      if (editingId) {
+        await recruitmentService.updateDepartment(editingId, formData)
+        toast.success('تم تحديث القسم بنجاح')
+      } else {
+        await recruitmentService.createDepartment(formData)
+        toast.success('تمت إضافة القسم بنجاح')
+      }
+
+      setFormData({ name: '', description: '' })
+      setIsAdding(false)
+      setEditingId(null)
+      loadDepartments()
+    } catch (error) {
+      console.error('Failed to save department:', error)
+      toast.error('فشل حفظ القسم')
+    }
+  }
+
+  const handleEdit = (dept: any) => {
+    setFormData({ name: dept.name, description: dept.description || '' })
+    setEditingId(dept.id)
+    setIsAdding(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا القسم؟ قد يؤثر ذلك على الوظائف المرتبطة به.')) return
+
+    try {
+      await recruitmentService.deleteDepartment(id)
+      toast.success('تم حذف القسم بنجاح')
+      loadDepartments()
+    } catch (error) {
+      console.error('Failed to delete department:', error)
+      toast.error('فشل حذف القسم')
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-0 shadow-lg">
+        <CardHeader
+          title="الهيكل التنظيمي (الأقسام)"
+          description="إدارة أقسام الشركة لتسهيل تصنيف الوظائف والموظفين"
+          action={
+            !isAdding && (
+              <Button variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsAdding(true)}>
+                إضافة قسم
+              </Button>
+            )
+          }
+        />
+        <CardContent>
+          {isAdding && (
+            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4">
+                {editingId ? 'تعديل قسم' : 'إضافة قسم جديد'}
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">اسم القسم *</label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="مثال: التسويق، المبيعات..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">وصف القسم (اختياري)</label>
+                  <Input
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="وصف مختصر للقسم"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={() => { setIsAdding(false); setEditingId(null); setFormData({ name: '', description: '' }); }}>
+                  إلغاء
+                </Button>
+                <Button variant="primary" size="sm" onClick={handleSave}>
+                  حفظ القسم
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="py-8 text-center text-gray-500">جاري التحميل...</div>
+          ) : departments.length === 0 ? (
+            <div className="py-12 text-center">
+              <Building2 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 font-medium pb-2">لا توجد أقسام مسجلة حتى الآن</p>
+              <p className="text-sm text-gray-400">أضف الأقسام الخاصة بشركتك لكي تتمكن من ربط الوظائف بها.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {departments.map((dept) => (
+                <div key={dept.id} className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-blue-500" />
+                        {dept.name}
+                      </h4>
+                      {dept.description && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{dept.description}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <button onClick={() => handleEdit(dept)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => handleDelete(dept.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 // ==================== المكون الرئيسي ====================
 
 const SettingsPage: React.FC = () => {
@@ -808,6 +971,12 @@ const SettingsPage: React.FC = () => {
       description: 'إدارة بيانات ومنشأة الشركة'
     },
     {
+      id: 'departments',
+      title: 'الهيكل التنظيمي',
+      icon: Building2,
+      description: 'إدارة وتكوين أقسام الشركة'
+    },
+    {
       id: 'notifications',
       title: 'الإشعارات',
       icon: Bell,
@@ -827,6 +996,8 @@ const SettingsPage: React.FC = () => {
         return <ProfileSettings data={profileData} onUpdate={handleProfileUpdate} />
       case 'company':
         return <CompanySettings data={companyData} onUpdate={handleCompanyUpdate} />
+      case 'departments':
+        return <DepartmentsSettings />
       case 'notifications':
         return <NotificationSettings data={notificationSettings} onUpdate={setNotificationSettings} />
       case 'appearance':

@@ -785,7 +785,7 @@ const JobsPage: React.FC = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">بيئة العمل السابقة المفضلة (معلومة لـ AI)</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">بيئة العمل السابقة المفضلة </label>
                                     <select
                                         name="previousCompanyType"
                                         defaultValue={selectedJob?.previousCompanyType || ''}
@@ -798,7 +798,7 @@ const JobsPage: React.FC = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">بيئة العمل لدينا (معلومة لـ AI)</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">بيئة العمل لدينا </label>
                                     <select
                                         name="workEnvironment"
                                         defaultValue={selectedJob?.workEnvironment || ''}
@@ -814,7 +814,7 @@ const JobsPage: React.FC = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">هل أدار فريق سابقاً؟ (معلومة لـ AI)</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">هل أدار فريق سابقاً؟</label>
                                     <select
                                         name="managedTeamBefore"
                                         defaultValue={selectedJob?.managedTeamBefore ? 'true' : 'false'}
@@ -825,7 +825,7 @@ const JobsPage: React.FC = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">متوسط حجم الفريق المراد إدارته (معلومة لـ AI)</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">متوسط حجم الفريق المراد إدارته </label>
                                     <input
                                         name="teamSize"
                                         type="number"
