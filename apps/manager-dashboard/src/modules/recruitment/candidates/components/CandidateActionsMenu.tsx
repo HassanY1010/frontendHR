@@ -34,8 +34,35 @@ const CandidateActionsMenu: React.FC<CandidateActionsMenuProps> = ({
         setIsOpen(false)
     }
 
+    const actions = [
+        {
+            label: 'قيد المراجعة',
+            status: 'SCREENING',
+            icon: <Clock className="h-4 w-4 text-yellow-500 shrink-0" />,
+            hover: 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20',
+        },
+        {
+            label: 'مقابلة',
+            status: 'INTERVIEWING',
+            icon: <Briefcase className="h-4 w-4 text-purple-500 shrink-0" />,
+            hover: 'hover:bg-purple-50 dark:hover:bg-purple-900/20',
+        },
+        {
+            label: 'قبول',
+            status: 'HIRED',
+            icon: <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />,
+            hover: 'hover:bg-green-50 dark:hover:bg-green-900/20',
+        },
+        {
+            label: 'رفض',
+            status: 'REJECTED',
+            icon: <XCircle className="h-4 w-4 text-red-500 shrink-0" />,
+            hover: 'hover:bg-red-50 dark:hover:bg-red-900/20',
+        },
+    ]
+
     return (
-        <div className="relative" ref={menuRef}>
+        <div className="relative" ref={menuRef} dir="rtl">
             <button
                 onClick={(e) => {
                     e.stopPropagation()
@@ -46,47 +73,25 @@ const CandidateActionsMenu: React.FC<CandidateActionsMenuProps> = ({
                 <MoreVertical className="h-5 w-5 text-gray-500" />
             </button>
             {isOpen && (
-                <div className="absolute left-0 top-10 bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700 rounded-xl p-2 z-50 min-w-[180px] animate-in fade-in zoom-in duration-200">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleAction('SCREENING')
-                        }}
-                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors text-right"
-                    >
-                        <Clock className="h-4 w-4 text-yellow-500" />
-                        <span>قيد المراجعة</span>
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleAction('INTERVIEWING')
-                        }}
-                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors text-right"
-                    >
-                        <Briefcase className="h-4 w-4 text-purple-500" />
-                        <span>مقابلة</span>
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleAction('HIRED')
-                        }}
-                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors text-right font-medium"
-                    >
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span>قبول</span>
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleAction('REJECTED')
-                        }}
-                        className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-right font-medium"
-                    >
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        <span>رفض</span>
-                    </button>
+                <div className="absolute left-0 top-10 bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden z-50 min-w-[180px]">
+                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <p className="text-xs font-bold text-gray-400 dark:text-gray-500">تغيير الحالة</p>
+                    </div>
+                    <div className="p-1.5 space-y-0.5">
+                        {actions.map((action) => (
+                            <button
+                                key={action.status}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleAction(action.status)
+                                }}
+                                className={`flex flex-row-reverse items-center gap-2.5 w-full px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 ${action.hover} rounded-lg transition-colors`}
+                            >
+                                {action.icon}
+                                <span className="flex-1 text-right">{action.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
