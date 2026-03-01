@@ -78,7 +78,7 @@ model AuditLog {
 model Candidate {
   id                String           @id @default(uuid())
   jobId             String
-  name              String
+  fullName          String           @map("name")
   email             String
   phone             String?
   resumeUrl         String?
@@ -90,7 +90,7 @@ model Candidate {
   aiSummary         String?          @db.Text
   status            candidate_status @default(NEW)
   createdAt         DateTime         @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime         @updatedAt
   deletedAt         DateTime?
   aiStatus          String?
   interviewCode     String?          @unique(map: "Candidate_interviewCode_key")
@@ -180,8 +180,19 @@ model Company {
   subscriptions      Subscription[]
   subscriptionCode   SubscriptionCode?
   users              User[]
+  departments        Department[]
 
   @@map("company")
+}
+
+model Department {
+  id        String           @id @default(uuid())
+  name      String
+  companyId String
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobs      RecruitmentJob[]
+
+  @@map("department")
 }
 
 model Competitor {
@@ -280,6 +291,7 @@ model FinancialTransaction {
 model Interview {
   id                String    @id @default(uuid())
   candidateId       String
+  jobId             String
   type              String
   score             Float?
   notes             String?   @db.Text
@@ -293,6 +305,12 @@ model Interview {
   status            String    @default("scheduled")
   candidateFeedback String?   @db.Text
   candidateRating   Int?
+  token             String?   @unique
+  expiresAt         DateTime?
+  completedAt       DateTime?
+  aiScore           Float?
+  aiSummary         String?   @db.LongText
+  transcript        String?   @db.LongText
   candidate         Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade, map: "Interview_candidateId_fkey")
 
   @@index([candidateId], map: "Interview_candidateId_fkey")
@@ -414,21 +432,37 @@ model Project {
 model RecruitmentJob {
   id               String                @id @default(uuid())
   companyId        String
+  departmentId     String?
   title            String
   department       String?
   location         String?
   type             String?
+  employmentType   recruitmentjob_employment_type @default(FULL_TIME)
+  city             String?
+  workMode         recruitmentjob_work_mode       @default(ONSITE)
+  seniorityLevel   recruitmentjob_seniority_level @default(MID)
+  yearsOfExperience Int?
+  previousCompanyType recruitmentjob_company_type?
+  managedTeamBefore Boolean?
+  teamSize         Int?
+  salaryMin        Int?
+  salaryMax        Int?
+  workEnvironment  recruitmentjob_work_environment?
+  openingReason    recruitmentjob_opening_reason @default(NEW_ROLE)
   description      String                @db.Text
   requirements     String?               @db.LongText
   responsibilities String?               @db.LongText
   salaryRange      String?               @db.LongText
   status           recruitmentjob_status @default(OPEN)
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime
-  deletedAt        DateTime?
+  aiGenerated      Boolean               @default(false)
+  createdBy        String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  deletedAt         DateTime?
   aiDescription    String?               @db.Text
   candidates        Candidate[]
   company          Company               @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "RecruitmentJob_companyId_fkey")
+  departmentRel    Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   @@index([companyId], map: "RecruitmentJob_companyId_fkey")
   @@index([companyId, status], map: "RecruitmentJob_companyId_status_idx")
@@ -702,10 +736,54 @@ enum recruitmentjob_status {
 
 enum candidate_status {
   NEW
+  INTERVIEW_SENT
+  INTERVIEW_COMPLETED
   SCREENING
   PRE_ACCEPTED
   INTERVIEWING
   OFFERED
   REJECTED
   HIRED
+}
+
+enum recruitmentjob_employment_type {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum recruitmentjob_work_mode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum recruitmentjob_seniority_level {
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  MANAGER
+}
+
+enum recruitmentjob_company_type {
+  STARTUP
+  CORPORATE
+  TECH
+  GOVERNMENT
+}
+
+enum recruitmentjob_work_environment {
+  STARTUP
+  CORPORATE
+  HIGH_PRESSURE
+  STABLE
+}
+
+enum recruitmentjob_opening_reason {
+  NEW_ROLE
+  EXPANSION
+  REPLACEMENT
+  PROJECT
+  RESTRUCTURE
 }
