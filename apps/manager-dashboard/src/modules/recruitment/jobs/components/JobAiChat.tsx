@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Bot, User, Loader2, CheckCircle2, AlertCircle, Sparkles, RotateCcw } from 'lucide-react'
+import { Send, Bot, User, Loader2, CheckCircle2, Sparkles, RotateCcw } from 'lucide-react'
 import { recruitmentService } from '@hr/services'
 import type { Job } from '@hr/types'
 

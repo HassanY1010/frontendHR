@@ -184,7 +184,7 @@ const InterviewsPage: React.FC = () => {
     // Filter Logic
     const filteredInterviews = (interviews || []).filter(i => {
         const query = searchQuery.toLowerCase();
-        const candidateName = i.candidate?.name?.toLowerCase() || '';
+        const candidateName = i.candidate?.fullName?.toLowerCase() || '';
         const position = i.candidate?.job?.title?.toLowerCase() || '';
         const interviewer = i.interviewerName?.toLowerCase() || '';
         return candidateName.includes(query) || position.includes(query) || interviewer.includes(query);
@@ -245,8 +245,8 @@ const InterviewsPage: React.FC = () => {
                         </div>
                         <div className="space-y-1">
                             {dayInterviews.slice(0, 3).map(inv => (
-                                <div key={inv.id} className="text-[10px] p-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800 truncate leading-tight" title={`${inv.candidate?.name} - ${inv.candidate?.job?.title}`}>
-                                    {inv.candidate?.name}
+                                <div key={inv.id} className="text-[10px] p-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800 truncate leading-tight" title={`${inv.candidate?.fullName} - ${inv.candidate?.job?.title}`}>
+                                    {inv.candidate?.fullName}
                                 </div>
                             ))}
                             {dayInterviews.length > 3 && <div className="text-[9px] text-gray-500 text-center font-medium">+{dayInterviews.length - 3} إضافي</div>}
@@ -361,7 +361,7 @@ const InterviewsPage: React.FC = () => {
                             <tbody className="divide-y dark:divide-gray-800">
                                 <AnimatePresence mode="popLayout">
                                     {filteredInterviews.length > 0 ? filteredInterviews.map((interview) => {
-                                        const candidateName = interview.candidate?.name || 'Unknown';
+                                        const candidateName = interview.candidate?.fullName || 'Unknown';
                                         const position = interview.candidate?.job?.title || 'N/A';
                                         const interviewerName = interview.interviewerName || 'لم يحدد';
                                         const scheduledDate = interview.scheduledAt ? new Date(interview.scheduledAt).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) : '—';
@@ -509,7 +509,7 @@ const InterviewsPage: React.FC = () => {
                             <select name="candidateId" className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-xl outline-none focus:border-blue-500 transition-all font-bold" required>
                                 <option value="">اختر من القائمة...</option>
                                 {candidates.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name} — {c.job?.title || 'عام'}</option>
+                                    <option key={c.id} value={c.id}>{c.fullName} — {(c as any).job?.title || 'عام'}</option>
                                 ))}
                             </select>
                         </div>
@@ -551,7 +551,7 @@ const InterviewsPage: React.FC = () => {
                 <form className="space-y-5" onSubmit={handleAddNote}>
                     <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl border border-orange-100 dark:border-orange-800 flex items-center gap-3">
                         <MessageSquare className="w-5 h-5 text-orange-600" />
-                        <p className="text-sm font-bold text-orange-900 dark:text-orange-200">إضافة ملاحظة لملف المرشح: {selectedInterview?.candidate?.name}</p>
+                        <p className="text-sm font-bold text-orange-900 dark:text-orange-200">إضافة ملاحظة لملف المرشح: {selectedInterview?.candidate?.fullName}</p>
                     </div>
                     <textarea
                         name="note"
@@ -570,7 +570,7 @@ const InterviewsPage: React.FC = () => {
                 <form className="space-y-5" onSubmit={handleReschedule}>
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 flex items-center gap-3">
                         <Calendar className="w-5 h-5 text-blue-600" />
-                        <p className="text-sm font-bold text-blue-900 dark:text-blue-200">تعديل جدول المرشح: {selectedInterview?.candidate?.name}</p>
+                        <p className="text-sm font-bold text-blue-900 dark:text-blue-200">تعديل جدول المرشح: {selectedInterview?.candidate?.fullName}</p>
                     </div>
                     <div className="space-y-1.5 px-1">
                         <label className="block text-sm font-black text-gray-700 dark:text-gray-300">الموعد الجديد المقترح</label>
