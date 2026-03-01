@@ -222,6 +222,20 @@ const JobsPage: React.FC = () => {
         { value: 'MANAGER', label: 'مدير' }
     ]
 
+    const previousCompanyTypes = [
+        { value: 'STARTUP', label: 'شركة ناشئة (Startup)' },
+        { value: 'CORPORATE', label: 'شركة كبرى (Corporate)' },
+        { value: 'TECH', label: 'شركة تقنية' },
+        { value: 'GOVERNMENT', label: 'قطاع حكومي' }
+    ]
+
+    const workEnvironments = [
+        { value: 'STARTUP', label: 'بيئة ناشئة سريعة' },
+        { value: 'CORPORATE', label: 'بيئة مؤسسية منظمة' },
+        { value: 'HIGH_PRESSURE', label: 'بيئة عالية الضغط' },
+        { value: 'STABLE', label: 'بيئة مستقرة' }
+    ]
+
     const getStatusConfig = (status: string) => {
         const statusMap: Record<string, any> = {
             'draft': STATUS_CONFIG.DRAFT,
@@ -279,26 +293,51 @@ const JobsPage: React.FC = () => {
         const form = e.target as HTMLFormElement
         const formData = new FormData(form)
 
+        const title = formData.get('title') as string
+        const departmentId = formData.get('departmentId') as string
+        const location = formData.get('location') as string
+        const city = formData.get('city') as string
+        const workMode = formData.get('workMode') as WorkMode
+        const description = formData.get('description') as string
+        const requirements = (formData.get('requirements') as string) || ''
+
+        const employmentType = formData.get('employmentType') as any
+        const seniorityLevel = formData.get('seniorityLevel') as any
+        const yearsOfExperience = formData.get('yearsOfExperience') ? parseInt(formData.get('yearsOfExperience') as string) : undefined
+        const salaryMin = formData.get('salaryMin') ? parseInt(formData.get('salaryMin') as string) : undefined
+        const salaryMax = formData.get('salaryMax') ? parseInt(formData.get('salaryMax') as string) : undefined
+        const openingReason = formData.get('openingReason') as any
+
+        // New AI fields
+        const previousCompanyType = formData.get('previousCompanyType') as any || undefined
+        const managedTeamBefore = formData.get('managedTeamBefore') === 'true'
+        const teamSize = formData.get('teamSize') ? parseInt(formData.get('teamSize') as string) : undefined
+        const workEnvironment = formData.get('workEnvironment') as any || undefined
+
         const newJobData: Partial<Job> = {
-            title: formData.get('title') as string,
-            departmentId: formData.get('departmentId') as string,
-            location: formData.get('location') as string,
-            city: formData.get('city') as string,
-            employmentType: formData.get('employmentType') as EmploymentType,
-            workMode: formData.get('workMode') as WorkMode,
-            seniorityLevel: formData.get('seniorityLevel') as SeniorityLevel,
-            yearsOfExperience: Number(formData.get('yearsOfExperience')),
-            salaryMin: Number(formData.get('salaryMin')),
-            salaryMax: Number(formData.get('salaryMax')),
-            description: formData.get('description') as string,
-            requirements: (formData.get('requirements') as string)?.split('\n').filter(Boolean) || [],
-            openingReason: (formData.get('openingReason') || 'NEW_ROLE') as any
+            title,
+            departmentId,
+            department: dynamicDepartments.find(d => d.id === departmentId)?.name || '',
+            description,
+            requirements: requirements.split('\n').filter(r => r.trim()),
+            location,
+            city,
+            workMode,
+            employmentType,
+            seniorityLevel,
+            yearsOfExperience,
+            salaryMin,
+            salaryMax,
+            openingReason,
+            previousCompanyType,
+            managedTeamBefore,
+            teamSize,
+            workEnvironment,
+            aiGenerated: false
         }
 
         // Only set these fields when creating a new job, not when updating
         if (!selectedJob) {
-            newJobData.status = 'draft'
-            newJobData.responsibilities = []
             newJobData.skills = []
             newJobData.experience = 'Not specified'
             newJobData.education = 'Not specified'
@@ -534,7 +573,7 @@ const JobsPage: React.FC = () => {
                                                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                                                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location}</span>
                                                     <span className="flex items-center gap-1"><Users className="h-3 w-3" />{job.applicantsCount || 0} متقدم</span>
-                                                    <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{(job.salaryRange as any)?.min?.toLocaleString() || '0'} - {(job.salaryRange as any)?.max?.toLocaleString() || '—'}</span>
+                                                    <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{(job.salaryMin)?.toLocaleString() || '0'} - {(job.salaryMax)?.toLocaleString() || '—'}</span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1 sm:gap-2 self-end sm:self-auto">
@@ -642,11 +681,12 @@ const JobsPage: React.FC = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">القسم</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">القسم <span className="text-red-500">*</span></label>
                                     <select
                                         name="departmentId"
                                         defaultValue={selectedJob?.departmentId || generatedJobData?.departmentId}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        required
                                     >
                                         <option value="">اختر القسم...</option>
                                         {dynamicDepartments.map(dept => (
@@ -690,11 +730,12 @@ const JobsPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">نمط العمل</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">نمط العمل <span className="text-red-500">*</span></label>
                                     <select
                                         name="workMode"
                                         defaultValue={selectedJob?.workMode || (generatedJobData as any)?.workMode}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        required
                                     >
                                         {workModes.map(mode => (
                                             <option key={mode.value} value={mode.value}>{mode.label}</option>
@@ -705,11 +746,12 @@ const JobsPage: React.FC = () => {
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">نوع التوظيف</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">نوع التوظيف <span className="text-red-500">*</span></label>
                                     <select
                                         name="employmentType"
                                         defaultValue={selectedJob?.employmentType || (generatedJobData as any)?.employmentType}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        required
                                     >
                                         {jobTypes.map(type => (
                                             <option key={type.value} value={type.value}>{type.label}</option>
@@ -717,11 +759,12 @@ const JobsPage: React.FC = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">المستوى الوظيفي</label>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">المستوى الوظيفي <span className="text-red-500">*</span></label>
                                     <select
                                         name="seniorityLevel"
                                         defaultValue={selectedJob?.seniorityLevel || (generatedJobData as any)?.seniorityLevel}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        required
                                     >
                                         {seniorityLevels.map(level => (
                                             <option key={level.value} value={level.value}>{level.label}</option>
@@ -736,6 +779,59 @@ const JobsPage: React.FC = () => {
                                         defaultValue={selectedJob?.yearsOfExperience || (generatedJobData as any)?.yearsOfExperience}
                                         className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                                         placeholder="3"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">بيئة العمل السابقة المفضلة (معلومة لـ AI)</label>
+                                    <select
+                                        name="previousCompanyType"
+                                        defaultValue={selectedJob?.previousCompanyType || ''}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                    >
+                                        <option value="">غير محدد</option>
+                                        {previousCompanyTypes.map(type => (
+                                            <option key={type.value} value={type.value}>{type.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">بيئة العمل لدينا (معلومة لـ AI)</label>
+                                    <select
+                                        name="workEnvironment"
+                                        defaultValue={selectedJob?.workEnvironment || ''}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                    >
+                                        <option value="">غير محدد</option>
+                                        {workEnvironments.map(env => (
+                                            <option key={env.value} value={env.value}>{env.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">هل أدار فريق سابقاً؟ (معلومة لـ AI)</label>
+                                    <select
+                                        name="managedTeamBefore"
+                                        defaultValue={selectedJob?.managedTeamBefore ? 'true' : 'false'}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                    >
+                                        <option value="false">لا يشترط</option>
+                                        <option value="true">نعم يشترط إدارته لفريق</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">متوسط حجم الفريق المراد إدارته (معلومة لـ AI)</label>
+                                    <input
+                                        name="teamSize"
+                                        type="number"
+                                        defaultValue={selectedJob?.teamSize || ''}
+                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                                        placeholder="مثال: 5"
                                     />
                                 </div>
                             </div>
