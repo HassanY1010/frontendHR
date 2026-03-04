@@ -4,11 +4,13 @@ import { MoreVertical, Clock, Briefcase, CheckCircle, XCircle } from 'lucide-rea
 interface CandidateActionsMenuProps {
     candidate: any
     onUpdateStatus: (candidateId: string, status: string) => void
+    onStartInterview?: (candidate: any) => void
 }
 
 const CandidateActionsMenu: React.FC<CandidateActionsMenuProps> = ({
     candidate,
-    onUpdateStatus
+    onUpdateStatus,
+    onStartInterview
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
@@ -30,7 +32,11 @@ const CandidateActionsMenu: React.FC<CandidateActionsMenuProps> = ({
     }, [isOpen])
 
     const handleAction = (status: string) => {
-        onUpdateStatus(candidate.id, status)
+        if (status === 'INTERVIEWING' && onStartInterview) {
+            onStartInterview(candidate)
+        } else {
+            onUpdateStatus(candidate.id, status)
+        }
         setIsOpen(false)
     }
 
