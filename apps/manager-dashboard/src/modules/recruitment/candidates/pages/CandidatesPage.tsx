@@ -103,6 +103,7 @@ const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: string, chi
 
 import { useCandidatesStore } from '../store';
 import { useJobsStore } from '../../jobs/store';
+import { recruitmentService } from '@hr/services';
 import { toast } from 'sonner';
 import InterviewResultModal from '../components/InterviewResultModal';
 
@@ -120,6 +121,8 @@ const CandidatesPage: React.FC = () => {
     const [selectedInterview, setSelectedInterview] = useState<any>(null)
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [isBatchSending, setIsBatchSending] = useState(false)
+    const [showInterviewLinkModal, setShowInterviewLinkModal] = useState(false)
+    const [generatedLink, setGeneratedLink] = useState('')
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev =>
@@ -252,6 +255,41 @@ const CandidatesPage: React.FC = () => {
         } catch (error) {
             console.error('Failed to send AI interview:', error);
             toast.error('فشل إرسال دعوة المقابلة');
+        }
+    };
+
+    const handleStartInterview = async (candidate: any) => {
+        try {
+            // Immediately generate interview link for the selected candidate
+            const loadingToast = toast.loading('جاري إنشاء مقابلة وإعداد الرابط...');
+
+            // Assume scheduleInterview returns the created interview object in the store
+            const interviewResponse: any = await recruitmentService.scheduleInterview({
+                candidateId: candidate.id,
+                type: 'VIDEO',
+                notes: 'Generated from Candidates Page Actions' // Track context
+            });
+
+            toast.dismiss(loadingToast);
+
+            // Set the generated link, depending on frontend/backend routing format
+            const frontendUrl = window.location.origin;
+            const link = `${frontendUrl}/interview/${interviewResponse.token}`;
+
+            setGeneratedLink(link);
+            setShowInterviewLinkModal(true);
+
+            // Refresh to update status
+            await fetchCandidates();
+
+            // Auto-select candidate to show batch action bar
+            if (!selectedIds.includes(candidate.id)) {
+                setSelectedIds(prev => [...prev, candidate.id]);
+            }
+
+        } catch (error) {
+            console.error('Failed to start interview:', error);
+            toast.error('فشل إنشاء المقابلة');
         }
     };
 
@@ -430,6 +468,7 @@ const CandidatesPage: React.FC = () => {
                                             <CandidateActionsMenu
                                                 candidate={candidate}
                                                 onUpdateStatus={handleUpdateStatus}
+                                                onStartInterview={handleStartInterview}
                                             />
                                         }
                                     />
@@ -625,6 +664,47 @@ const CandidatesPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Generated Interview Link Modal */}
+            <Modal isOpen={showInterviewLinkModal} onClose={() => setShowInterviewLinkModal(false)} title="رابط المقابلة" size="md">
+                <div className="space-y-6">
+                    <div className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 p-4 rounded-xl border border-green-200 dark:border-green-800 flex items-start gap-3">
+                        <CheckCircle className="h-6 w-6 shrink-0" />
+                        <div>
+                            <h4 className="font-bold text-sm">تم إنشاء رابط المقابلة بنجاح!</h4>
+                            <p className="text-xs text-green-600 dark:text-green-500 mt-1">
+                                يمكنك نسخ الرابط أدناه وإرساله للمتقدم بأي طريقة تفضلها.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="relative group">
+                        <input
+                            type="text"
+                            readOnly
+                            value={generatedLink}
+                            dir="ltr"
+                            className="w-full pl-4 pr-24 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white outline-none cursor-copy font-mono text-sm"
+                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                        />
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(generatedLink);
+                                toast.success('تم نسخ الرابط');
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            نسخ الرابط
+                        </button>
+                    </div>
+
+                    <div className="flex justify-end pt-4 border-t dark:border-gray-800">
+                        <Button variant="outline" onClick={() => setShowInterviewLinkModal(false)}>
+                            إغلاق
+                        </Button>
+                    </div>
+                </div>
             </Modal>
 
             {/* Interview Result Modal */}
