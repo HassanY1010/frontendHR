@@ -13,7 +13,8 @@ import {
     Calendar,
     MessageSquare,
     ChevronRight,
-    ChevronLeft
+    ChevronLeft,
+    Brain
 } from 'lucide-react'
 import { InterviewActionsMenu } from '../components/InterviewActionsMenu'
 import { useCandidatesStore } from '../../candidates/store'
@@ -21,6 +22,7 @@ import { useInterviewsStore } from '../store';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import InterviewResultModal from '../../candidates/components/InterviewResultModal';
 
 // المكونات المساعدة
 const Card: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className = '', onClick }) => (
@@ -87,6 +89,7 @@ const InterviewsPage: React.FC = () => {
     const [showScheduleModal, setShowScheduleModal] = React.useState(false);
     const [showNoteModal, setShowNoteModal] = React.useState(false);
     const [showRescheduleModal, setShowRescheduleModal] = React.useState(false);
+    const [showReviewModal, setShowReviewModal] = React.useState(false);
     const [selectedInterview, setSelectedInterview] = React.useState<any>(null);
     const [selectedVideoUrl, setSelectedVideoUrl] = React.useState<string | null>(null);
     const [viewMode, setViewMode] = React.useState<'list' | 'calendar'>('list');
@@ -131,6 +134,11 @@ const InterviewsPage: React.FC = () => {
         } catch (error) {
             toast.error('فشل تحديث الحالة');
         }
+    };
+
+    const handleReviewInterview = (interview: any) => {
+        setSelectedInterview(interview);
+        setShowReviewModal(true);
     };
 
     const handleDelete = async (id: string) => {
@@ -411,7 +419,12 @@ const InterviewsPage: React.FC = () => {
                                                 </td>
                                                 <td className="p-5">
                                                     <div className="flex items-center justify-center gap-3">
-                                                        {interview.videoUrl && (
+                                                        {interview.status === 'completed' && interview.videoUrl && (
+                                                            <Button variant="ai" size="sm" className="shadow-sm font-bold animate-pulse text-xs px-3" leftIcon={<Brain className="h-3 w-3" />} onClick={() => handleReviewInterview(interview)}>
+                                                                مراجعة النتائج
+                                                            </Button>
+                                                        )}
+                                                        {interview.videoUrl && interview.status !== 'completed' && (
                                                             <Button variant="outline" size="sm" className="rounded-xl border-2" onClick={() => setSelectedVideoUrl(interview.videoUrl || null)}>
                                                                 <Video className="h-4 w-4" />
                                                             </Button>
@@ -589,7 +602,7 @@ const InterviewsPage: React.FC = () => {
                     <div className="space-y-6">
                         <div className="aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl relative group">
                             <video controls className="w-full h-full shadow-inner" autoPlay>
-                                <source src={selectedVideoUrl} type="video/mp4" />
+                                <source src={selectedVideoUrl} type="video/webm" />
                                 متصفحك الحالي لا يدعم تقنيات تشغيل هذا الفيديو.
                             </video>
                         </div>
@@ -600,6 +613,20 @@ const InterviewsPage: React.FC = () => {
                     </div>
                 )}
             </Modal>
+
+            {/* Interview Result Modal */}
+            <InterviewResultModal
+                isOpen={showReviewModal}
+                onClose={() => setShowReviewModal(false)}
+                candidate={selectedInterview?.candidate}
+                interview={selectedInterview}
+                onStatusUpdate={(newStatus) => {
+                    if (selectedInterview) {
+                        handleUpdateStatus(selectedInterview.id, newStatus);
+                        setShowReviewModal(false);
+                    }
+                }}
+            />
         </div>
     )
 }
