@@ -236,9 +236,24 @@ class RecruitmentService {
   async uploadInterviewVideo(file: Blob, candidateId: string): Promise<{ url: string }> {
     logger.info('Upload interview video', { candidateId })
     const formData = new FormData()
-    formData.append('video', file, 'interview.webm')
 
-    const response = await apiClient.post<{ status: string, data: { url: string } }>('/recruitment/interviews/upload-video-file', formData)
+    // Ensure we are sending a proper File object with a filename and correct mimetype.
+    // MediaRecorder usually outputs 'video/webm'
+    const videoFile = new File([file], `interview-${candidateId}.webm`, { type: 'video/webm' });
+    formData.append('video', videoFile)
+
+    // Using apiClient directly but ensuring we don't accidentally send a JSON Content-Type
+    // Axios will automatically set the correct Content-Type with Boundary for FormData
+    const response = await apiClient.post<{ status: string, data: { url: string } }>(
+      '/recruitment/interviews/upload-video-file',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 120000 // 2 minutes timeout for large video files
+      }
+    )
     return response.data
   }
 
