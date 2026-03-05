@@ -170,7 +170,7 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                             </h3>
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm leading-relaxed">
                                 <p className="text-gray-700 dark:text-gray-300 text-sm italic">
-                                    "{interview.aiSummary || 'لم يتم توليد ملخص تلقائي.'}"
+                                    "{interview.aiSummary || aiAnalysis?.summary || 'لم يتم توليد ملخص تلقائي أو المقابلة لا تزال قيد الانتظار.'}"
                                 </p>
                             </div>
 
