@@ -8,6 +8,7 @@ interface JobActionsMenuProps {
     onDuplicate: (job: Job) => void
     onArchive: (jobId: string) => void
     onDelete: (jobId: string) => void
+    onOpenChange?: (isOpen: boolean) => void
 }
 
 const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
@@ -15,7 +16,8 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
     onEdit,
     onDuplicate,
     onArchive,
-    onDelete
+    onDelete,
+    onOpenChange
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
@@ -31,10 +33,12 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
             document.addEventListener('mousedown', handleClickOutside)
         }
 
+        onOpenChange?.(isOpen)
+
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [isOpen])
+    }, [isOpen, onOpenChange])
 
     return (
         <div className="relative" ref={menuRef}>
