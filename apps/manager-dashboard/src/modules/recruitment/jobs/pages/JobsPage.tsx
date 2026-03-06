@@ -47,7 +47,7 @@ const formatDate = (dateString: string | Date, format: string = 'dd/MM/yyyy'): s
 // Custom Card component
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => {
     return (
-        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 overflow-hidden ${className}`}>
+        <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 ${className}`}>
             {children}
         </div>
     )
@@ -183,6 +183,7 @@ const JobsPage: React.FC = () => {
     const [filterDepartment, setFilterDepartment] = useState('all')
     const [sortBy] = useState('createdAt')
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+    const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
 
     const [showAiChat, setShowAiChat] = useState(false)
     const [generatedJobData, setGeneratedJobData] = useState<Partial<Job> | null>(null)
@@ -555,6 +556,7 @@ const JobsPage: React.FC = () => {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.5 + index * 0.1 }}
+                                style={{ position: 'relative', zIndex: activeMenuId === job.id ? 50 : 1 }}
                             >
                                 <Card className={`h-full shadow-md hover:shadow-lg transition-all duration-200 border-0 ${viewMode === 'list' ? 'flex items-center p-3 sm:p-4' : ''}`}>
                                     {viewMode === 'list' ? (
@@ -607,6 +609,7 @@ const JobsPage: React.FC = () => {
                                                         onDuplicate={handleDuplicateJob}
                                                         onArchive={handleArchiveJob}
                                                         onDelete={handleDeleteJob}
+                                                        onOpenChange={(isOpen) => setActiveMenuId(isOpen ? job.id : null)}
                                                     />
                                                 }
                                             />
