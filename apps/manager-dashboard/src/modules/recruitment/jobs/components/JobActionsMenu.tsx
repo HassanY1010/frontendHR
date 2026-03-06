@@ -48,14 +48,14 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
                 <MoreVertical className="h-4 w-4" />
             </button>
             {isOpen && (
-                <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 rounded-lg p-2 z-50 min-w-[160px]">
+                <div className="absolute right-0 top-8 bg-white dark:bg-slate-900 shadow-2xl dark:shadow-black/60 border border-gray-100 dark:border-slate-700 rounded-lg p-2 z-[60] min-w-[160px]">
                     <button
                         onClick={(e) => {
                             e.stopPropagation()
                             onEdit(job)
                             setIsOpen(false)
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors text-right"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:hover:text-white rounded transition-colors text-right"
                     >
                         <Edit className="h-4 w-4" />
                         تعديل
@@ -66,7 +66,7 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
                             onDuplicate(job)
                             setIsOpen(false)
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors text-right"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:hover:text-white rounded transition-colors text-right"
                     >
                         <FileText className="h-4 w-4" />
                         نسخ
@@ -77,7 +77,7 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
                             onArchive(job.id)
                             setIsOpen(false)
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors text-right"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:hover:text-white rounded transition-colors text-right"
                     >
                         <Archive className="h-4 w-4" />
                         أرشفة
@@ -88,7 +88,7 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
                             onDelete(job.id)
                             setIsOpen(false)
                         }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-right"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:text-red-300 rounded transition-colors text-right"
                     >
                         <Trash2 className="h-4 w-4" />
                         حذف
