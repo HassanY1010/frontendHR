@@ -674,7 +674,7 @@ const DepartmentsSettings: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({ name: '', description: '' })
+  const [formData, setFormData] = useState({ name: '', description: '', parentId: '' })
 
   const loadDepartments = useCallback(async () => {
     try {
@@ -708,7 +708,7 @@ const DepartmentsSettings: React.FC = () => {
         toast.success('تمت إضافة القسم بنجاح')
       }
 
-      setFormData({ name: '', description: '' })
+      setFormData({ name: '', description: '', parentId: '' })
       setIsAdding(false)
       setEditingId(null)
       loadDepartments()
@@ -719,7 +719,7 @@ const DepartmentsSettings: React.FC = () => {
   }
 
   const handleEdit = (dept: any) => {
-    setFormData({ name: dept.name, description: dept.description || '' })
+    setFormData({ name: dept.name, description: dept.description || '', parentId: dept.parentId || '' })
     setEditingId(dept.id)
     setIsAdding(true)
   }
@@ -767,16 +767,22 @@ const DepartmentsSettings: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">وصف القسم (اختياري)</label>
-                  <Input
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="وصف مختصر للقسم"
-                  />
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">القسم الرئيسي (اختياري)</label>
+                  <Select
+                    value={formData.parentId}
+                    onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
+                  >
+                    <option value="">-- بدون قسم رئيسي --</option>
+                    {departments
+                      .filter(d => d.id !== editingId && !d.parentId) // Only top-level as parents to keep it 2-level or avoid cycles
+                      .map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                  </Select>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => { setIsAdding(false); setEditingId(null); setFormData({ name: '', description: '' }); }}>
+                <Button variant="ghost" size="sm" onClick={() => { setIsAdding(false); setEditingId(null); setFormData({ name: '', description: '', parentId: '' }); }}>
                   إلغاء
                 </Button>
                 <Button variant="primary" size="sm" onClick={handleSave}>
@@ -795,27 +801,64 @@ const DepartmentsSettings: React.FC = () => {
               <p className="text-sm text-gray-400">أضف الأقسام الخاصة بشركتك لكي تتمكن من ربط الوظائف بها.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {departments.map((dept) => (
-                <div key={dept.id} className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-blue-500" />
-                        {dept.name}
-                      </h4>
-                      {dept.description && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{dept.description}</p>
-                      )}
+            <div className="space-y-4">
+              {departments
+                .filter(d => !d.parentId) // Top-level first
+                .map((parentDept) => (
+                  <div key={parentDept.id} className="space-y-2">
+                    {/* Parent Department */}
+                    <div className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-blue-500" />
+                            {parentDept.name}
+                          </h4>
+                          {parentDept.description && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{parentDept.description}</p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button onClick={() => handleEdit(parentDept)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => handleDelete(parentDept.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => handleEdit(dept)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => handleDelete(dept.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+
+                    {/* Sub-Departments */}
+                    <div className="mr-8 space-y-2 border-r-2 border-blue-50 dark:border-blue-900/30 pr-4">
+                      {departments
+                        .filter(sub => sub.parentId === parentDept.id)
+                        .map(subDept => (
+                          <div key={subDept.id} className="p-3 rounded-lg border border-gray-50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+                            <div>
+                              <h5 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{subDept.name}</h5>
+                              {subDept.description && <p className="text-xs text-gray-500 mt-0.5">{subDept.description}</p>}
+                            </div>
+                            <div className="flex gap-1">
+                              <button onClick={() => handleEdit(subDept)} className="p-1 text-gray-400 hover:text-blue-600">
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => handleDelete(subDept.id)} className="p-1 text-gray-400 hover:text-red-600">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                     </div>
+                  </div>
+                ))}
+
+              {/* Orphaned departments (should not happen with UI but for safety) */}
+              {departments.filter(d => d.parentId && !departments.find(p => p.id === d.parentId)).map(orphan => (
+                <div key={orphan.id} className="p-4 rounded-xl border border-dashed border-red-200 bg-red-50/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-red-800">{orphan.name} (قسم فرعي بدون مرجع)</span>
+                    <button onClick={() => handleDelete(orphan.id)} className="text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
               ))}
