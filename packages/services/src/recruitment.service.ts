@@ -82,12 +82,12 @@ class RecruitmentService {
     return response.data.departments
   }
 
-  async createDepartment(data: { name: string, description?: string }): Promise<any> {
+  async createDepartment(data: { name: string, description?: string, parentId?: string }): Promise<any> {
     const response = await apiClient.post<{ status: string, data: { department: any } }>('/recruitment/departments', data)
     return response.data.department
   }
 
-  async updateDepartment(id: string, data: { name?: string, description?: string }): Promise<any> {
+  async updateDepartment(id: string, data: { name?: string, description?: string, parentId?: string }): Promise<any> {
     const response = await apiClient.put<{ status: string, data: { department: any } }>(`/recruitment/departments/${id}`, data)
     return response.data.department
   }
