@@ -187,7 +187,7 @@ const JobsPage: React.FC = () => {
 
     const [showAiChat, setShowAiChat] = useState(false)
     const [generatedJobData, setGeneratedJobData] = useState<Partial<Job> | null>(null)
-    const [dynamicDepartments, setDynamicDepartments] = useState<{ id: string, name: string }[]>([])
+    const [dynamicDepartments, setDynamicDepartments] = useState<{ id: string, name: string, parentId?: string }[]>([])
 
     React.useEffect(() => {
         fetchJobs()
@@ -251,6 +251,25 @@ const JobsPage: React.FC = () => {
     const getStatusColor = (status: string) => {
         return getStatusConfig(status).color
     }
+
+    const orderedDepartments = React.useMemo(() => {
+        const parents = dynamicDepartments.filter(d => !d.parentId);
+        const result: any[] = [];
+        parents.forEach(parent => {
+            result.push({ ...parent, isSub: false });
+            const subs = dynamicDepartments.filter(d => d.parentId === parent.id);
+            subs.forEach(sub => {
+                result.push({ ...sub, isSub: true });
+            });
+        });
+        // Add orphans if any
+        dynamicDepartments.forEach(d => {
+            if (d.parentId && !parents.find(p => p.id === d.parentId)) {
+                if (!result.find(r => r.id === d.id)) result.push({ ...d, isSub: true });
+            }
+        });
+        return result;
+    }, [dynamicDepartments]);
 
     const filteredJobs = React.useMemo(() => {
         const normalizedSearch = searchTerm.toLowerCase().trim()
@@ -493,9 +512,9 @@ const JobsPage: React.FC = () => {
                             className="px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         >
                             <option value="all">كل الأقسام</option>
-                            {dynamicDepartments.map(dept => (
+                            {orderedDepartments.map(dept => (
                                 <option key={dept.id} value={dept.id}>
-                                    {dept.name}
+                                    {dept.isSub ? `— ${dept.name}` : dept.name}
                                 </option>
                             ))}
                         </select>
@@ -692,8 +711,10 @@ const JobsPage: React.FC = () => {
                                         required
                                     >
                                         <option value="">اختر القسم...</option>
-                                        {dynamicDepartments.map(dept => (
-                                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                        {orderedDepartments.map(dept => (
+                                            <option key={dept.id} value={dept.id}>
+                                                {dept.isSub ? `— ${dept.name}` : dept.name}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
