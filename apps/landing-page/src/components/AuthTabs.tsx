@@ -77,7 +77,11 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                     rememberMe: false
                 })
                 if (result.user.dashboardUrl) {
-                    const dashboardUrl = new URL(result.user.dashboardUrl);
+                    const cleanDashboardUrl = result.user.dashboardUrl.endsWith('/login')
+                        ? result.user.dashboardUrl.replace('/login', '')
+                        : result.user.dashboardUrl;
+
+                    const dashboardUrl = new URL(cleanDashboardUrl);
                     dashboardUrl.searchParams.set('access_token', result.token);
                     dashboardUrl.searchParams.set('user', JSON.stringify(result.user));
                     window.location.href = dashboardUrl.toString();
@@ -96,7 +100,11 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                 })
                 toast.success('تم إنشاء الحساب بنجاح!')
                 if (result.user.dashboardUrl) {
-                    const dashboardUrl = new URL(result.user.dashboardUrl);
+                    const cleanDashboardUrl = result.user.dashboardUrl.endsWith('/login')
+                        ? result.user.dashboardUrl.replace('/login', '')
+                        : result.user.dashboardUrl;
+
+                    const dashboardUrl = new URL(cleanDashboardUrl);
                     dashboardUrl.searchParams.set('access_token', result.token);
                     dashboardUrl.searchParams.set('user', JSON.stringify(result.user));
                     window.location.href = dashboardUrl.toString();
