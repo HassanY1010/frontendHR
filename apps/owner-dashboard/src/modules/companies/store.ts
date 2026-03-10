@@ -25,6 +25,7 @@ interface CompaniesState {
     refreshCompanies: () => Promise<void>;
     fetchPortfolioAnalytics: () => Promise<void>;
     analyzeCompany: (id: string) => Promise<void>;
+    updateCompanyStatus: (id: string, status: string) => Promise<void>;
     forceLogout: (id: string) => Promise<void>;
 }
 
@@ -148,6 +149,21 @@ export const useCompaniesStore = create<CompaniesState>((set, get) => ({
             console.error('Failed to analyze company', error);
         } finally {
             set({ isAnalyzing: false });
+        }
+    },
+    updateCompanyStatus: async (id, status) => {
+        try {
+            // Optimistic update
+            set((state) => ({
+                companies: state.companies.map(c => c.id === id ? { ...c, status: status as any } : c)
+            }));
+
+            await companyService.updateStatus(id, status);
+        } catch (error) {
+            console.error('Failed to update company status', error);
+            const { refreshCompanies } = get();
+            await refreshCompanies();
+            throw error;
         }
     },
     forceLogout: async (id) => {
