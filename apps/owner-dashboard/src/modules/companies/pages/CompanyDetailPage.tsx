@@ -62,14 +62,12 @@ const CompanyDetailPage: React.FC = () => {
         setIsLoggingOut(true)
         try {
             // 1. Update status using specialized method
-            console.log(`[DEBUG-UI] Toggling access for ${company.id} to ${newStatus}`);
             await updateCompanyStatus(company.id, newStatus)
             setCompany(prev => prev ? { ...prev, status: newStatus } : null)
 
             // 2. If blocking (active -> inactive), also force logout
             if (isCurrentlyActive) {
-                const res = await forceLogout(company.id)
-                console.log(`[DEBUG-UI] Force logout response:`, res);
+                await forceLogout(company.id)
                 toast.success('تم حظر الوصول وتسجيل خروج جميع المستخدمين بنجاح')
             } else {
                 toast.success('تم إعادة تفعيل وصول المستخدمين بنجاح')
