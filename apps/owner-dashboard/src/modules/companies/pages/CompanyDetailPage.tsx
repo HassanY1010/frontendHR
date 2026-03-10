@@ -4,8 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Building2, Users, ShieldAlert, ArrowRight, Mail, Phone,
-    MapPin, Globe, Calendar, CreditCard, UserCheck, UserX,
-    LogOut, RefreshCw, AlertTriangle, CheckCircle2, MoreVertical
+    MapPin, Globe, Calendar, CreditCard, UserCheck, UserX, RefreshCw, AlertTriangle, CheckCircle2, MoreVertical
 } from 'lucide-react'
 import { useCompaniesStore } from '../store'
 import { userService } from '@hr/services'
