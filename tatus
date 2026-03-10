@@ -1,0 +1,48 @@
+[33mcommit 5da96a730ae11fc4ab50ae0710e529b272508abc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: HassanY1010 <hassanmohammedbarafah836@gmail.com>
+Date:   Tue Mar 10 11:58:17 2026 +0300
+
+    Save all changes including API, migrations, dashboards, and services
+
+apps/api/check_production_schema.js
+apps/api/create_missing_tables.sql
+apps/api/package.json
+apps/api/prisma/migrations/20251230055209_enable_task_cascade_delete/migration.sql
+apps/api/prisma/migrations/20251230130024_add_training_feedback_fields/migration.sql
+apps/api/prisma/migrations/20251231054228_add_interview_candidate_fields/migration.sql
+apps/api/prisma/migrations/20260104045814_add_subscription_code/migration.sql
+apps/api/prisma/migrations/20260105053637_add_attachments/migration.sql
+apps/api/prisma/migrations/20260105175422_add_user_to_notification/migration.sql
+apps/api/prisma/migrations/20260108043721_smart_training_manual/migration.sql
+apps/api/prisma/migrations/20260301073050_init_ats_pro_v1/migration.sql
+apps/api/prisma/migrations/20260302124716_add_department_table_and_description/migration.sql
+apps/api/prisma/migrations/20260310083007_add_company_status/migration.sql
+apps/api/prisma/schema.prisma
+apps/api/seed_jobs.js
+apps/api/src/ai/ai-service.js
+apps/api/src/app.js
+apps/api/src/controllers/admin.controller.js
+apps/api/src/controllers/auth.controller.js
+apps/api/src/controllers/company.controller.js
+apps/api/src/controllers/recruitment.controller.js
+apps/api/src/controllers/user.controller.js
+apps/api/src/middlewares/auth.middleware.js
+apps/api/src/routes/company.routes.js
+apps/api/src/routes/user.routes.js
+apps/api/src/services/queue.service.js
+apps/api/src/utils/cache.js
+apps/api/src/utils/supabase.js
+apps/manager-dashboard/build_output.txt
+apps/manager-dashboard/src/modules/recruitment/jobs/components/JobActionsMenu.tsx
+apps/owner-dashboard/src/layouts/MainLayout.tsx
+apps/owner-dashboard/src/modules/companies/components/CompanyCard.tsx
+apps/owner-dashboard/src/modules/companies/components/CompanyTable.tsx
+apps/owner-dashboard/src/modules/companies/pages/CompaniesPage.tsx
+apps/owner-dashboard/src/modules/companies/pages/CompanyDetailPage.tsx
+apps/owner-dashboard/src/modules/companies/store.ts
+apps/owner-dashboard/src/routes/index.tsx
+apps/owner-dashboard/vite.config.ts.timestamp-1773132795729-8c06a3425537d.mjs
+packages/services/src/company.service.ts
+packages/services/src/index.ts
+packages/services/src/user.service.ts
+packages/types/src/user.ts
