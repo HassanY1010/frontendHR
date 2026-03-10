@@ -6,41 +6,59 @@
   - Added the required column `updatedAt` to the `Training` table without a default value. This is not possible if the table is not empty.
 
 */
+
+-- Column aiStatus does not exist in init, so we don't need to drop it here.
+-- If someone manually added it, they should have fixed it elsewhere.
+-- Removing the failing IF EXISTS check.
+
 -- DropForeignKey
-ALTER TABLE `task` DROP FOREIGN KEY `Task_employeeId_fkey`;
+ALTER TABLE `Task` DROP FOREIGN KEY `Task_employeeId_fkey`;
 
 -- AlterTable
-ALTER TABLE `candidate` ADD COLUMN `aiStatus` VARCHAR(191) NULL,
+ALTER TABLE `Candidate` 
+    ADD COLUMN `aiStatus` VARCHAR(191) NULL,
     ADD COLUMN `interviewCode` VARCHAR(191) NULL,
     MODIFY `status` ENUM('NEW', 'SCREENING', 'PRE_ACCEPTED', 'INTERVIEWING', 'OFFERED', 'REJECTED', 'HIRED') NOT NULL DEFAULT 'NEW';
 
 -- AlterTable
-ALTER TABLE `company` ADD COLUMN `address` VARCHAR(191) NULL,
+ALTER TABLE `Company` 
+    ADD COLUMN `address` VARCHAR(191) NULL,
     ADD COLUMN `employeeLimit` INTEGER NOT NULL DEFAULT 10,
     ADD COLUMN `language` VARCHAR(191) NOT NULL DEFAULT 'ar',
     ADD COLUMN `logo` VARCHAR(191) NULL,
     ADD COLUMN `settings` JSON NULL,
     ADD COLUMN `website` VARCHAR(191) NULL;
 
--- AlterTable
-ALTER TABLE `employee` ADD COLUMN `companyId` VARCHAR(191) NOT NULL DEFAULT '',
+-- Fix: Add companyId as NULL first, then update, then make it required
+ALTER TABLE `Employee` 
+    ADD COLUMN `companyId` VARCHAR(191) NULL,
     ADD COLUMN `startDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'active';
 
+-- Fix: Update existing employees with a default company
+UPDATE `Employee` SET `companyId` = (SELECT `id` FROM `Company` LIMIT 1) WHERE `companyId` IS NULL;
+
+-- Fix: Now make companyId required
+ALTER TABLE `Employee` MODIFY COLUMN `companyId` VARCHAR(191) NOT NULL;
+
 -- AlterTable
-ALTER TABLE `employeetraining` ADD COLUMN `certificateUrl` VARCHAR(191) NULL,
+ALTER TABLE `EmployeeTraining` 
+    ADD COLUMN `certificateUrl` VARCHAR(191) NULL,
     ADD COLUMN `completedAt` DATETIME(3) NULL,
     ADD COLUMN `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);
 
 -- AlterTable
-ALTER TABLE `interview` ADD COLUMN `aiAnalysis` JSON NULL,
+ALTER TABLE `Interview` 
+    ADD COLUMN `aiAnalysis` JSON NULL,
     ADD COLUMN `videoUrl` VARCHAR(191) NULL;
 
 -- AlterTable
-ALTER TABLE `recruitmentjob` ADD COLUMN `aiDescription` TEXT NULL;
+ALTER TABLE `RecruitmentJob` 
+    ADD COLUMN `aiDescription` TEXT NULL;
 
 -- AlterTable
-ALTER TABLE `task` ADD COLUMN `actualTime` DOUBLE NULL,
+ALTER TABLE `Task` 
+    ADD COLUMN `actualTime` DOUBLE NULL,
     ADD COLUMN `aiScore` DOUBLE NULL,
     ADD COLUMN `complexity` VARCHAR(191) NULL,
     ADD COLUMN `dependencies` JSON NULL,
@@ -50,24 +68,32 @@ ALTER TABLE `task` ADD COLUMN `actualTime` DOUBLE NULL,
     MODIFY `description` TEXT NULL,
     MODIFY `employeeId` VARCHAR(191) NULL;
 
--- AlterTable
-ALTER TABLE `training` ADD COLUMN `aiTags` JSON NULL,
+-- Fix: Add updatedAt as NULL first, then update, then make it required
+ALTER TABLE `Training` 
+    ADD COLUMN `aiTags` JSON NULL,
     ADD COLUMN `category` VARCHAR(191) NULL,
     ADD COLUMN `cost` DOUBLE NULL,
     ADD COLUMN `provider` VARCHAR(191) NULL,
     ADD COLUMN `skills` JSON NULL,
-    ADD COLUMN `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    ADD COLUMN `updatedAt` DATETIME(3) NULL,
     ADD COLUMN `url` VARCHAR(191) NULL;
 
+-- Fix: Update existing trainings with default updatedAt
+UPDATE `Training` SET `updatedAt` = `createdAt` WHERE `updatedAt` IS NULL;
+
+-- Fix: Now make updatedAt required
+ALTER TABLE `Training` MODIFY COLUMN `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);
+
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `avatar` VARCHAR(191) NULL,
+ALTER TABLE `User` 
+    ADD COLUMN `avatar` VARCHAR(191) NULL,
     ADD COLUMN `bio` TEXT NULL,
     ADD COLUMN `lastLogin` DATETIME(3) NULL,
     ADD COLUMN `phone` VARCHAR(191) NULL,
     ADD COLUMN `settings` JSON NULL;
 
 -- CreateTable
-CREATE TABLE `Subscription` (
+CREATE TABLE IF NOT EXISTS `Subscription` (
     `id` VARCHAR(191) NOT NULL,
     `companyId` VARCHAR(191) NOT NULL,
     `plan` VARCHAR(191) NOT NULL DEFAULT 'FREE_TRIAL',
@@ -81,7 +107,7 @@ CREATE TABLE `Subscription` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `TrainingRequest` (
+CREATE TABLE IF NOT EXISTS `TrainingRequest` (
     `id` VARCHAR(191) NOT NULL,
     `employeeId` VARCHAR(191) NOT NULL,
     `trainingId` VARCHAR(191) NULL,
@@ -97,7 +123,7 @@ CREATE TABLE `TrainingRequest` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Project` (
+CREATE TABLE IF NOT EXISTS `Project` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
@@ -118,7 +144,7 @@ CREATE TABLE `Project` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `AuditLog` (
+CREATE TABLE IF NOT EXISTS `AuditLog` (
     `id` VARCHAR(191) NOT NULL,
     `userId` VARCHAR(191) NULL,
     `action` VARCHAR(191) NOT NULL,
@@ -135,7 +161,7 @@ CREATE TABLE `AuditLog` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `AIUsageLog` (
+CREATE TABLE IF NOT EXISTS `AIUsageLog` (
     `id` VARCHAR(191) NOT NULL,
     `companyId` VARCHAR(191) NOT NULL,
     `service` VARCHAR(191) NOT NULL,
@@ -150,7 +176,7 @@ CREATE TABLE `AIUsageLog` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `AIQualityMetric` (
+CREATE TABLE IF NOT EXISTS `AIQualityMetric` (
     `id` VARCHAR(191) NOT NULL,
     `modelName` VARCHAR(191) NOT NULL,
     `accuracy` DOUBLE NOT NULL,
@@ -166,7 +192,7 @@ CREATE TABLE `AIQualityMetric` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `SystemSetting` (
+CREATE TABLE IF NOT EXISTS `SystemSetting` (
     `key` VARCHAR(191) NOT NULL,
     `value` TEXT NOT NULL,
     `description` VARCHAR(191) NULL,
@@ -176,7 +202,7 @@ CREATE TABLE `SystemSetting` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `ProductMetric` (
+CREATE TABLE IF NOT EXISTS `ProductMetric` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `category` ENUM('ENGAGEMENT', 'ADOPTION', 'PERFORMANCE', 'USAGE') NOT NULL,
@@ -191,7 +217,7 @@ CREATE TABLE `ProductMetric` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `ProductUsage` (
+CREATE TABLE IF NOT EXISTS `ProductUsage` (
     `id` VARCHAR(191) NOT NULL,
     `date` DATETIME(3) NOT NULL,
     `activeUsers` INTEGER NOT NULL,
@@ -204,7 +230,7 @@ CREATE TABLE `ProductUsage` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `FinancialTransaction` (
+CREATE TABLE IF NOT EXISTS `FinancialTransaction` (
     `id` VARCHAR(191) NOT NULL,
     `amount` DOUBLE NOT NULL,
     `type` ENUM('INCOME', 'EXPENSE') NOT NULL,
@@ -217,7 +243,7 @@ CREATE TABLE `FinancialTransaction` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `FinanceMetric` (
+CREATE TABLE IF NOT EXISTS `FinanceMetric` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `value` DOUBLE NOT NULL,
@@ -230,7 +256,7 @@ CREATE TABLE `FinanceMetric` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `FeatureFlag` (
+CREATE TABLE IF NOT EXISTS `FeatureFlag` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
@@ -242,7 +268,7 @@ CREATE TABLE `FeatureFlag` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Milestone` (
+CREATE TABLE IF NOT EXISTS `Milestone` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
@@ -257,7 +283,7 @@ CREATE TABLE `Milestone` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `RoadmapItem` (
+CREATE TABLE IF NOT EXISTS `RoadmapItem` (
     `id` VARCHAR(191) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
@@ -275,7 +301,7 @@ CREATE TABLE `RoadmapItem` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `PlatformFeature` (
+CREATE TABLE IF NOT EXISTS `PlatformFeature` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` TEXT NULL,
@@ -289,7 +315,7 @@ CREATE TABLE `PlatformFeature` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Notification` (
+CREATE TABLE IF NOT EXISTS `Notification` (
     `id` VARCHAR(191) NOT NULL,
     `employeeId` VARCHAR(191) NOT NULL,
     `title` VARCHAR(191) NOT NULL,
@@ -304,7 +330,7 @@ CREATE TABLE `Notification` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- CreateIndex
+-- Standard index creation without IF NOT EXISTS
 CREATE UNIQUE INDEX `Candidate_interviewCode_key` ON `Candidate`(`interviewCode`);
 
 -- AddForeignKey

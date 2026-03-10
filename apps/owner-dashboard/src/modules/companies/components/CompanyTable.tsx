@@ -13,6 +13,7 @@ interface CompanyTableProps {
     onSelectAll: (checked: boolean) => void
     onSelectItem: (id: string) => void
     onViewPlatform?: (company: Company) => void
+    onViewDetails?: (company: Company) => void
 }
 
 export const CompanyTable: React.FC<CompanyTableProps> = ({
@@ -23,7 +24,8 @@ export const CompanyTable: React.FC<CompanyTableProps> = ({
     selectedIds,
     onSelectAll,
     onSelectItem,
-    onViewPlatform
+    onViewPlatform,
+    onViewDetails
 }) => {
     const toggleSelectAll = () => {
         if (selectedIds.length === companies.length) {
@@ -76,7 +78,12 @@ export const CompanyTable: React.FC<CompanyTableProps> = ({
                                         {company.name.charAt(0)}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-slate-900 dark:text-white">{company.name}</span>
+                                        <span
+                                            className="font-bold text-slate-900 dark:text-white cursor-pointer hover:text-indigo-600 transition-colors"
+                                            onClick={() => onViewDetails?.(company)}
+                                        >
+                                            {company.name}
+                                        </span>
                                         <span className="text-xs text-slate-500 flex items-center gap-1">
                                             <Globe className="w-3 h-3" />
                                             {company.domain}
@@ -105,6 +112,9 @@ export const CompanyTable: React.FC<CompanyTableProps> = ({
                             </td>
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="sm" onClick={() => onViewDetails?.(company)} title="عرض التفاصيل">
+                                        <MoreHorizontal className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
+                                    </Button>
                                     <Button variant="ghost" size="sm" onClick={() => onEdit(company)}>
                                         <Edit className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
                                     </Button>

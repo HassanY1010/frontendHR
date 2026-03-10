@@ -33,6 +33,10 @@ class CompanyService {
     async analyzeCompany(id: string) {
         return apiClient.post<any>(`/admin/companies/${id}/analyze`);
     }
+
+    async forceLogout(id: string) {
+        return apiClient.post<{ status: string; message: string; data: { affectedUserCount: number } }>(`/companies/${id}/force-logout`);
+    }
 }
 
 export const companyService = new CompanyService();

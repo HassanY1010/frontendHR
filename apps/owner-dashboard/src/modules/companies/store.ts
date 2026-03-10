@@ -25,6 +25,7 @@ interface CompaniesState {
     refreshCompanies: () => Promise<void>;
     fetchPortfolioAnalytics: () => Promise<void>;
     analyzeCompany: (id: string) => Promise<void>;
+    forceLogout: (id: string) => Promise<void>;
 }
 
 const initialCompanies: Company[] = [];
@@ -147,6 +148,14 @@ export const useCompaniesStore = create<CompaniesState>((set, get) => ({
             console.error('Failed to analyze company', error);
         } finally {
             set({ isAnalyzing: false });
+        }
+    },
+    forceLogout: async (id) => {
+        try {
+            await companyService.forceLogout(id);
+        } catch (error) {
+            console.error('Failed to force logout company users', error);
+            throw error;
         }
     }
 }));

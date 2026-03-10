@@ -13,6 +13,7 @@ interface CompanyCardProps {
     isSelected: boolean
     onSelect: (id: string) => void
     onViewPlatform?: (company: Company) => void
+    onViewDetails?: (company: Company) => void
 }
 
 export const CompanyCard: React.FC<CompanyCardProps> = ({
@@ -22,7 +23,8 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({
     onToggleStatus,
     isSelected,
     onSelect,
-    onViewPlatform
+    onViewPlatform,
+    onViewDetails
 }) => {
     return (
         <motion.div
@@ -49,7 +51,10 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({
                     <div className="p-6">
                         <div className="flex items-start justify-between mb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate max-w-[200px]">
+                                <h3
+                                    className="text-xl font-bold text-slate-900 dark:text-white truncate max-w-[200px] cursor-pointer hover:text-indigo-600 transition-colors"
+                                    onClick={() => onViewDetails?.(company)}
+                                >
                                     {company.name}
                                 </h3>
                                 <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 mt-1">
@@ -97,6 +102,13 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({
                                 variant="primary"
                                 size="sm"
                                 className="flex-1"
+                                onClick={() => onViewDetails?.(company)}
+                            >
+                                إدارة البيانات
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => onEdit(company)}
                             >
                                 تعديل

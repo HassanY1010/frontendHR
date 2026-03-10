@@ -1,5 +1,6 @@
 // apps/admin-dashboard/src/modules/companies/pages/CompaniesPage.tsx
 import React, { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Building, Plus, Trash2, ExternalLink, TrendingUp,
@@ -26,6 +27,7 @@ import { exportUtils } from '../../../shared/utils/exportUtils';
 import { INDUSTRIES, COMPANY_SIZES } from '../constants'
 
 const CompaniesPage: React.FC = () => {
+  const navigate = useNavigate()
   const {
     companies, loading, refreshCompanies,
     portfolioStats, fetchPortfolioAnalytics,
@@ -145,6 +147,10 @@ const CompaniesPage: React.FC = () => {
       return
     }
     window.location.href = `mailto:?bcc=${emails}`
+  }
+
+  const handleViewDetails = (company: Company) => {
+    navigate(`/companies/${company.id}`)
   }
 
   const handleDeleteCompany = async (companyId: string) => {
@@ -496,6 +502,7 @@ const CompaniesPage: React.FC = () => {
                       isSelected={selectedCompanies.includes(company.id)}
                       onSelect={handleSelectItem}
                       onViewPlatform={handleViewPlatform}
+                      onViewDetails={handleViewDetails}
                     />
                   ))}
                 </div>
@@ -527,6 +534,8 @@ const CompaniesPage: React.FC = () => {
                       selectedIds={selectedCompanies}
                       onSelectAll={handleSelectAll}
                       onSelectItem={handleSelectItem}
+                      onViewPlatform={handleViewPlatform}
+                      onViewDetails={handleViewDetails}
                     />
                   </CardContent>
                 </Card>

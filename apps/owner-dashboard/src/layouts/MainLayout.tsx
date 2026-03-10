@@ -31,7 +31,7 @@ const MainLayout: React.FC = () => {
     { path: '/roadmap', icon: TrendingUp, label: 'خارطة الطريق', section: 'business' },
 
     // System Management
-    { path: '/companies', icon: Building2, label: 'الشركات', section: 'system' },
+    { path: '/companies', icon: Building2, label: 'إدارة الشركات', section: 'system' },
     { path: '/system-health', icon: Activity, label: 'صحة النظام', section: 'system' },
     { path: '/audit-logs', icon: FileText, label: 'سجلات التدقيق', section: 'system' },
     { path: '/feature-flags', icon: ToggleLeft, label: 'التحكم في الميزات', section: 'system' },

@@ -10,6 +10,7 @@ const OverviewPage = React.lazy(() => import('@/modules/overview/pages/OverviewP
 const AIQualityPage = React.lazy(() => import('@/modules/ai-quality/pages/AIQualityPage'))
 const AIUsagePage = React.lazy(() => import('@/modules/ai-usage/pages/AIUsagePage'))
 const CompaniesPage = React.lazy(() => import('@/modules/companies/pages/CompaniesPage'))
+const CompanyDetailPage = React.lazy(() => import('@/modules/companies/pages/CompanyDetailPage'))
 
 const ProductMetricsPage = React.lazy(() => import('@/modules/product-metrics/pages/ProductMetricsPage'))
 const RoadmapPage = React.lazy(() => import('@/modules/roadmap/pages/RoadmapPage'))
@@ -64,6 +65,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="ai-usage" element={<AIUsagePage />} />
                     <Route path="roadmap" element={<RoadmapPage />} />
                     <Route path="companies" element={<CompaniesPage />} />
+                    <Route path="companies/:id" element={<CompanyDetailPage />} />
 
                     {/* System Management */}
                     <Route path="system-health" element={<SystemHealthPage />} />

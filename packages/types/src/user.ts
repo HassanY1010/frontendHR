@@ -13,6 +13,7 @@ export interface User {
   position?: string
   joinDate: string
   isActive: boolean
+  status?: string
   lastLogin?: string
   preferences?: UserPreferences
 }
