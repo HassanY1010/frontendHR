@@ -160,7 +160,7 @@ const CompanyDetailPage: React.FC = () => {
                     </Button>
                     <Button
                         variant="outline"
-                        className="gap-2 font-bold border-2"
+                        className="gap-2 font-bold border-2 text-neutral-900"
                         onClick={() => setShowConfirmStatus(true)}
                     >
                         {company.status === 'active' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
@@ -316,7 +316,7 @@ const CompanyDetailPage: React.FC = () => {
                     </div>
                     <div className="flex gap-4 pt-4">
                         <Button
-                            className="flex-1 font-bold h-12"
+                            className="flex-1 font-bold h-12 text-white"
                             variant={company.status === 'active' ? 'danger' : 'success'}
                             onClick={handleToggleAccess}
                             disabled={isLoggingOut}
