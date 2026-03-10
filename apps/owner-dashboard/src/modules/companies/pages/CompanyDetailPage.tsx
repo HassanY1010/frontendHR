@@ -16,7 +16,7 @@ import type { User } from '@hr/types'
 const CompanyDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
-    const { companies, refreshCompanies, forceLogout, updateCompany } = useCompaniesStore()
+    const { companies, refreshCompanies, forceLogout, updateCompanyStatus } = useCompaniesStore()
 
     const [company, setCompany] = useState<Company | null>(null)
     const [users, setUsers] = useState<User[]>([])
@@ -61,8 +61,8 @@ const CompanyDetailPage: React.FC = () => {
 
         setIsLoggingOut(true)
         try {
-            // 1. Update status
-            await updateCompany(company.id, { status: newStatus })
+            // 1. Update status using specialized method
+            await updateCompanyStatus(company.id, newStatus)
             setCompany(prev => prev ? { ...prev, status: newStatus } : null)
 
             // 2. If blocking (active -> inactive), also force logout
@@ -86,7 +86,7 @@ const CompanyDetailPage: React.FC = () => {
         if (!company) return
         const newStatus = company.status === 'active' ? 'inactive' : 'active'
         try {
-            await updateCompany(company.id, { status: newStatus })
+            await updateCompanyStatus(company.id, newStatus)
             setCompany(prev => prev ? { ...prev, status: newStatus } : null)
             toast.success(newStatus === 'active' ? 'تم تفعيل الشركة' : 'تم تعليق الشركة')
             setShowConfirmStatus(false)
