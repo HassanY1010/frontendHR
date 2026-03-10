@@ -94,20 +94,21 @@ export class ApiClient {
         }
 
         logger.error('API Response Error', errorData)
-
         if (error.response?.status === 401) {
-          const isAuthRequest = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/signup-company')
+          const isAuthRequest =
+            error.config?.url?.includes('/auth/login') ||
+            error.config?.url?.includes('/auth/signup-company')
 
           if (!isAuthRequest) {
             localStorage.removeItem('access_token')
             localStorage.removeItem('user')
 
-            // Derive landing page origin from environment variable or use the requested fallback
-            const landingOrigin = env.VITE_LANDING_PAGE_URL || 'https://hr-full-stack-landing-page-h4ku.vercel.app';
-
-            window.location.href = `${landingOrigin}/login`
+            // تحويل دائم إلى الصفحة الرئيسية
+            window.location.href = 'https://hr-full-stack-landing-page-h4ku.vercel.app'
           }
         }
+
+
 
         return Promise.reject(error)
       }
