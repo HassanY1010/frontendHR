@@ -55,15 +55,29 @@ const CompanyDetailPage: React.FC = () => {
         fetchData()
     }, [id, companies.length, refreshCompanies])
 
-    const handleForceLogout = async () => {
-        if (!id) return
+    const handleToggleAccess = async () => {
+        if (!company) return
+        const isCurrentlyActive = company.status === 'active'
+        const newStatus = isCurrentlyActive ? 'inactive' : 'active'
+
         setIsLoggingOut(true)
         try {
-            await forceLogout(id)
-            toast.success('تم تسجيل خروج جميع المستخدمين بنجاح')
+            // 1. Update status
+            await updateCompany(company.id, { status: newStatus })
+            setCompany(prev => prev ? { ...prev, status: newStatus } : null)
+
+            // 2. If blocking (active -> inactive), also force logout
+            if (isCurrentlyActive) {
+                await forceLogout(company.id)
+                toast.success('تم حظر الوصول وتسجيل خروج جميع المستخدمين')
+            } else {
+                toast.success('تم إعادة تفعيل وصول المستخدمين بنجاح')
+            }
+
             setShowConfirmLogout(false)
         } catch (error) {
-            toast.error('فشل في تسجيل خروج المستخدمين')
+            toast.error('فشل في تحديث صلاحيات الوصول')
+            console.error(error)
         } finally {
             setIsLoggingOut(false)
         }
@@ -130,20 +144,27 @@ const CompanyDetailPage: React.FC = () => {
 
                 <div className="flex items-center gap-3">
                     <Button
-                        variant={company.status === 'active' ? 'danger' : 'default'}
-                        className="gap-2 font-bold px-6 shadow-lg shadow-neutral-200"
-                        onClick={() => setShowConfirmStatus(true)}
+                        variant={company.status === 'active' ? 'danger' : 'success'}
+                        className="gap-2 font-bold px-6 shadow-lg"
+                        onClick={() => setShowConfirmLogout(true)}
+                        disabled={isLoggingOut}
                     >
-                        {company.status === 'active' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                        {company.status === 'active' ? 'تعليق الشركة' : 'تفعيل الشركة'}
+                        {isLoggingOut ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : company.status === 'active' ? (
+                            <ShieldAlert className="w-4 h-4" />
+                        ) : (
+                            <UserCheck className="w-4 h-4" />
+                        )}
+                        {company.status === 'active' ? 'إخراج وحظر الجميع' : 'تفعيل وصول الجميع'}
                     </Button>
                     <Button
                         variant="outline"
-                        className="gap-2 font-bold border-2 hover:bg-neutral-50"
-                        onClick={() => setShowConfirmLogout(true)}
+                        className="gap-2 font-bold border-2"
+                        onClick={() => setShowConfirmStatus(true)}
                     >
-                        <LogOut className="w-4 h-4" />
-                        إخراج جميع المستخدمين
+                        {company.status === 'active' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                        {company.status === 'active' ? 'تعليق فقط' : 'تنشيط فقط'}
                     </Button>
                 </div>
             </div>
@@ -277,26 +298,30 @@ const CompanyDetailPage: React.FC = () => {
             <Modal
                 isOpen={showConfirmLogout}
                 onClose={() => setShowConfirmLogout(false)}
-                title="تأكيد تسجيل الخروج الإجباري"
+                title={company.status === 'active' ? 'تأكيد حظر الوصول' : 'تأكيد تفعيل الوصول'}
             >
                 <div className="p-6 text-center space-y-4">
-                    <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto text-red-600">
-                        <ShieldAlert className="w-8 h-8" />
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${company.status === 'active' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                        {company.status === 'active' ? <ShieldAlert className="w-8 h-8" /> : <UserCheck className="w-8 h-8" />}
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-neutral-900">هل أنت متأكد من تسجيل خروج الجميع؟</h3>
+                        <h3 className="text-lg font-bold text-neutral-900">
+                            {company.status === 'active' ? 'هل أنت متأكد من حظر وصول الجميع؟' : 'هل تريد تفعيل وصول الجميع؟'}
+                        </h3>
                         <p className="text-neutral-500 text-sm mt-2">
-                            سيتم إنهاء جميع جلسات العمل الحالية لجميع مستخدمي شركة "{company.name}". سيتعين عليهم تسجيل الدخول مرة أخرى.
+                            {company.status === 'active'
+                                ? `سيتم تعليق حساب شركة "${company.name}" فوراً وتسجيل خروج كافة المستخدمين الحاليين ومنع أي محاولات دخول جديدة.`
+                                : `سيتم إعادة تفعيل حساب شركة "${company.name}" والسماح لجميع المستخدمين بالدخول للمنصة بشكل طبيعي.`}
                         </p>
                     </div>
                     <div className="flex gap-4 pt-4">
                         <Button
                             className="flex-1 font-bold h-12"
-                            variant="danger"
-                            onClick={handleForceLogout}
+                            variant={company.status === 'active' ? 'danger' : 'success'}
+                            onClick={handleToggleAccess}
                             disabled={isLoggingOut}
                         >
-                            {isLoggingOut ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'نعم، قم بتسجيل الخروج'}
+                            {isLoggingOut ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'تأكيد الإجراء'}
                         </Button>
                         <Button
                             className="flex-1 font-bold h-12"
