@@ -104,7 +104,10 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                         ? result.user.dashboardUrl.replace('/login', '')
                         : result.user.dashboardUrl;
 
-                    const dashboardUrl = new URL(cleanDashboardUrl);
+                    // Redirect new companies directly to recruitment setup/dashboard
+                    const baseUrl = cleanDashboardUrl.endsWith('/') ? cleanDashboardUrl.slice(0, -1) : cleanDashboardUrl;
+                    const dashboardUrl = new URL(`${baseUrl}/recruitment`);
+
                     dashboardUrl.searchParams.set('access_token', result.token);
                     dashboardUrl.searchParams.set('user', JSON.stringify(result.user));
                     window.location.href = dashboardUrl.toString();
