@@ -1,8 +1,0 @@
-{
-    "testEnvironment": "node",
-    "testTimeout": 30000,
-    "verbose": true,
-    "setupFiles": [
-        "./tests/setup.js"
-    ]
-}
