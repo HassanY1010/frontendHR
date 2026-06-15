@@ -37,7 +37,7 @@ class Logger {
   private isDev: boolean
 
   constructor() {
-    this.isDev = process.env.NODE_ENV === 'development' || false
+    this.isDev = import.meta.env.MODE === 'development' || false
   }
 
   private log(level: LogLevel, message: string, data?: any, userId?: string, action?: string) {

@@ -1,5 +1,0 @@
-[build.environment]
-  NPM_FLAGS = "--no-audit --no-fund"
-  PNPM_FLAGS = "--shamefully-hoist"
-  NODE_VERSION = "20"
-

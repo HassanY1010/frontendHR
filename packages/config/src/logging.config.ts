@@ -1,5 +1,5 @@
 export const loggingConfig = {
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-    enableRemoteLogging: process.env.NODE_ENV === 'production',
+    level: import.meta.env.MODE === 'production' ? 'info' : 'debug',
+    enableRemoteLogging: import.meta.env.MODE === 'production',
     sensitiveFields: ['password', 'token', 'creditCard'],
 };

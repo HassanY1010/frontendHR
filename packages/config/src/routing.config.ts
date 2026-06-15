@@ -2,5 +2,5 @@ export const routingConfig = {
     homePath: '/',
     loginPath: '/login',
     dashboardPath: '/dashboard',
-    apiBaseUrl: process.env.NEXT_PUBLIC_API_URL || '',
+    apiBaseUrl: import.meta.env.VITE_API_URL || '',
 };
