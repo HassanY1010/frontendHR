@@ -60,14 +60,16 @@ class Logger {
       console[consoleMethod](`[HR-Platform] ${message}`, safeData)
     }
 
-    this.sendToServer(redactPII(entry))
+    if (!this.isDev) {
+      this.sendToServer(redactPII(entry))
+    }
   }
 
   private async sendToServer(entry: LogEntry) {
+    const apiUrl = import.meta.env.VITE_API_URL || ''
+    if (!apiUrl) return
     try {
-      if (this.isDev) return
-
-      await fetch('/api/logs', {
+      await fetch(`${apiUrl}/api/logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(entry)
