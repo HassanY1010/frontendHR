@@ -477,8 +477,8 @@ importers:
         specifier: ^20.0.0
         version: 20.0.0
       tsup:
-        specifier: ^7.0.0
-        version: 7.0.0(postcss@8.5.6)(typescript@5.0.2)
+        specifier: ^8.0.0
+        version: 8.0.0(postcss@8.5.6)(typescript@5.0.2)
       typescript:
         specifier: ^5.0.0
         version: 5.0.2
@@ -545,8 +545,8 @@ importers:
         specifier: ^20.0.0
         version: 20.0.0
       tsup:
-        specifier: ^7.0.0
-        version: 7.0.0(postcss@8.5.6)(typescript@5.0.2)
+        specifier: ^8.0.0
+        version: 8.0.0(postcss@8.5.6)(typescript@5.0.2)
       typescript:
         specifier: ^5.0.0
         version: 5.0.2
