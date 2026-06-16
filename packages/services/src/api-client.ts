@@ -4,7 +4,7 @@ import axios, { type AxiosRequestConfig } from 'axios'
 import { logger } from '@hr/utils'
 
 const env = import.meta.env
-const API_BASE_URL = env.VITE_API_BASE_URL || ''
+const API_BASE_URL = env.VITE_API_BASE_URL || env.VITE_API_URL || ''
 const MOCK_MODE = env.VITE_MOCK_MODE === 'true'
 
 export class ApiClient {
