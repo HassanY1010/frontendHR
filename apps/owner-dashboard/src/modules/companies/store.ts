@@ -98,30 +98,34 @@ export const useCompaniesStore = create<CompaniesState>((set, get) => ({
             // Handle standard API wrapper { status: 'success', data: [...] } or { status: 'success', data: { companies: [...] } }
             const backendCompanies = response.data?.companies || response.data || response.companies || (Array.isArray(response) ? response : []);
 
-            const companies: Company[] = backendCompanies.map((c: any) => ({
-                id: c.id,
-                name: c.name || 'Anonymous Company', // Default name if empty
-                domain: c.domain || c.website || '',
-                industry: c.industry || 'Technology',
-                size: c.size || (c.employeeLimit > 50 ? 'Medium' : 'Small'),
-                status: c.status || (c.subscriptionStatus === 'ACTIVE' ? 'active' : 'inactive'),
-                subscription: {
-                    plan: c.subscription?.plan || 'trial',
-                    status: c.subscription?.status || 'active',
-                    seats: c.subscription?.seats || c.employeeLimit || 10,
-                    usedSeats: c.subscription?.usedSeats || c._count?.users || 0,
-                    currentPeriodEnd: c.subscription?.currentPeriodEnd || c.subscriptionExpiry || new Date().toISOString(),
-                    monthlyRevenue: c.subscription?.monthlyRevenue || (c.subscription?.plan === 'ENTERPRISE' ? 5000 : 99)
-                },
-                createdAt: c.createdAt,
-                revenue: c.subscription?.monthlyRevenue || 0,
-                userCount: c._count?.users || 0,
-                contact: {
-                    email: c.email || `contact@${c.domain || c.website || 'company.com'}`,
-                    phone: c.phone || '',
-                    location: c.address || ''
-                }
-            }));
+            const companies: Company[] = backendCompanies.map((c: any) => {
+                const managerUser = c.users?.[0];
+                const subscription = c.subscriptions?.[0];
+                return {
+                    id: c.id,
+                    name: c.name || 'Anonymous Company',
+                    domain: c.domain || c.website || '',
+                    industry: c.industry || 'Technology',
+                    size: c.size || (c.employeeLimit > 50 ? 'Medium' : 'Small'),
+                    status: c.status || (c.subscriptionStatus === 'ACTIVE' ? 'active' : 'inactive'),
+                    subscription: {
+                        plan: subscription?.plan?.toLowerCase() || 'trial',
+                        status: subscription?.status?.toLowerCase() || 'active',
+                        seats: subscription?.seats || c.employeeLimit || 10,
+                        usedSeats: subscription?.usedSeats || c._count?.users || 0,
+                        currentPeriodEnd: subscription?.endDate || c.subscriptionExpiry || new Date().toISOString(),
+                        monthlyRevenue: subscription?.monthlyRevenue || (subscription?.plan === 'ENTERPRISE' ? 5000 : 99)
+                    },
+                    createdAt: c.createdAt,
+                    revenue: subscription?.monthlyRevenue || 0,
+                    userCount: c._count?.users || 0,
+                    contact: {
+                        email: managerUser?.email || `contact@${c.domain || c.website || 'company.com'}`,
+                        phone: managerUser?.phone || c.phone || '',
+                        location: c.address || managerUser?.location || ''
+                    }
+                };
+            });
 
             set({ companies: companies || [], loading: false });
         } catch (error) {

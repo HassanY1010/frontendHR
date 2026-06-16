@@ -135,7 +135,7 @@ class AuthService {
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
   }
-  async registerCompany(data: { companyName: string; email: string; password: string; fullName: string; employeeCount: number; language: string; subscriptionCode: string }): Promise<LoginResponse> {
+  async registerCompany(data: { companyName: string; email: string; password: string; fullName: string; employeeCount: number; language: string; subscriptionCode: string; phone?: string; address?: string }): Promise<LoginResponse> {
     logger.info('Company registration attempt', { email: data.email, companyName: data.companyName })
 
     try {
@@ -147,7 +147,9 @@ class AuthService {
         employeeCount: data.employeeCount,
         language: data.language,
         role: 'MANAGER',
-        subscriptionCode: data.subscriptionCode
+        subscriptionCode: data.subscriptionCode,
+        phone: data.phone || '',
+        address: data.address || ''
       }
       logger.info('API Request Payload', payload)
       const response = await apiClient.post<LoginResponse>('/auth/signup-company', payload)

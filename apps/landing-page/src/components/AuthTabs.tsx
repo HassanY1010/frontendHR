@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button, Input } from '@hr/ui'
-import { Mail, Lock, Building, User, ArrowRight, Sparkles } from 'lucide-react'
+import { Mail, Lock, Building, User, ArrowRight, Sparkles, MapPin } from 'lucide-react'
 import { authService } from '@hr/services'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -26,7 +26,10 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
         fullName: '',
         employeeCount: '',
         language: 'ar',
-        subscriptionCode: ''
+        subscriptionCode: '',
+        phone: '',
+        phoneCode: '+966',
+        address: ''
     })
     const [forgotPasswordResult, setForgotPasswordResult] = useState<{
         role: string;
@@ -98,7 +101,9 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                     fullName: formData.fullName.trim(),
                     employeeCount: parseInt(formData.employeeCount),
                     language: formData.language,
-                    subscriptionCode: formData.subscriptionCode.trim()
+                    subscriptionCode: formData.subscriptionCode.trim(),
+                    phone: formData.phone ? `${formData.phoneCode}${formData.phone}` : '',
+                    address: formData.address || ''
                 })
                 toast.success('تم إنشاء الحساب بنجاح!')
                 if (!result.user.dashboardUrl) {
@@ -318,6 +323,58 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                                                     value={formData.subscriptionCode}
                                                     onChange={(e) => setFormData({ ...formData, subscriptionCode: e.target.value })}
                                                     autoComplete="off"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700 block pr-1">رقم الهاتف</label>
+                                            <div className="flex gap-2 items-start">
+                                                <select
+                                                    className="w-28 h-13 bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all rounded-xl font-semibold px-2 outline-none text-sm"
+                                                    value={formData.phoneCode}
+                                                    onChange={(e) => setFormData({ ...formData, phoneCode: e.target.value })}
+                                                >
+                                                    <option value="+966">🇸🇦 +966</option>
+                                                    <option value="+971">🇦🇪 +971</option>
+                                                    <option value="+974">🇶🇦 +974</option>
+                                                    <option value="+973">🇧🇭 +973</option>
+                                                    <option value="+965">🇰🇼 +965</option>
+                                                    <option value="+968">🇴🇲 +968</option>
+                                                    <option value="+20">🇪🇬 +20</option>
+                                                    <option value="+962">🇯🇴 +962</option>
+                                                    <option value="+961">🇱🇧 +961</option>
+                                                    <option value="+963">🇸🇾 +963</option>
+                                                    <option value="+964">🇮🇶 +964</option>
+                                                    <option value="+967">🇾🇪 +967</option>
+                                                    <option value="+249">🇸🇩 +249</option>
+                                                    <option value="+218">🇱🇾 +218</option>
+                                                    <option value="+216">🇹🇳 +216</option>
+                                                    <option value="+213">🇩🇿 +213</option>
+                                                    <option value="+212">🇲🇦 +212</option>
+                                                    <option value="+222">🇲🇷 +222</option>
+                                                    <option value="+252">🇸🇴 +252</option>
+                                                    <option value="+253">🇩🇯 +253</option>
+                                                    <option value="+211">🇸🇸 +211</option>
+                                                    <option value="+970">🇵🇸 +970</option>
+                                                </select>
+                                                <Input
+                                                    placeholder="5xxxxxxxx"
+                                                    dir="ltr"
+                                                    className="flex-1 h-13 bg-slate-50 border-slate-200 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all rounded-xl font-semibold"
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-slate-700 block pr-1">الموقع الجغرافي</label>
+                                            <div className="relative group">
+                                                <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                                <Input
+                                                    placeholder="المدينة، الدولة"
+                                                    className="pr-12 h-13 bg-slate-50 border-slate-200 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 transition-all rounded-xl font-semibold"
+                                                    value={formData.address}
+                                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                                 />
                                             </div>
                                         </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Briefcase, Mail, Calendar, TrendingUp, AlertTriangle, Trash2, Edit2, Save, Loader2 } from 'lucide-react';
+import { X, User, Briefcase, Mail, Calendar, TrendingUp, AlertTriangle, Trash2, Edit2, Save, Loader2, Key, Copy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { CheckInStats } from '../CheckInStats';
@@ -159,6 +159,28 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                                 )}
                             </div>
 
+                            {employee.initialPassword && (
+                                <div>
+                                    <label className="text-xs font-semibold text-gray-500 mb-1 block">كلمة المرور</label>
+                                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                                        <Key className="w-4 h-4 text-amber-500" />
+                                        <span dir="ltr" className="font-mono text-sm bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                                            {employee.initialPassword}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(employee.initialPassword);
+                                                toast.success('تم نسخ كلمة المرور');
+                                            }}
+                                            className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-all"
+                                            title="نسخ كلمة المرور"
+                                        >
+                                            <Copy className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             <div>
                                 <label className="text-xs font-semibold text-gray-500 mb-1 block">رقم الهاتف</label>
                                 {isEditing ? (

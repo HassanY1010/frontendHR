@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Building2, Users, ShieldAlert, ArrowRight, Mail, Phone,
-    MapPin, Globe, Calendar, CreditCard, UserCheck, UserX, RefreshCw, AlertTriangle, CheckCircle2, MoreVertical
+    MapPin, Globe, Calendar, CreditCard, UserCheck, UserX, RefreshCw, AlertTriangle, CheckCircle2, MoreVertical, Key, Copy, User as UserIcon
 } from 'lucide-react'
 import { useCompaniesStore } from '../store'
 import { userService } from '@hr/services'
@@ -24,6 +24,16 @@ const CompanyDetailPage: React.FC = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [showConfirmLogout, setShowConfirmLogout] = useState(false)
     const [showConfirmStatus, setShowConfirmStatus] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<User | null>(null)
+    const [showUserMenu, setShowUserMenu] = useState<string | null>(null)
+
+    const managerUser = users.find(u => u.role === 'MANAGER')
+
+    useEffect(() => {
+        const handleClickOutside = () => setShowUserMenu(null)
+        document.addEventListener('click', handleClickOutside)
+        return () => document.removeEventListener('click', handleClickOutside)
+    }, [])
 
     useEffect(() => {
         const fetchData = async () => {
@@ -31,7 +41,6 @@ const CompanyDetailPage: React.FC = () => {
 
             try {
                 setLoading(true)
-                // Ensure companies are loaded in store
                 if (companies.length === 0) {
                     await refreshCompanies()
                 }
@@ -181,9 +190,9 @@ const CompanyDetailPage: React.FC = () => {
                             </h3>
 
                             <div className="space-y-4">
-                                <InfoRow icon={Mail} label="البريد الإلكتروني" value={company.contact?.email || 'N/A'} />
-                                <InfoRow icon={Phone} label="رقم الهاتف" value={company.contact?.phone || 'N/A'} />
-                                <InfoRow icon={MapPin} label="الموقع" value={company.contact?.location || 'N/A'} />
+                                <InfoRow icon={Mail} label="البريد الإلكتروني" value={managerUser?.email || company.contact?.email || 'N/A'} />
+                                <InfoRow icon={Phone} label="رقم الهاتف" value={(managerUser as any)?.phone || company.contact?.phone || 'N/A'} />
+                                <InfoRow icon={MapPin} label="الموقع" value={company.contact?.location || (managerUser as any)?.location || 'N/A'} />
                                 <InfoRow icon={Calendar} label="تاريخ الانضمام" value={new Date(company.createdAt).toLocaleDateString('ar-EG')} />
                             </div>
 
@@ -249,7 +258,8 @@ const CompanyDetailPage: React.FC = () => {
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: idx * 0.05 }}
-                                                    className="hover:bg-neutral-50/50 transition-colors group"
+                                                    className="hover:bg-neutral-50/50 transition-colors group cursor-pointer"
+                                                    onClick={() => setSelectedUser(u)}
                                                 >
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-3">
@@ -278,10 +288,26 @@ const CompanyDetailPage: React.FC = () => {
                                                     <td className="px-6 py-4 text-sm text-neutral-500">
                                                         {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('ar-EG') : 'لم يدخل بعد'}
                                                     </td>
-                                                    <td className="px-6 py-4 text-left">
-                                                        <Button variant="ghost" size="sm" className="p-2 h-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <td className="px-6 py-4 text-left relative">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="p-2 h-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            onClick={(e) => { e.stopPropagation(); setShowUserMenu(showUserMenu === u.id ? null : u.id) }}
+                                                        >
                                                             <MoreVertical className="w-4 h-4 text-neutral-400" />
                                                         </Button>
+                                                        {showUserMenu === u.id && (
+                                                            <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-neutral-200 dark:border-gray-700 z-50 py-2" onClick={(e) => e.stopPropagation()}>
+                                                                <button
+                                                                    className="w-full text-right px-4 py-2.5 text-sm font-bold text-neutral-700 hover:bg-neutral-50 flex items-center gap-2 transition-colors"
+                                                                    onClick={() => { setSelectedUser(u); setShowUserMenu(null) }}
+                                                                >
+                                                                    <UserIcon className="w-4 h-4 text-blue-500" />
+                                                                    عرض التفاصيل
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                 </motion.tr>
                                             ))}
@@ -369,6 +395,102 @@ const CompanyDetailPage: React.FC = () => {
                         </Button>
                     </div>
                 </div>
+            </Modal>
+
+            {/* User Detail Modal */}
+            <Modal
+                isOpen={!!selectedUser}
+                onClose={() => setSelectedUser(null)}
+                title={selectedUser?.name || 'تفاصيل المستخدم'}
+            >
+                {selectedUser && (
+                    <div className="p-6 space-y-5">
+                        <div className="flex items-center gap-4 pb-4 border-b border-neutral-100">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                                {selectedUser.avatar ? <img src={selectedUser.avatar} alt={selectedUser.name} className="w-full h-full object-cover rounded-2xl" /> : selectedUser.name.charAt(0)}
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-neutral-900">{selectedUser.name}</h3>
+                                <Badge variant="outline" className={`font-bold mt-1 ${selectedUser.role === 'MANAGER' ? 'text-indigo-600 bg-indigo-50 border-indigo-100' : 'text-neutral-600 bg-neutral-100'}`}>
+                                    {selectedUser.role === 'MANAGER' ? 'مدير شركة' : selectedUser.role === 'SUPER_ADMIN' ? 'مدير النظام' : 'موظف'}
+                                </Badge>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-neutral-500">البريد الإلكتروني</p>
+                                <p className="font-bold text-neutral-900 flex items-center gap-2" dir="ltr">
+                                    <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+                                    {selectedUser.email}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-neutral-500">رقم الهاتف</p>
+                                <p className="font-bold text-neutral-900 flex items-center gap-2" dir="ltr">
+                                    <Phone className="w-4 h-4 text-green-500 shrink-0" />
+                                    {(selectedUser as any).phone || 'غير محدد'}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-neutral-500">الموقع</p>
+                                <p className="font-bold text-neutral-900 flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-orange-500 shrink-0" />
+                                    {(selectedUser as any).location || 'غير محدد'}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-neutral-500">الحالة</p>
+                                <div className="flex items-center gap-1.5">
+                                    <div className={`w-2 h-2 rounded-full ${selectedUser.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                    <span className={`font-bold ${selectedUser.status === 'ACTIVE' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        {selectedUser.status === 'ACTIVE' ? 'نشط' : 'معطل'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-neutral-500">آخر دخول</p>
+                                <p className="font-bold text-neutral-900">
+                                    {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleDateString('ar-EG') : 'لم يدخل بعد'}
+                                </p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-neutral-500">تاريخ التسجيل</p>
+                                <p className="font-bold text-neutral-900">
+                                    {(selectedUser as any).createdAt ? new Date((selectedUser as any).createdAt).toLocaleDateString('ar-EG') : 'غير محدد'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Password section */}
+                        <div className="pt-4 border-t border-neutral-100">
+                            <p className="text-xs font-bold text-neutral-500 mb-2">كلمة المرور</p>
+                            <div className="flex items-center gap-2">
+                                <Key className="w-4 h-4 text-amber-500 shrink-0" />
+                                {(selectedUser as any).initialPassword ? (
+                                    <>
+                                        <span dir="ltr" className="font-mono text-sm bg-neutral-100 px-3 py-1.5 rounded-lg border border-neutral-200 break-all">
+                                            {(selectedUser as any).initialPassword}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText((selectedUser as any).initialPassword)
+                                                toast.success('تم نسخ كلمة المرور')
+                                            }}
+                                            className="p-1.5 text-neutral-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                            title="نسخ كلمة المرور"
+                                        >
+                                            <Copy className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <span className="text-sm text-neutral-500">غير متاحة (مشفرة)</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     )
