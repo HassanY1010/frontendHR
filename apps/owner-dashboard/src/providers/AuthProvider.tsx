@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null)
         localStorage.removeItem('faceVerified')
         // Redirect to Production Landing Page
-        window.location.href = 'https://hr-full-stack-landing-page-h4ku.vercel.app/'
+        window.location.href = import.meta.env.VITE_LANDING_PAGE_URL || '/'
     }
 
     return (
