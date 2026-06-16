@@ -1,3 +1,4 @@
+/// <reference path="./env.d.ts" />
 export const routingConfig = {
     homePath: '/',
     loginPath: '/login',

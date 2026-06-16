@@ -1,3 +1,4 @@
+/// <reference path="./env.d.ts" />
 // packages/utils/src/logger.ts
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 

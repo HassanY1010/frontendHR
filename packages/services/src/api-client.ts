@@ -1,3 +1,4 @@
+/// <reference path="./env.d.ts" />
 // packages/services/src/api-client.ts
 import axios, { type AxiosRequestConfig } from 'axios'
 import { logger } from '@hr/utils'
