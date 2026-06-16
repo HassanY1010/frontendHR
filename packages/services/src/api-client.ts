@@ -4,7 +4,16 @@ import axios, { type AxiosRequestConfig } from 'axios'
 import { logger } from '@hr/utils'
 
 const env = import.meta.env
-const API_BASE_URL = env.VITE_API_BASE_URL || env.VITE_API_URL || ''
+const getBaseUrl = () => {
+  const url = env.VITE_API_BASE_URL || env.VITE_API_URL || ''
+  if (!url) return ''
+  let cleanUrl = url.trim()
+  if (cleanUrl.endsWith('/')) {
+    cleanUrl = cleanUrl.slice(0, -1)
+  }
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`
+}
+const API_BASE_URL = getBaseUrl()
 const MOCK_MODE = env.VITE_MOCK_MODE === 'true'
 
 export class ApiClient {
@@ -12,7 +21,6 @@ export class ApiClient {
     baseURL: API_BASE_URL,
     timeout: 30000,
     withCredentials: true
-    // Removed static Content-Type header to allow dynamic handling
   })
 
   constructor() {
