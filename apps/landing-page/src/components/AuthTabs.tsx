@@ -35,6 +35,7 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
     } | null>(null)
 
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+    const [generalError, setGeneralError] = useState<string | null>(null)
 
     const navigate = useNavigate()
 
@@ -67,28 +68,29 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
             return handleForgotPassword(e)
         }
         setIsLoading(true)
+        setGeneralError(null)
+        setErrors({})
 
         try {
-            setErrors({})
             if (mode === 'login') {
                 const result = await authService.login({
                     email: formData.email.trim(),
                     password: formData.password.trim(),
                     rememberMe: false
                 })
-                if (result.user.dashboardUrl) {
-                    const cleanDashboardUrl = result.user.dashboardUrl.endsWith('/login')
-                        ? result.user.dashboardUrl.replace('/login', '')
-                        : result.user.dashboardUrl;
-
-                    const dashboardUrl = new URL(cleanDashboardUrl);
-                    dashboardUrl.searchParams.set('access_token', result.token);
-                    dashboardUrl.searchParams.set('user', JSON.stringify(result.user));
-                    window.location.href = dashboardUrl.toString();
+                if (!result.user.dashboardUrl) {
+                    setGeneralError('تم تسجيل الدخول بنجاح، لكن لم يتم تحديد لوحة التحكم. يرجى التواصل مع الدعم الفني.')
+                    return
                 }
+                const cleanDashboardUrl = result.user.dashboardUrl.endsWith('/login')
+                    ? result.user.dashboardUrl.replace('/login', '')
+                    : result.user.dashboardUrl;
+
+                const dashboardUrl = new URL(cleanDashboardUrl);
+                dashboardUrl.searchParams.set('access_token', result.token);
+                dashboardUrl.searchParams.set('user', JSON.stringify(result.user));
+                window.location.href = dashboardUrl.toString();
             } else {
-                console.log('--- FORM DATA SUBMISSION ---');
-                console.log(JSON.stringify(formData, null, 2));
                 const result = await authService.registerCompany({
                     companyName: formData.companyName.trim(),
                     email: formData.email.trim(),
@@ -99,27 +101,37 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                     subscriptionCode: formData.subscriptionCode.trim()
                 })
                 toast.success('تم إنشاء الحساب بنجاح!')
-                if (result.user.dashboardUrl) {
-                    const cleanDashboardUrl = result.user.dashboardUrl.endsWith('/login')
-                        ? result.user.dashboardUrl.replace('/login', '')
-                        : result.user.dashboardUrl;
-
-                    // Redirect new companies directly to recruitment setup/dashboard
-                    const baseUrl = cleanDashboardUrl.endsWith('/') ? cleanDashboardUrl.slice(0, -1) : cleanDashboardUrl;
-                    const dashboardUrl = new URL(`${baseUrl}/recruitment`);
-
-                    dashboardUrl.searchParams.set('access_token', result.token);
-                    dashboardUrl.searchParams.set('user', JSON.stringify(result.user));
-                    window.location.href = dashboardUrl.toString();
+                if (!result.user.dashboardUrl) {
+                    setGeneralError('تم إنشاء الحساب بنجاح، لكن لم يتم تحديد لوحة التحكم. يرجى التواصل مع الدعم الفني.')
+                    return
                 }
+                const cleanDashboardUrl = result.user.dashboardUrl.endsWith('/login')
+                    ? result.user.dashboardUrl.replace('/login', '')
+                    : result.user.dashboardUrl;
+
+                const baseUrl = cleanDashboardUrl.endsWith('/') ? cleanDashboardUrl.slice(0, -1) : cleanDashboardUrl;
+                const dashboardUrl = new URL(`${baseUrl}/recruitment`);
+
+                dashboardUrl.searchParams.set('access_token', result.token);
+                dashboardUrl.searchParams.set('user', JSON.stringify(result.user));
+                window.location.href = dashboardUrl.toString();
             }
         } catch (error: any) {
             console.error('Auth Error Details:', error)
             const errorData = error.response?.data?.error
-            const errorMessage = errorData?.message || error.message || 'حدث خطأ ما'
 
-            // Always show toast for high visibility
-            toast.error(errorMessage)
+            let errorMessage: string
+            if (errorData?.message) {
+                errorMessage = errorData.message
+            } else if (error.message?.includes('Network Error')) {
+                errorMessage = 'تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.'
+            } else if (error.code === 'ERR_NETWORK') {
+                errorMessage = 'الخادم غير متاح حالياً. يرجى المحاولة لاحقاً.'
+            } else {
+                errorMessage = error.message || 'حدث خطأ غير متوقع'
+            }
+
+            setGeneralError(errorMessage)
 
             if (errorData?.field) {
                 setErrors({ [errorData.field]: errorMessage })
@@ -189,7 +201,7 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                                                 </>
                                             ) : (
                                                 <>
-                                                    <p className="font-medium mb-3">عزيزي المدير، لاستعادة كلمة المرور يرجى التواصل مع صاحب النظام شخصياً عبر بريده الإلكتروني:</p>
+                                                    <p className="font-medium mb-3">عزيزي المدير، لاستعادة كلمة المرور يرجى التواصل مع أحد مسؤولي النظام عبر البريد الإلكتروني:</p>
                                                     <div className="bg-white p-3 rounded-xl border border-indigo-200 text-center font-bold text-indigo-700 select-all">
                                                         {forgotPasswordResult.contactEmail || 'admin@platform.com'}
                                                     </div>
@@ -395,6 +407,23 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                     </motion.div>
                 </AnimatePresence>
             </form>
+            {generalError && (
+                <div className="w-full mt-4 p-3 bg-red-50/10 border border-red-500/30 rounded-lg text-right" role="alert">
+                    <p className="text-red-400 text-sm font-medium">{generalError}</p>
+                    {(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL) && (
+                        <p className="text-gray-500 text-xs mt-1 dir-ltr text-left">
+                            {import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL}
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => setGeneralError(null)}
+                        className="mt-2 text-xs text-gray-500 hover:text-gray-300 underline"
+                    >
+                        محاولة مرة أخرى
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
