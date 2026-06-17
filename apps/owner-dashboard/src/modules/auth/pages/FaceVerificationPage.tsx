@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as faceapi from 'face-api.js';
 import { Button, Card, CardContent, CardHeader } from '@hr/ui';
-import { Camera, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Camera, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '../../../providers/AuthProvider';
 import { setFaceVerified } from '../../../utils/face-model-cache';
 
@@ -12,7 +12,6 @@ const FaceVerification: React.FC = () => {
     const [status, setStatus] = useState<'loading' | 'scanning' | 'success' | 'failed' | 'timeout'>('loading');
     const [message, setMessage] = useState('جاري تجهيز النظام...');
     const [loadingStep, setLoadingStep] = useState<string>('');
-    const [showBypass, setShowBypass] = useState(false);
     const navigate = useNavigate();
     const { logout } = useAuth();
     const attemptsRef = useRef(0);
@@ -33,23 +32,12 @@ const FaceVerification: React.FC = () => {
         };
     }, []);
 
-    // Show bypass button after 20 seconds if still loading
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (mountedRef.current && (status === 'loading' || status === 'scanning')) {
-                setShowBypass(true);
-            }
-        }, 20000);
-        return () => clearTimeout(timer);
-    }, [status]);
-
     // Overall timeout: fail after 90 seconds
     useEffect(() => {
         const timer = setTimeout(() => {
             if (mountedRef.current && (status === 'loading' || status === 'scanning')) {
                 setStatus('timeout');
-                setMessage('انتهت مهلة التحقق. يرجى المحاولة مرة أخرى أو استخدام الرمز البديل.');
-                setShowBypass(true);
+                setMessage('انتهت مهلة التحقق. يرجى إعادة المحاولة.');
                 if (intervalRef.current) clearInterval(intervalRef.current);
             }
         }, 90000);
@@ -77,7 +65,6 @@ const FaceVerification: React.FC = () => {
             if (mountedRef.current) {
                 setMessage(`لا يمكن الوصول إلى الكاميرا: ${err.message || 'تأكد من منح إذن الكاميرا'}`);
                 setStatus('failed');
-                setShowBypass(true);
             }
             return false;
         }
@@ -139,7 +126,6 @@ const FaceVerification: React.FC = () => {
             if (mountedRef.current) {
                 setMessage('لم يتم العثور على صور مرجعية صالحة. يرجى التواصل مع الدعم الفني.');
                 setStatus('failed');
-                setShowBypass(true);
             }
             return null;
         }
@@ -162,7 +148,6 @@ const FaceVerification: React.FC = () => {
                 if (mountedRef.current) {
                     setStatus('failed');
                     setMessage('فشل التحقق: لم يتم التعرف على الوجه. حاول مرة أخرى مع إضاءة أفضل.');
-                    setShowBypass(true);
                 }
                 return;
             }
@@ -224,13 +209,6 @@ const FaceVerification: React.FC = () => {
     useEffect(() => {
         runVerification();
     }, [runVerification]);
-
-    const handleBypassVerification = () => {
-        // Security bypass: sets faceVerified and goes to dashboard
-        // This is a fallback for when camera/models fail
-        setFaceVerified();
-        navigate('/');
-    };
 
     const statusIcon = {
         loading: <div className="animate-spin w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full" />,
@@ -313,12 +291,6 @@ const FaceVerification: React.FC = () => {
                                 يرجى التأكد من وجود إضاءة كافية والنظر مباشرة للكاميرا
                             </p>
                         )}
-                        {status === 'loading' && showBypass && (
-                            <p className="text-xs text-amber-400 flex items-center justify-center gap-1">
-                                <AlertTriangle className="w-3 h-3" />
-                                التحميل يستغرق وقتاً أطول من المعتاد...
-                            </p>
-                        )}
                     </div>
 
                     {/* Action buttons */}
@@ -330,17 +302,6 @@ const FaceVerification: React.FC = () => {
                                 onClick={() => window.location.reload()}
                             >
                                 إعادة المحاولة
-                            </Button>
-                        )}
-
-                        {/* Bypass button - shown on failure/timeout OR after 20s loading */}
-                        {(status === 'failed' || status === 'timeout' || (showBypass && status === 'loading') || (showBypass && status === 'scanning')) && (
-                            <Button
-                                variant="ghost"
-                                className="w-full border border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
-                                onClick={handleBypassVerification}
-                            >
-                                تجاوز التحقق بالوجه والدخول مباشرة
                             </Button>
                         )}
 
