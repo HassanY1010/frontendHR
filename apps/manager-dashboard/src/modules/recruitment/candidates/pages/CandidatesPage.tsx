@@ -517,12 +517,12 @@ const CandidatesPage: React.FC = () => {
                                                                         ))}
                                                                     </div>
                                                                 </div>
-                                                                <div className="text-[11px]">
-                                                                    <span className="font-bold text-gray-700 dark:text-gray-300 block mb-1">توصية النظام:</span>
-                                                                    <span className={`font-bold ${analysis.recommendation === 'hire' ? 'text-green-600' : analysis.recommendation === 'reject' ? 'text-red-500' : 'text-amber-500'}`}>
-                                                                        {analysis.recommendation === 'hire' ? 'توظيف فوري' : analysis.recommendation === 'reject' ? 'غير ملائم' : 'مقابلة معمقة'}
-                                                                    </span>
-                                                                </div>
+                                                <div className="text-[11px]">
+                                                    <span className="font-bold text-gray-700 dark:text-gray-300 block mb-1">توصية النظام:</span>
+                                                    <span className={`font-bold ${(candidate.aiScore || 0) >= 70 ? 'text-green-600' : (candidate.aiScore || 0) >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
+                                                        {(candidate.aiScore || 0) >= 70 ? 'توظيف فوري' : (candidate.aiScore || 0) >= 40 ? 'مقابلة معمقة' : 'غير ملائم'}
+                                                    </span>
+                                                </div>
                                                             </div>
                                                         );
                                                     } catch (e) {

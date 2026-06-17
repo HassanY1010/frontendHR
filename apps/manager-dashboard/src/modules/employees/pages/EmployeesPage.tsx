@@ -260,8 +260,12 @@ const EmployeesPage: React.FC = () => {
                   <Card className="h-full hover:shadow-lg transition-all border-0">
                     <CardContent className="p-4 sm:p-6">
                       <div className="relative flex justify-center mb-4">
-                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                          {employee.name.charAt(0)}
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">
+                          {(employee as any).user?.avatar || (employee as any).avatar ? (
+                            <img src={(employee as any).user?.avatar || (employee as any).avatar} alt={employee.name} className="w-full h-full object-cover" />
+                          ) : (
+                            employee.name.charAt(0)
+                          )}
                         </div>
                       </div>
                       <div className="text-center mb-4">
@@ -314,8 +318,12 @@ const EmployeesPage: React.FC = () => {
                     >
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
-                            {employee.name.charAt(0)}
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold overflow-hidden">
+                            {(employee as any).user?.avatar || (employee as any).avatar ? (
+                              <img src={(employee as any).user?.avatar || (employee as any).avatar} alt={employee.name} className="w-full h-full object-cover" />
+                            ) : (
+                              employee.name.charAt(0)
+                            )}
                           </div>
                           <div>
                             <p className="font-bold text-gray-900 dark:text-white">{employee.name}</p>

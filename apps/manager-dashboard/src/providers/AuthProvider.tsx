@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const freshData = await settingsService.getCurrentUser()
             if (freshData) {
-                const merged = { ...freshData, role: user?.role || freshData.role }
+                const merged = { ...user, ...freshData, role: user?.role || freshData.role }
                 setUser(merged)
                 authService.updateCurrentUser(merged)
             }
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         try {
                             const freshData = await settingsService.getCurrentUser()
                             if (freshData) {
-                                const merged = { ...freshData, role: 'MANAGER' }
+                                const merged = { ...currentUser, ...freshData, role: 'MANAGER' }
                                 setUser(merged)
                                 authService.updateCurrentUser(merged)
                             }

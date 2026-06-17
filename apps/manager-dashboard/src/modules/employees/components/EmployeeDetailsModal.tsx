@@ -23,7 +23,7 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
         status: employee.status || 'active',
         phone: employee.phone || employee.user?.phone || '',
         bio: employee.bio || employee.user?.bio || '',
-        avatar: employee.user?.avatar || ''
+        avatar: employee.user?.avatar || (employee as any).avatar || ''
     });
 
     // Sync form data with employee prop if it changes
@@ -37,7 +37,7 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                 status: employee.status || 'active',
                 phone: employee.phone || employee.user?.phone || '',
                 bio: employee.bio || employee.user?.bio || '',
-                avatar: employee.user?.avatar || '',
+                avatar: employee.user?.avatar || (employee as any).avatar || '',
             });
         }
     }, [employee]);
@@ -90,8 +90,8 @@ export const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({ empl
                     <div className="absolute -bottom-12 left-8">
                         <div className="h-24 w-24 rounded-2xl bg-white dark:bg-gray-800 p-1 shadow-xl">
                             <div className="h-full w-full rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 text-3xl font-bold overflow-hidden">
-                                {employee.user?.avatar ? (
-                                    <img src={employee.user.avatar} alt={formData.name} className="w-full h-full object-cover" />
+                                {employee.user?.avatar || (employee as any).avatar ? (
+                                    <img src={employee.user?.avatar || (employee as any).avatar} alt={formData.name} className="w-full h-full object-cover" />
                                 ) : (
                                     formData.name.charAt(0)
                                 )}
