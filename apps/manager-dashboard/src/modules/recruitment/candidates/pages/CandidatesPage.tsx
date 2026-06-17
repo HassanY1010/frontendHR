@@ -280,7 +280,7 @@ const CandidatesPage: React.FC = () => {
             toast.dismiss(loadingToast);
 
             // Set the generated link to point to the landing page interview route
-            const frontendUrl = 'https://hr-full-stack-landing-page-h4ku.vercel.app';
+            const frontendUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'https://landing-page-cyan-eta-81.vercel.app';
             const link = `${frontendUrl}/interview/${interviewResponse.token}`;
 
             setGeneratedLink(link);

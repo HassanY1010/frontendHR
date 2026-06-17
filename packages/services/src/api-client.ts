@@ -97,7 +97,7 @@ export class ApiClient {
             localStorage.removeItem('user')
 
             // تحويل دائم إلى الصفحة الرئيسية
-            window.location.href = 'https://hr-full-stack-landing-page-h4ku.vercel.app'
+            window.location.href = import.meta.env.VITE_LANDING_PAGE_URL || 'https://landing-page-cyan-eta-81.vercel.app'
           }
         }
 

@@ -86,7 +86,6 @@ const FaceVerification: React.FC = () => {
             if (mountedRef.current) {
                 setMessage('فشل تحميل نماذج التعرف على الوجه. تحقق من اتصالك بالإنترنت.');
                 setStatus('failed');
-                setShowBypass(true);
             }
             return false;
         }
@@ -209,14 +208,6 @@ const FaceVerification: React.FC = () => {
     useEffect(() => {
         runVerification();
     }, [runVerification]);
-
-    const statusIcon = {
-        loading: <div className="animate-spin w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full" />,
-        scanning: <Camera className="w-12 h-12 text-blue-400 animate-pulse" />,
-        success: <CheckCircle className="w-14 h-14 text-green-500" />,
-        failed: <XCircle className="w-14 h-14 text-red-500" />,
-        timeout: <Clock className="w-14 h-14 text-orange-400" />,
-    };
 
     const statusColors = {
         loading: 'text-slate-200',
