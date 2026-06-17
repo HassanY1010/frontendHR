@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { User } from '@hr/types'
 import { authService } from '@hr/services'
-import { cacheModelFiles } from '../utils/face-model-cache'
 
 interface AuthContextType {
     user: User | null
@@ -51,9 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (currentUser && isAuth) {
                     if (currentUser.role === 'SUPER_ADMIN') {
                         setUser(currentUser)
-
-                        // Preload face models in background for instant verification
-                        cacheModelFiles().catch(() => {})
 
                         // Check Face Verification
                         const isVerified = localStorage.getItem('faceVerified') === 'true'
