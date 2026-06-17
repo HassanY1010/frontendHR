@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, Suspense, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@hr/ui'
-import { settingsService, fileService, recruitmentService } from '@hr/services'
+import { settingsService, fileService, recruitmentService, authService } from '@hr/services'
 import { toast } from 'sonner'
 import {
   User,
@@ -956,6 +956,7 @@ const SettingsPage: React.FC = () => {
     try {
       await settingsService.updateProfile(newData);
       setProfileData(newData);
+      authService.updateCurrentUser({ avatar: newData.avatar, name: newData.name, email: newData.email });
       toast.success('تم تحديث الملف الشخصي بنجاح');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);

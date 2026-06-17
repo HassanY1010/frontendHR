@@ -135,6 +135,14 @@ class AuthService {
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
   }
+
+  /** Overwrite the stored user with partial updates (e.g. after avatar/profile change) */
+  updateCurrentUser(partial: Partial<User>): void {
+    const current = this.getCurrentUser()
+    if (current) {
+      localStorage.setItem('user', JSON.stringify({ ...current, ...partial }))
+    }
+  }
   async registerCompany(data: { companyName: string; email: string; password: string; fullName: string; employeeCount: number; language: string; subscriptionCode: string; phone?: string; address?: string }): Promise<LoginResponse> {
     logger.info('Company registration attempt', { email: data.email, companyName: data.companyName })
 
