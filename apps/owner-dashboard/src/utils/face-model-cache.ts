@@ -1,4 +1,3 @@
-const CACHE_KEY = 'face-api-models-v1';
 const MODEL_FILES = [
   '/models/ssd_mobilenetv1_model-weights_manifest.json',
   '/models/ssd_mobilenetv1_model-shard1',
@@ -9,20 +8,6 @@ const MODEL_FILES = [
   '/models/face_recognition_model-shard1',
   '/models/face_recognition_model-shard2',
 ];
-
-async function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(CACHE_KEY, 1);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains('models')) {
-        db.createObjectStore('models');
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
 
 export async function cacheModelFiles(): Promise<void> {
   const cache = await caches.open('face-api-models');

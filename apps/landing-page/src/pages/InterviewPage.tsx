@@ -553,7 +553,6 @@ const InterviewPage = () => {
                             <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 flex flex-col relative overflow-hidden"
                                 onContextMenu={e => e.preventDefault()}
                                 onCopy={e => e.preventDefault()}
-                                onSelectStart={e => e.preventDefault()}
                                 style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
                                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-50" />
 

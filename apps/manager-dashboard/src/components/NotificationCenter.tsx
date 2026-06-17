@@ -101,11 +101,6 @@ const NotificationCenter: React.FC = () => {
         }
     };
 
-    const Icon = (type: string) => {
-        const C = getNotifIcon(type);
-        return <C className="h-5 w-5" />;
-    };
-
     return (
         <div className="relative">
             <button

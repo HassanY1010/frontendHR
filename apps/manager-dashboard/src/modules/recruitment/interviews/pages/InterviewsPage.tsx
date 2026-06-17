@@ -1,5 +1,5 @@
 // apps/manager-dashboard/src/modules/recruitment/interviews/pages/InterviewsPage.tsx
-import React from 'react'
+import React, { useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Clock,

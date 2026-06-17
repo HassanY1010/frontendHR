@@ -1,5 +1,5 @@
 // apps/manager-dashboard/src/modules/recruitment/candidates/pages/CandidatesPage.tsx
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
     Plus,
@@ -546,7 +546,7 @@ const CandidatesPage: React.FC = () => {
                                                     <Button variant="ai" size="sm" className="shadow-lg font-bold animate-pulse" leftIcon={<Brain className="h-4 w-4" />} onClick={() => handleReviewInterview(candidate)}>مراجعة النتائج</Button>
                                                 )}
                                                 {candidate.resumeUrl && (
-                                                    <Button variant="secondary" size="sm" className="shadow-sm" onClick={() => window.open(resolveResumeUrl(candidate.resumeUrl), '_blank')}>
+                                                    <Button variant="secondary" size="sm" className="shadow-sm" onClick={() => window.open(resolveResumeUrl(candidate.resumeUrl || ''), '_blank')}>
                                                         <FileText className="h-4 w-4" />
                                                     </Button>
                                                 )}
@@ -662,7 +662,7 @@ const CandidatesPage: React.FC = () => {
                                 إرسال بريد إلكتروني
                             </Button>
                             {selectedCandidate.resumeUrl && (
-                                <Button variant="outline" onClick={() => window.open(resolveResumeUrl(selectedCandidate.resumeUrl), '_blank')}>
+                                <Button variant="outline" onClick={() => window.open(resolveResumeUrl(selectedCandidate.resumeUrl || ''), '_blank')}>
                                     <FileText className="h-4 w-4 ml-2" />
                                     عرض السيرة الذاتية
                                 </Button>

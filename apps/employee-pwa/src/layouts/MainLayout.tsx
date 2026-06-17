@@ -4,7 +4,7 @@ import { Home, GraduationCap, Bell, User, Layout, LogOut, Target } from 'lucide-
 import { useAuth } from '../providers/AuthProvider'
 import { InstallPWA } from '../components/InstallPWA'
 import { notificationService } from '@hr/services'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 const UnreadBadge: React.FC = () => {
     const [count, setCount] = useState(0)

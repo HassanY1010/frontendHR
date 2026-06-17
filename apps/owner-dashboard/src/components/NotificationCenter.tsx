@@ -25,15 +25,6 @@ const getNotifColor = (type: string) => {
     }
 };
 
-const getNavigationLink = (notif: Notification): string | null => {
-    if (notif.metadata?.link) return notif.metadata.link;
-    switch (notif.type) {
-        case 'task': return '/';
-        case 'training': return '/courses';
-        default: return null;
-    }
-};
-
 const NotificationCenter: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isOpen, setIsOpen] = useState(false);
