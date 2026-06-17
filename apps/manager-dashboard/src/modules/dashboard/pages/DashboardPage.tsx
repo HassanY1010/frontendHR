@@ -117,10 +117,10 @@ const DashboardPage: React.FC = () => {
       <section>
         <SectionHeader title="الموارد البشرية" icon={Users} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <KPICard icon={Users} label="إجمالي الموظفين" value={hr.totalEmployees} trend="+3" />
-          <KPICard icon={TrendingUp} label="مستوى الرضا العام" value={`${hr.satisfaction}%`} trend="+5%" variant="success" />
-          <KPICard icon={AlertCircle} label="مؤشرات ضغط مرتفعة" value={hr.stressHigh} subValue="موظف" variant="warning" />
-          <KPICard icon={Zap} label="مخاطر تسرب محتملة" value={hr.attritionRisk} subValue="حالات" variant="danger" />
+          <KPICard icon={Users} label="إجمالي الموظفين" value={hr.totalEmployees} trend={hr.trends?.totalEmployees} />
+          <KPICard icon={TrendingUp} label="مستوى الرضا العام" value={`${hr.satisfaction}%`} trend={hr.trends?.satisfaction} variant="success" />
+          <KPICard icon={AlertCircle} label="مؤشرات ضغط مرتفعة" value={hr.stressHigh} subValue="موظف" trend={hr.trends?.stressHigh} variant="warning" />
+          <KPICard icon={Zap} label="مخاطر تسرب محتملة" value={hr.attritionRisk} subValue="حالات" trend={hr.trends?.attritionRisk} variant="danger" />
         </div>
       </section>
 

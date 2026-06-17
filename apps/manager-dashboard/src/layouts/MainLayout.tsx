@@ -75,19 +75,27 @@ const MainLayout: React.FC = () => {
               <div className="flex items-center gap-2 md:gap-4">
                 <NotificationCenter />
 
-                <div className="flex items-center gap-3 hidden sm:flex">
-                  <div className="text-right">
-                    <p className="font-medium text-neutral-900 dark:text-white max-w-[150px] truncate">{user?.name}</p>
-                    <p className="text-xs text-neutral-500 dark:text-gray-400">{user?.position}</p>
+                  <div className="flex items-center gap-3 hidden sm:flex">
+                    <div className="text-right">
+                      <p className="font-medium text-neutral-900 dark:text-white max-w-[150px] truncate">{user?.name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-gray-400">{user?.position}</p>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold shrink-0 overflow-hidden">
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                      ) : (
+                        user?.name?.charAt(0)
+                      )}
+                    </div>
                   </div>
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold shrink-0">
-                    {user?.name.charAt(0)}
+                  {/* Mobile User Avatar */}
+                  <div className="h-8 w-8 sm:hidden rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      user?.name?.charAt(0)
+                    )}
                   </div>
-                </div>
-                {/* Mobile User Avatar */}
-                <div className="h-8 w-8 sm:hidden rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold">
-                  {user?.name.charAt(0)}
-                </div>
               </div>
             </div>
           </div>

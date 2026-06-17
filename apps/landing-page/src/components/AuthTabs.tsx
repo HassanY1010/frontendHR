@@ -115,7 +115,7 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                     : result.user.dashboardUrl;
 
                 const baseUrl = cleanDashboardUrl.endsWith('/') ? cleanDashboardUrl.slice(0, -1) : cleanDashboardUrl;
-                const dashboardUrl = new URL(`${baseUrl}/recruitment`);
+                const dashboardUrl = new URL(baseUrl);
 
                 dashboardUrl.searchParams.set('access_token', result.token);
                 dashboardUrl.searchParams.set('user', JSON.stringify(result.user));

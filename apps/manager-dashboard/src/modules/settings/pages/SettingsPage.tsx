@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@hr/ui'
 import { settingsService, fileService, recruitmentService, authService } from '@hr/services'
 import { toast } from 'sonner'
+import { useAuth } from '../../../providers/AuthProvider'
 import {
   User,
   Bell,
@@ -877,6 +878,7 @@ const SettingsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [showSuccess, setShowSuccess] = useState(false)
+  const { refreshUser } = useAuth()
 
   // بيانات الإعدادات
   const [profileData, setProfileData] = useState({
@@ -956,7 +958,8 @@ const SettingsPage: React.FC = () => {
     try {
       await settingsService.updateProfile(newData);
       setProfileData(newData);
-      authService.updateCurrentUser({ avatar: newData.avatar, name: newData.name, email: newData.email });
+      authService.updateCurrentUser({ avatar: newData.avatar, name: newData.name, email: newData.email, position: newData.position });
+      refreshUser();
       toast.success('تم تحديث الملف الشخصي بنجاح');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);

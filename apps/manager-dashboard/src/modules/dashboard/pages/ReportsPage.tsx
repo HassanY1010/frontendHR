@@ -140,10 +140,10 @@ const ReportsPage: React.FC = () => {
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { title: 'إجمالي الموظفين', value: stats?.hr?.totalEmployees || 0, icon: Users, color: 'indigo', trend: '+4%' },
-                    { title: 'وظائف شاغرة', value: stats?.recruitment?.activeJobs || 0, icon: Briefcase, color: 'purple', trend: 'ثابت' },
-                    { title: 'إنجاز التدريب', value: `${training?.completionRate?.toFixed(0) || 0}%`, icon: GraduationCap, color: 'emerald', trend: '+12%' },
-                    { title: 'معدل الرضا', value: `${stats?.hr?.satisfaction || 0}%`, icon: TrendingUp, color: 'rose', trend: '-2%' }
+                    { title: 'إجمالي الموظفين', value: stats?.hr?.totalEmployees || 0, icon: Users, color: 'indigo', trend: stats?.hr?.trends?.totalEmployees },
+                    { title: 'وظائف شاغرة', value: stats?.recruitment?.activeJobs || 0, icon: Briefcase, color: 'purple', trend: stats?.recruitment?.trends?.activeJobs },
+                    { title: 'إنجاز التدريب', value: `${training?.completionRate?.toFixed(0) || 0}%`, icon: GraduationCap, color: 'emerald', trend: training?.trends?.completionRate },
+                    { title: 'معدل الرضا', value: `${stats?.hr?.satisfaction || 0}%`, icon: TrendingUp, color: 'rose', trend: stats?.hr?.trends?.satisfaction }
                 ].map((kpi, i) => (
                     <motion.div
                         key={i}
@@ -161,9 +161,11 @@ const ReportsPage: React.FC = () => {
                                 <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">{kpi.title}</h3>
                                 <div className="flex items-end gap-3 mt-1">
                                     <span className="text-3xl font-black dark:text-white">{kpi.value}</span>
-                                    <Badge variant={kpi.trend.startsWith('+') ? 'success' : kpi.trend === 'ثابت' ? 'outline' : 'danger'} className="text-[10px] mb-1.5 px-2">
-                                        {kpi.trend}
-                                    </Badge>
+                                    {kpi.trend && (
+                                        <Badge variant={kpi.trend.startsWith('+') ? 'success' : kpi.trend === 'ثابت' ? 'outline' : 'danger'} className="text-[10px] mb-1.5 px-2">
+                                            {kpi.trend}
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
                         </div>

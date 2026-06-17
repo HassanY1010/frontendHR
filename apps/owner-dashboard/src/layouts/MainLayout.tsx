@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { useAuth } from '../providers/AuthProvider'
+import NotificationCenter from '../components/NotificationCenter'
 
 const MainLayout: React.FC = () => {
   const { user, logout } = useAuth()
@@ -77,6 +78,7 @@ const MainLayout: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 md:gap-4">
+                <NotificationCenter />
                 <div className="text-right hidden sm:block">
                   <p className="font-medium text-neutral-900">{user?.name}</p>
                   <p className="text-xs text-neutral-500">صاحب المشروع</p>

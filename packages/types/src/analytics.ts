@@ -5,6 +5,12 @@ export interface DashboardStats {
         satisfaction: number;
         stressHigh: number;
         attritionRisk: number;
+        trends?: {
+            totalEmployees?: string;
+            satisfaction?: string;
+            stressHigh?: string;
+            attritionRisk?: string;
+        };
     };
     recruitment: {
         activeJobs: number;
@@ -12,12 +18,25 @@ export interface DashboardStats {
         accepted: number;
         rejected: number;
         interviews: number;
+        trends?: {
+            activeJobs?: string;
+            applicants?: string;
+            accepted?: string;
+            rejected?: string;
+            interviews?: string;
+        };
     };
     training: {
         needsTraining: number;
         inProgress: number;
         completionRate: number;
         impact: number;
+        trends?: {
+            needsTraining?: string;
+            inProgress?: string;
+            completionRate?: string;
+            impact?: string;
+        };
     };
 }
 

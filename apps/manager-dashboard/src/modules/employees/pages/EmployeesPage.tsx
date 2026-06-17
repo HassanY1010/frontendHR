@@ -18,10 +18,10 @@ import { EmployeeDetailsModal } from '../components/EmployeeDetailsModal'
 
 // UI Components (Simplified inline for brevity, in real app should be imported)
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`bg - white dark: bg - gray - 900 rounded - 2xl shadow - lg border border - gray - 100 dark: border - gray - 800 overflow - hidden ${className} `}>{children}</div>
+  <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 overflow-hidden ${className}`}>{children}</div>
 )
 const CardContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <div className={`p - 6 ${className} `}>{children}</div>
+  <div className={`p-6 ${className}`}>{children}</div>
 )
 const Badge: React.FC<{ children: React.ReactNode; variant?: string; className?: string }> = ({ children, variant = 'neutral', className = '' }) => {
   const variantClasses: any = {
@@ -33,7 +33,7 @@ const Badge: React.FC<{ children: React.ReactNode; variant?: string; className?:
     ai: 'bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
     outline: 'border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300'
   }
-  return <span className={`inline - flex items - center px - 2.5 py - 0.5 rounded - full text - xs font - medium border ${variantClasses[variant] || variantClasses.neutral} ${className} `}>{children}</span>
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${variantClasses[variant] || variantClasses.neutral} ${className}`}>{children}</span>
 }
 
 const Button: React.FC<any> = ({ children, variant = 'primary', size = 'md', className = '', onClick, leftIcon }) => {

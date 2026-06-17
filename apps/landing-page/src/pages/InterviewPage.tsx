@@ -550,7 +550,11 @@ const InterviewPage = () => {
                             </div>
 
                             {/* Question & Timer Panel - 2/5 width */}
-                            <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 flex flex-col relative overflow-hidden">
+                            <div className="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 flex flex-col relative overflow-hidden"
+                                onContextMenu={e => e.preventDefault()}
+                                onCopy={e => e.preventDefault()}
+                                onSelectStart={e => e.preventDefault()}
+                                style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}>
                                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50 rounded-full blur-3xl opacity-50" />
 
                                 <div className="relative z-10 flex flex-col h-full">
@@ -567,14 +571,15 @@ const InterviewPage = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 flex flex-col justify-center text-center">
+                                    <div className="flex-1 flex flex-col justify-center text-center select-none">
                                         <motion.div
                                             key={currentQuestionIdx}
                                             initial={{ opacity: 0, x: 20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             className="space-y-6"
                                         >
-                                            <h3 className="text-2xl font-black text-slate-800 leading-[1.3] min-h-[150px]">
+                                            <h3 className="text-2xl font-black text-slate-800 leading-[1.3] min-h-[150px]"
+                                                onCopy={e => e.preventDefault()}>
                                                 {questions[currentQuestionIdx]}
                                             </h3>
 

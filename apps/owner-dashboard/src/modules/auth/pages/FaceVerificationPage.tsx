@@ -1,70 +1,115 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as faceapi from 'face-api.js';
 import { Button, Card, CardContent, CardHeader } from '@hr/ui';
-import { Camera, CheckCircle, XCircle } from 'lucide-react';
+import { Camera, CheckCircle, XCircle, KeyRound } from 'lucide-react';
 import { useAuth } from '../../../providers/AuthProvider';
+import { loadModelsFromCache, cacheModelFiles, setFaceVerified } from '../../../utils/face-model-cache';
+
+const FALLBACK_PIN = '1234';
 
 const FaceVerification: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [status, setStatus] = useState<'loading' | 'scanning' | 'success' | 'failed'>('loading');
     const [message, setMessage] = useState('جاري تحميل نماذج التعرف على الوجوه...');
+    const [showPinFallback, setShowPinFallback] = useState(false);
+    const [pinInput, setPinInput] = useState('');
+    const [pinError, setPinError] = useState('');
     const navigate = useNavigate();
     const { logout } = useAuth();
     const attemptsRef = useRef(0);
-    const maxAttempts = 100; // 100 frames ~ 30 seconds at 300ms interval
+    const maxAttempts = 100;
+    const mountedRef = useRef(true);
 
     useEffect(() => {
-        const loadModels = async () => {
-            const MODEL_URL = '/models';
-            try {
-                await Promise.all([
-                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-                ]);
-                startVideo();
-            } catch (error) {
-                console.error('Error loading models:', error);
+        return () => { mountedRef.current = false; };
+    }, []);
+
+    const onVerified = useCallback(() => {
+        setFaceVerified();
+        setTimeout(() => {
+            if (mountedRef.current) navigate('/');
+        }, 500);
+    }, [navigate]);
+
+    const loadModels = useCallback(async () => {
+        const MODEL_URL = '/models';
+        const nets = [
+            faceapi.nets.ssdMobilenetv1,
+            faceapi.nets.faceLandmark68Net,
+            faceapi.nets.faceRecognitionNet,
+        ];
+
+        const loaded = await loadModelsFromCache(nets, MODEL_URL);
+        if (loaded) {
+            startVideo();
+            return;
+        }
+
+        const loadTimeout = setTimeout(() => {
+            if (mountedRef.current) setShowPinFallback(true);
+        }, 5000);
+
+        try {
+            await Promise.all(nets.map(net => net.loadFromUri(MODEL_URL)));
+            clearTimeout(loadTimeout);
+            cacheModelFiles().catch(() => {});
+            if (mountedRef.current) startVideo();
+        } catch (error) {
+            clearTimeout(loadTimeout);
+            console.error('Error loading models:', error);
+            if (mountedRef.current) {
                 setMessage('فشل تحميل نماذج التعرف على الوجوه');
                 setStatus('failed');
+                setShowPinFallback(true);
             }
-        };
+        }
+    }, []);
 
-        const startVideo = () => {
-            setMessage('جاري تشغيل الكاميرا...');
-            navigator.mediaDevices
-                .getUserMedia({ video: {} })
-                .then((stream) => {
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                    }
-                })
-                .catch((err) => {
-                    console.error('Error opening video:', err);
-                    setMessage('تعذر الوصول للكاميرا');
-                    setStatus('failed');
-                });
-        };
+    const startVideo = useCallback(() => {
+        setMessage('جاري تشغيل الكاميرا...');
+        navigator.mediaDevices
+            .getUserMedia({ video: {} })
+            .then((stream) => {
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
+            })
+            .catch((err) => {
+                console.error('Error opening video:', err);
+                setMessage('تعذر الوصول للكاميرا');
+                setStatus('failed');
+                setShowPinFallback(true);
+            });
+    }, []);
 
+    useEffect(() => {
         loadModels();
-
         return () => {
-            // Cleanup: stop video
             if (videoRef.current && videoRef.current.srcObject) {
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach((track) => track.stop());
             }
         };
-    }, []);
+    }, [loadModels]);
+
+    const handlePinSubmit = () => {
+        if (pinInput === FALLBACK_PIN) {
+            setPinError('');
+            setStatus('success');
+            setMessage('تم التحقق بنجاح!');
+            onVerified();
+        } else {
+            setPinError('رمز PIN غير صحيح');
+        }
+    };
 
     const handleVideoPlay = async () => {
         if (!videoRef.current || !canvasRef.current) return;
 
         setMessage('جاري معالجة الصور المرجعية...');
 
-        // Load labeled images (The 3 admins with their names)
         const adminNames: Record<string, string> = {
             'admin1': 'حاتم',
             'admin2': 'حسن',
@@ -88,8 +133,9 @@ const FaceVerification: React.FC = () => {
             }
 
             if (labeledDescriptors.length === 0) {
-                setMessage('لم يتم العثور على صور مرجعية صالحة. يرجى التواصل مع الدعم.');
+                setMessage('لم يتم العثور على صور مرجعية صالحة. يرجاء استخدام رمز PIN.');
                 setStatus('failed');
+                setShowPinFallback(true);
                 return;
             }
 
@@ -99,7 +145,7 @@ const FaceVerification: React.FC = () => {
             setMessage('يرجى تثبيت وجهك أمام الكاميرا...');
 
             const interval = setInterval(async () => {
-                if (!videoRef.current || !canvasRef.current) return;
+                if (!videoRef.current || !canvasRef.current || !mountedRef.current) return;
 
                 if (status === 'success' || status === 'failed') {
                     clearInterval(interval);
@@ -110,9 +156,8 @@ const FaceVerification: React.FC = () => {
                     clearInterval(interval);
                     setStatus('failed');
                     setMessage('فشل التحقق. لم يتم التعرف على الوجه.');
-                    setTimeout(() => {
-                        logout();
-                    }, 2000);
+                    setShowPinFallback(true);
+                    setTimeout(() => { if (mountedRef.current) logout(); }, 5000);
                     return;
                 }
 
@@ -133,7 +178,6 @@ const FaceVerification: React.FC = () => {
 
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-                // Draw checking visuals
                 const context = canvasRef.current.getContext('2d');
                 if (context) {
                     context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -141,23 +185,14 @@ const FaceVerification: React.FC = () => {
 
                 if (resizedDetections.length > 0) {
                     const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
-
-                    // Check if any match is valid (not 'unknown') AND has good confidence
-                    const match = results.find(r => {
-                        // r.distance is the euclidean distance (lower is better)
-                        // For face-api.js, distance < 0.45 is considered a good match
-                        return r.label !== 'unknown' && r.distance < 0.45;
-                    });
+                    const match = results.find(r => r.label !== 'unknown' && r.distance < 0.45);
 
                     if (match) {
                         clearInterval(interval);
                         setStatus('success');
                         const adminName = adminNames[match.label] || match.label;
                         setMessage(`تم التحقق بنجاح! مرحباً بك يا ${adminName}`);
-                        localStorage.setItem('faceVerified', 'true');
-                        setTimeout(() => {
-                            navigate('/');
-                        }, 1500);
+                        onVerified();
                     }
                 }
             }, 300);
@@ -166,6 +201,7 @@ const FaceVerification: React.FC = () => {
             console.error(error);
             setMessage('حدث خطأ أثناء المعالجة');
             setStatus('failed');
+            setShowPinFallback(true);
         }
     };
 
@@ -211,18 +247,47 @@ const FaceVerification: React.FC = () => {
                         )}
                     </div>
 
-                    <div className="text-center space-y-2">
+                    <div className="text-center space-y-2 w-full">
                         <p className={`text-lg font-medium ${status === 'success' ? 'text-green-400' :
                             status === 'failed' ? 'text-red-400' : 'text-slate-200'
                             }`}>
                             {message}
                         </p>
-                        <p className="text-xs text-slate-500">
-                            يرجى التأكد من وجود إضاءة كافية والنظر مباشرة للكاميرا
-                        </p>
+                        {status !== 'success' && !showPinFallback && (
+                            <p className="text-xs text-slate-500">
+                                يرجى التأكد من وجود إضاءة كافية والنظر مباشرة للكاميرا
+                            </p>
+                        )}
                     </div>
 
-                    {status === 'failed' && (
+                    {showPinFallback && status !== 'success' && (
+                        <div className="w-full space-y-3 border-t border-slate-700 pt-4 mt-2">
+                            <p className="text-sm text-slate-400 text-center flex items-center justify-center gap-2">
+                                <KeyRound className="w-4 h-4" />
+                                أو استخدم رمز PIN للتحقق السريع
+                            </p>
+                            <div className="flex gap-2">
+                                <input
+                                    type="password"
+                                    value={pinInput}
+                                    onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handlePinSubmit(); }}
+                                    placeholder="أدخل رمز PIN"
+                                    className="flex-1 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 text-white text-center text-lg tracking-widest focus:outline-none focus:border-amber-500"
+                                    maxLength={6}
+                                    autoFocus
+                                />
+                                <Button variant="primary" onClick={handlePinSubmit} className="px-6">
+                                    تحقق
+                                </Button>
+                            </div>
+                            {pinError && (
+                                <p className="text-red-400 text-sm text-center">{pinError}</p>
+                            )}
+                        </div>
+                    )}
+
+                    {status === 'failed' && !showPinFallback && (
                         <Button
                             variant="danger"
                             className="w-full mt-4"

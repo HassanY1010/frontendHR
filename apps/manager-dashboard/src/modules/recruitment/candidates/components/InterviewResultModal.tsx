@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
     X,
@@ -30,6 +30,12 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
     onStatusUpdate
 }) => {
     if (!isOpen) return null;
+
+    const resolveUrl = (url: string): string => {
+        if (!url || !url.startsWith('/')) return url || '';
+        const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+        return `${baseUrl}${url}`;
+    };
 
     const aiAnalysis = typeof interview.aiAnalysis === 'string'
         ? JSON.parse(interview.aiAnalysis)
@@ -121,7 +127,7 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                             <div className="aspect-video bg-gray-900 rounded-3xl overflow-hidden relative group border-4 border-gray-100 dark:border-gray-800 shadow-xl">
                                 {interview.videoUrl ? (
                                     <video
-                                        src={interview.videoUrl}
+                                        src={resolveUrl(interview.videoUrl)}
                                         controls
                                         className="w-full h-full object-cover"
                                     />

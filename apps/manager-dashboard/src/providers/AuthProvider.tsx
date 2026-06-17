@@ -2,16 +2,17 @@
 
 
 // apps/manager-dashboard/src/providers/AuthProvider.tsx
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { User } from '@hr/types'
-import { authService } from '@hr/services'
+import { authService, settingsService } from '@hr/services'
 
 interface AuthContextType {
     user: User | null
     isLoading: boolean
     login: (email: string, password: string) => Promise<void>
     logout: () => Promise<void>
+    refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -29,6 +30,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState(true)
     const navigate = useNavigate()
 
+    const refreshUser = useCallback(async () => {
+        try {
+            const freshData = await settingsService.getCurrentUser()
+            if (freshData) {
+                const merged = { ...freshData, role: user?.role || freshData.role }
+                setUser(merged)
+                authService.updateCurrentUser(merged)
+            }
+        } catch {
+            // silent fail - use cached user
+        }
+    }, [user])
+
     useEffect(() => {
         const initAuth = async () => {
             try {
@@ -38,6 +52,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (currentUser && isAuth) {
                     if (currentUser.role === 'MANAGER') {
                         setUser(currentUser)
+                        // Fetch latest profile data (including avatar) from API
+                        try {
+                            const freshData = await settingsService.getCurrentUser()
+                            if (freshData) {
+                                const merged = { ...freshData, role: 'MANAGER' }
+                                setUser(merged)
+                                authService.updateCurrentUser(merged)
+                            }
+                        } catch {
+                            // use cached user
+                        }
                         // If we are at login, go to dashboard
                         if (window.location.pathname === '/login') {
                             navigate('/', { replace: true })
@@ -93,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     )

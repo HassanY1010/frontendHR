@@ -92,6 +92,13 @@ const InterviewsPage: React.FC = () => {
     const [showReviewModal, setShowReviewModal] = React.useState(false);
     const [selectedInterview, setSelectedInterview] = React.useState<any>(null);
     const [selectedVideoUrl, setSelectedVideoUrl] = React.useState<string | null>(null);
+
+    // دالة مساعدة لتحويل رابط الفيديو النسبي إلى رابط مطلق
+    const resolveUrl = useCallback((url: string): string => {
+        if (!url || !url.startsWith('/')) return url || '';
+        const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+        return `${baseUrl}${url}`;
+    }, []);
     const [viewMode, setViewMode] = React.useState<'list' | 'calendar'>('list');
     const [searchQuery, setSearchQuery] = React.useState('');
     const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -602,7 +609,7 @@ const InterviewsPage: React.FC = () => {
                     <div className="space-y-6">
                         <div className="aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl relative group">
                             <video controls className="w-full h-full shadow-inner" autoPlay>
-                                <source src={selectedVideoUrl} type="video/webm" />
+                                <source src={resolveUrl(selectedVideoUrl)} type="video/webm" />
                                 متصفحك الحالي لا يدعم تقنيات تشغيل هذا الفيديو.
                             </video>
                         </div>
