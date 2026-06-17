@@ -6,8 +6,18 @@ import { Camera, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '../../../providers/AuthProvider';
 import { setFaceVerified } from '../../../utils/face-model-cache';
 
-// ✅ Module-level flag: prevents re-loading models on re-mount (React Strict Mode safe)
-let modelsLoaded = false;
+// ✅ Cache the load models promise globally to avoid parallel load calls
+let loadModelsPromise: Promise<void> | null = null;
+
+const loadModelsOnce = () => {
+    if (loadModelsPromise) return loadModelsPromise;
+    loadModelsPromise = (async () => {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+    })();
+    return loadModelsPromise;
+};
 
 const FaceVerification: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -17,59 +27,41 @@ const FaceVerification: React.FC = () => {
     const [loadingStep, setLoadingStep] = useState<string>('');
     const navigate = useNavigate();
     const { logout } = useAuth();
-    const mountedRef = useRef(true);
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const startedRef = useRef(false); // ✅ prevents double-execution in React Strict Mode
 
     // ✅ Overall timeout — runs once only
     useEffect(() => {
+        let active = true;
         const timer = setTimeout(() => {
-            if (mountedRef.current && (status === 'loading' || status === 'scanning')) {
+            if (active && (status === 'loading' || status === 'scanning')) {
                 setStatus('timeout');
                 setMessage('انتهت مهلة التحقق. يرجى إعادة المحاولة.');
-                if (intervalRef.current) clearInterval(intervalRef.current);
             }
         }, 90000);
-        return () => clearTimeout(timer);
-    }, []); // ✅ empty deps — runs once
+        return () => {
+            active = false;
+            clearTimeout(timer);
+        };
+    }, [status]);
 
-    // ✅ Main verification flow — empty deps [] to run exactly once, no infinite loop
+    // ✅ Main verification flow — empty deps [] to run exactly once per mount
     useEffect(() => {
-        // Guard against React Strict Mode double-invocation
-        if (startedRef.current) return;
-        startedRef.current = true;
+        let active = true;
+        let stream: MediaStream | null = null;
+        let intervalId: ReturnType<typeof setInterval> | null = null;
 
         const run = async () => {
-            // ── STEP 1: Load AI models (sequential, not parallel with camera) ──
-            // CRITICAL: TensorFlow.js WebGL backend must fully initialize BEFORE
-            // opening the camera to avoid WebGL context conflict.
-            if (!modelsLoaded) {
-                try {
-                    setLoadingStep('جاري تحميل نماذج الذكاء الاصطناعي...');
-                    // Load sequentially to avoid TensorFlow initialization race condition
-                    await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
-                    await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-                    await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-                    modelsLoaded = true;
-                } catch (err) {
-                    console.error('[FaceVerify] Model loading error:', err);
-                    if (mountedRef.current) {
-                        setMessage('فشل تحميل نماذج الذكاء الاصطناعي. تحقق من اتصالك بالإنترنت.');
-                        setStatus('failed');
-                    }
-                    return;
-                }
-            }
-
-            if (!mountedRef.current) return;
-
-            // ── STEP 2: Start camera AFTER TensorFlow is fully ready ──
+            // ── STEP 1: Load AI models (sequential inside the promise cache) ──
             try {
+                setLoadingStep('جاري تحميل نماذج الذكاء الاصطناعي...');
+                await loadModelsOnce();
+                if (!active) return;
+
+                // ── STEP 2: Start camera AFTER TensorFlow is fully ready ──
                 setLoadingStep('جاري تشغيل الكاميرا...');
-                const stream = await navigator.mediaDevices.getUserMedia({
+                stream = await navigator.mediaDevices.getUserMedia({
                     video: { width: 640, height: 480, facingMode: 'user' },
                 });
-                if (!mountedRef.current) {
+                if (!active) {
                     stream.getTracks().forEach(t => t.stop());
                     return;
                 }
@@ -83,130 +75,137 @@ const FaceVerification: React.FC = () => {
                     });
                 }
             } catch (err: any) {
-                console.error('[FaceVerify] Camera error:', err);
-                if (mountedRef.current) {
-                    setMessage(`لا يمكن الوصول إلى الكاميرا: ${err.message || 'تأكد من منح إذن الكاميرا'}`);
+                console.error('[FaceVerify] Initialization error:', err);
+                if (active) {
+                    setMessage(`لا يمكن الوصول إلى الكاميرا أو النماذج: ${err.message || 'تأكد من منح إذن الكاميرا'}`);
                     setStatus('failed');
                 }
                 return;
             }
 
-            if (!mountedRef.current) return;
+            if (!active) return;
 
             // ── STEP 3: Process reference admin images ──
-            setLoadingStep('جاري معالجة الصور المرجعية...');
-            const labels = ['admin1', 'admin2', 'admin3'];
-            const adminNames: Record<string, string> = {
-                admin1: 'حاتم',
-                admin2: 'حسن',
-                admin3: 'مشاري',
-            };
-            const labeledDescriptors: faceapi.LabeledFaceDescriptors[] = [];
+            try {
+                setLoadingStep('جاري معالجة الصور المرجعية...');
+                const labels = ['admin1', 'admin2', 'admin3'];
+                const adminNames: Record<string, string> = {
+                    admin1: 'حاتم',
+                    admin2: 'حسن',
+                    admin3: 'مشاري',
+                };
+                const labeledDescriptors: faceapi.LabeledFaceDescriptors[] = [];
 
-            for (const label of labels) {
-                try {
-                    const img = await faceapi.fetchImage(`/admin-faces/${label}.jpg`);
-                    const det = await faceapi
-                        .detectSingleFace(img)
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
-                    if (det) {
-                        labeledDescriptors.push(
-                            new faceapi.LabeledFaceDescriptors(label, [det.descriptor])
-                        );
-                    } else {
-                        console.warn(`[FaceVerify] No face detected in reference image: ${label}`);
+                for (const label of labels) {
+                    try {
+                        const img = await faceapi.fetchImage(`/admin-faces/${label}.jpg`);
+                        const det = await faceapi
+                            .detectSingleFace(img)
+                            .withFaceLandmarks()
+                            .withFaceDescriptor();
+                        if (det && active) {
+                            labeledDescriptors.push(
+                                new faceapi.LabeledFaceDescriptors(label, [det.descriptor])
+                            );
+                        } else {
+                            console.warn(`[FaceVerify] No face detected in reference image: ${label}`);
+                        }
+                    } catch (err) {
+                        console.warn(`[FaceVerify] Failed to process reference image ${label}:`, err);
                     }
-                } catch (err) {
-                    console.warn(`[FaceVerify] Failed to process reference image ${label}:`, err);
                 }
-            }
 
-            if (labeledDescriptors.length === 0) {
-                if (mountedRef.current) {
+                if (!active) return;
+
+                if (labeledDescriptors.length === 0) {
                     setMessage('لم يتم العثور على صور مرجعية صالحة. يرجى التواصل مع الدعم الفني.');
                     setStatus('failed');
-                }
-                return;
-            }
-
-            if (!mountedRef.current) return;
-
-            // ── STEP 4: Start face scanning loop ──
-            const matcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
-            setStatus('scanning');
-            setMessage('يرجى تثبيت وجهك أمام الكاميرا...');
-            setLoadingStep('');
-
-            let attempts = 0;
-            const maxAttempts = 40;
-
-            intervalRef.current = setInterval(async () => {
-                if (!mountedRef.current || !videoRef.current || !canvasRef.current) return;
-
-                if (attempts > maxAttempts) {
-                    clearInterval(intervalRef.current!);
-                    if (mountedRef.current) {
-                        setStatus('failed');
-                        setMessage('فشل التحقق: لم يتم التعرف على الوجه. حاول مرة أخرى مع إضاءة أفضل.');
-                    }
                     return;
                 }
 
-                attempts++;
+                // ── STEP 4: Start face scanning loop ──
+                const matcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+                setStatus('scanning');
+                setMessage('يرجى تثبيت وجهك أمام الكاميرا...');
+                setLoadingStep('');
 
-                try {
-                    const displaySize = {
-                        width: videoRef.current.videoWidth || 640,
-                        height: videoRef.current.videoHeight || 480,
-                    };
-                    faceapi.matchDimensions(canvasRef.current, displaySize);
+                let attempts = 0;
+                const maxAttempts = 40;
 
-                    const detections = await faceapi
-                        .detectAllFaces(
-                            videoRef.current,
-                            new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
-                        )
-                        .withFaceLandmarks()
-                        .withFaceDescriptors();
+                intervalId = setInterval(async () => {
+                    if (!active || !videoRef.current || !canvasRef.current) return;
 
-                    const resized = faceapi.resizeResults(detections, displaySize);
-                    const ctx = canvasRef.current.getContext('2d');
-                    if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-                    if (resized.length > 0) {
-                        const results = resized.map(d => matcher.findBestMatch(d.descriptor));
-                        const match = results.find(r => r.label !== 'unknown' && r.distance < 0.45);
-
-                        if (match && mountedRef.current) {
-                            clearInterval(intervalRef.current!);
-                            setStatus('success');
-                            setMessage(`تم التحقق بنجاح! مرحباً بك يا ${adminNames[match.label] || match.label} 👋`);
-                            setFaceVerified();
-                            setTimeout(() => {
-                                if (mountedRef.current) navigate('/');
-                            }, 1000);
+                    if (attempts > maxAttempts) {
+                        if (intervalId) clearInterval(intervalId);
+                        if (active) {
+                            setStatus('failed');
+                            setMessage('فشل التحقق: لم يتم التعرف على الوجه. حاول مرة أخرى مع إضاءة أفضل.');
                         }
+                        return;
                     }
-                } catch (err) {
-                    // Silently continue on transient errors during scanning
-                    console.warn('[FaceVerify] Scan frame error:', err);
+
+                    attempts++;
+
+                    try {
+                        const displaySize = {
+                            width: videoRef.current.videoWidth || 640,
+                            height: videoRef.current.videoHeight || 480,
+                        };
+                        faceapi.matchDimensions(canvasRef.current, displaySize);
+
+                        const detections = await faceapi
+                            .detectAllFaces(
+                                videoRef.current,
+                                new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
+                            )
+                            .withFaceLandmarks()
+                            .withFaceDescriptors();
+
+                        if (!active) return;
+
+                        const resized = faceapi.resizeResults(detections, displaySize);
+                        const ctx = canvasRef.current.getContext('2d');
+                        if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+                        if (resized.length > 0) {
+                            const results = resized.map(d => matcher.findBestMatch(d.descriptor));
+                            const match = results.find(r => r.label !== 'unknown' && r.distance < 0.45);
+
+                            if (match && active) {
+                                if (intervalId) clearInterval(intervalId);
+                                setStatus('success');
+                                setMessage(`تم التحقق بنجاح! مرحباً بك يا ${adminNames[match.label] || match.label} 👋`);
+                                setFaceVerified();
+                                setTimeout(() => {
+                                    if (active) navigate('/');
+                                }, 1000);
+                            }
+                        }
+                    } catch (err) {
+                        // Silently continue on transient errors during scanning
+                        console.warn('[FaceVerify] Scan frame error:', err);
+                    }
+                }, 300);
+            } catch (err: any) {
+                console.error('[FaceVerify] Processing error:', err);
+                if (active) {
+                    setMessage('حدث خطأ أثناء معالجة الصور. يرجى المحاولة مرة أخرى.');
+                    setStatus('failed');
                 }
-            }, 300);
+            }
         };
 
         run();
 
         // Cleanup on unmount
         return () => {
-            mountedRef.current = false;
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            if (videoRef.current?.srcObject) {
-                const stream = videoRef.current.srcObject as MediaStream;
+            active = false;
+            if (intervalId) clearInterval(intervalId);
+            if (stream) {
                 stream.getTracks().forEach(track => track.stop());
             }
         };
-    }, []); // ✅ CRITICAL: empty deps — NO infinite loop, runs exactly once
+    }, [navigate]);
 
     const statusColors = {
         loading: 'text-slate-200',
