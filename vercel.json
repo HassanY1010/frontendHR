@@ -1,7 +1,15 @@
 {
   "headers": [
     {
-      "source": "/models/(.*)",
+      "source": "/models/:path*-weights_manifest.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/models/:path*-shard:num",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
         { "key": "Content-Type", "value": "application/octet-stream" },
@@ -9,17 +17,14 @@
       ]
     },
     {
-      "source": "/admin-faces/(.*)",
+      "source": "/admin-faces/:path*",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400" },
         { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     }
   ],
-  "routes": [
-    { "src": "/models/(.*)", "dest": "/models/$1" },
-    { "src": "/admin-faces/(.*)", "dest": "/admin-faces/$1" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/((?!models|admin-faces|assets).*)", "destination": "/index.html" }
   ]
 }

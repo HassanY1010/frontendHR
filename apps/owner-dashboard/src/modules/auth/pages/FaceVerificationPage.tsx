@@ -12,10 +12,24 @@ let loadModelsPromise: Promise<void> | null = null;
 const loadModelsOnce = () => {
     if (loadModelsPromise) return loadModelsPromise;
     loadModelsPromise = (async () => {
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        const loadPromise = Promise.all([
+            faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        ]);
+
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('انتهت مهلة تحميل نماذج الذكاء الاصطناعي (15 ثانية)')), 15000)
+        );
+
+        await Promise.race([loadPromise, timeoutPromise]);
     })();
+
+    // Reset cache on failure to allow retry
+    loadModelsPromise.catch(() => {
+        loadModelsPromise = null;
+    });
+
     return loadModelsPromise;
 };
 
@@ -50,7 +64,7 @@ const FaceVerification: React.FC = () => {
         let intervalId: ReturnType<typeof setInterval> | null = null;
 
         const run = async () => {
-            // ── STEP 1: Load AI models (sequential inside the promise cache) ──
+            // ── STEP 1: Load AI models ──
             try {
                 setLoadingStep('جاري تحميل نماذج الذكاء الاصطناعي...');
                 await loadModelsOnce();
@@ -67,12 +81,18 @@ const FaceVerification: React.FC = () => {
                 }
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
-                    // Wait for video metadata to be ready before scanning
-                    await new Promise<void>((resolve) => {
-                        if (!videoRef.current) return resolve();
-                        if (videoRef.current.readyState >= 1) return resolve();
-                        videoRef.current.onloadedmetadata = () => resolve();
-                    });
+                    
+                    // Timeout metadata loading to avoid infinite pending
+                    await Promise.race([
+                        new Promise<void>((resolve) => {
+                            if (!videoRef.current) return resolve();
+                            if (videoRef.current.readyState >= 1) return resolve();
+                            videoRef.current.onloadedmetadata = () => resolve();
+                        }),
+                        new Promise<never>((_, reject) =>
+                            setTimeout(() => reject(new Error('انتهت مهلة تشغيل الكاميرا (10 ثوان)')), 10000)
+                        )
+                    ]);
                 }
             } catch (err: any) {
                 console.error('[FaceVerify] Initialization error:', err);
@@ -87,31 +107,68 @@ const FaceVerification: React.FC = () => {
 
             // ── STEP 3: Process reference admin images ──
             try {
-                setLoadingStep('جاري معالجة الصور المرجعية...');
                 const labels = ['admin1', 'admin2', 'admin3'];
                 const adminNames: Record<string, string> = {
                     admin1: 'حاتم',
                     admin2: 'حسن',
                     admin3: 'مشاري',
                 };
-                const labeledDescriptors: faceapi.LabeledFaceDescriptors[] = [];
+                let labeledDescriptors: faceapi.LabeledFaceDescriptors[] = [];
 
-                for (const label of labels) {
+                // Try loading from localStorage cache first
+                const cachedDescriptors = localStorage.getItem('adminFaceDescriptors');
+                if (cachedDescriptors) {
+                    setLoadingStep('جاري تحميل الصور المرجعية من الذاكرة المؤقتة...');
                     try {
-                        const img = await faceapi.fetchImage(`/admin-faces/${label}.jpg`);
-                        const det = await faceapi
-                            .detectSingleFace(img)
-                            .withFaceLandmarks()
-                            .withFaceDescriptor();
-                        if (det && active) {
-                            labeledDescriptors.push(
-                                new faceapi.LabeledFaceDescriptors(label, [det.descriptor])
-                            );
-                        } else {
-                            console.warn(`[FaceVerify] No face detected in reference image: ${label}`);
+                        const parsed = JSON.parse(cachedDescriptors);
+                        labeledDescriptors = parsed.map((item: any) => 
+                            new faceapi.LabeledFaceDescriptors(
+                                item.label,
+                                item.descriptors.map((d: any) => new Float32Array(Object.values(d)))
+                            )
+                        );
+                    } catch (cacheErr) {
+                        console.warn('[FaceVerify] Failed to parse cached descriptors, re-detecting:', cacheErr);
+                        localStorage.removeItem('adminFaceDescriptors');
+                    }
+                }
+
+                // If cache is empty or failed, run face detection on images
+                if (labeledDescriptors.length === 0) {
+                    for (let i = 0; i < labels.length; i++) {
+                        const label = labels[i];
+                        setLoadingStep(`جاري معالجة الصورة المرجعية ${i + 1} من ${labels.length}...`);
+                        
+                        // Yield to let the browser paint the loading message update
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        if (!active) return;
+
+                        try {
+                            const img = await faceapi.fetchImage(`/admin-faces/${label}.jpg`);
+                            const det = await faceapi
+                                .detectSingleFace(img)
+                                .withFaceLandmarks()
+                                .withFaceDescriptor();
+                            if (det && active) {
+                                labeledDescriptors.push(
+                                    new faceapi.LabeledFaceDescriptors(label, [det.descriptor])
+                                );
+                            } else {
+                                console.warn(`[FaceVerify] No face detected in reference image: ${label}`);
+                            }
+                        } catch (err) {
+                            console.warn(`[FaceVerify] Failed to process reference image ${label}:`, err);
                         }
-                    } catch (err) {
-                        console.warn(`[FaceVerify] Failed to process reference image ${label}:`, err);
+                    }
+
+                    // Save computed descriptors to cache if valid
+                    if (labeledDescriptors.length > 0 && active) {
+                        localStorage.setItem('adminFaceDescriptors', JSON.stringify(
+                            labeledDescriptors.map(ld => ({
+                                label: ld.label,
+                                descriptors: ld.descriptors.map(d => Array.from(d))
+                            }))
+                        ));
                     }
                 }
 
