@@ -19,7 +19,7 @@ const loadModelsOnce = () => {
         ]);
 
         const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('انتهت مهلة تحميل نماذج الذكاء الاصطناعي (15 ثانية)')), 15000)
+            setTimeout(() => reject(new Error('انتهت مهلة تحميل نماذج الذكاء الاصطناعي (90 ثانية)')), 90000)
         );
 
         await Promise.race([loadPromise, timeoutPromise]);
