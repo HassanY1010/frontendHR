@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface HeaderProps {
     onAuthClick?: (mode: 'login' | 'signup') => void;
@@ -35,27 +36,27 @@ const Header = ({ onAuthClick }: HeaderProps) => {
         >
             <div className="container mx-auto px-6 flex items-center justify-between">
                 {/* Logo */}
-                <a href="/" className="flex items-center gap-2 cursor-pointer group">
+                <Link to="/" className="flex items-center gap-2 cursor-pointer group">
                     <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300 shadow-lg shadow-indigo-500/20">
                         <span className="text-white font-black text-xl">H</span>
                     </div>
                     <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
                         HR <span className="text-indigo-600">Minds</span>
                     </span>
-                </a>
+                </Link>
 
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-8">
                     {navLinks.map((link) => (
                         link.isRoute ? (
-                            <a
+                            <Link
                                 key={link.name}
-                                href={link.href}
+                                to={link.href}
                                 className="text-slate-600 hover:text-indigo-600 font-semibold transition-colors duration-300 relative group"
                             >
                                 {link.name}
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
-                            </a>
+                            </Link>
                         ) : (
                             <a
                                 key={link.name}
@@ -119,14 +120,25 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                     >
                         <div className="flex flex-col p-6 gap-4">
                             {navLinks.map((link) => (
-                                <a
-                                    key={link.name}
-                                    href={link.href}
-                                    className="text-lg font-bold text-slate-700"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    {link.name}
-                                </a>
+                                link.isRoute ? (
+                                    <Link
+                                        key={link.name}
+                                        to={link.href}
+                                        className="text-lg font-bold text-slate-700"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        {link.name}
+                                    </Link>
+                                ) : (
+                                    <a
+                                        key={link.name}
+                                        href={link.href}
+                                        className="text-lg font-bold text-slate-700"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        {link.name}
+                                    </a>
+                                )
                             ))}
                             <hr className="border-slate-100" />
                             <div className="flex flex-col gap-4">
