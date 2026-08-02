@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, AlertCircle, FileText, DollarSign, Briefcase, Calendar, Award } from 'lucide-react';
+import { jobRequestService } from '@hr/services';
 
 interface CreateJobRequestModalProps {
   isOpen: boolean;
@@ -57,32 +58,17 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
 
     setLoading(true);
     try {
-      // Get token from storage or context
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/job-requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          // Fallback departmentId if empty
-          departmentId: formData.departmentId || 'dep-101',
-          skills,
-          submitDirectly
-        })
+      await jobRequestService.createJobRequest({
+        ...formData,
+        departmentId: formData.departmentId || 'dep-tech',
+        skills,
+        submitDirectly
       });
-
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || 'فشل في حفظ طلب التوظيف');
-      }
 
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.response?.data?.error || err.message || 'فشل في حفظ طلب التوظيف');
     } finally {
       setLoading(false);
     }

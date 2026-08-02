@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Send
 } from 'lucide-react';
+import { jobRequestService } from '@hr/services';
 
 interface JobRequestDetailsModalProps {
   requestId: string | null;
@@ -51,14 +52,8 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
   const fetchDetails = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/job-requests/${requestId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await res.json();
-      if (res.ok) {
-        setData(result.data);
-      }
+      const res = await jobRequestService.getJobRequestById(requestId!);
+      setData(res.data);
     } catch (err) {
       console.error('Failed to fetch request details:', err);
     } finally {
@@ -68,28 +63,23 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleAction = async (endpoint: string, payload: any = {}) => {
+  const handleAction = async (actionType: string, payload: any = {}) => {
     setActionLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/job-requests/${requestId}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        setComment('');
-        fetchDetails();
-        onRefresh();
-      } else {
-        const errData = await res.json();
-        alert(errData.error || 'حدث خطأ أثناء تنفيذ الإجراء');
+      if (actionType === 'submit') {
+        await jobRequestService.submitJobRequest(requestId!);
+      } else if (actionType === 'approve') {
+        await jobRequestService.approveJobRequest(requestId!, payload.comment);
+      } else if (actionType === 'reject') {
+        await jobRequestService.rejectJobRequest(requestId!, payload.comment);
+      } else if (actionType === 'convert-to-job') {
+        await jobRequestService.convertToRecruitmentJob(requestId!);
       }
+      setComment('');
+      fetchDetails();
+      onRefresh();
     } catch (err: any) {
-      alert(err.message);
+      alert(err?.response?.data?.error || err.message || 'حدث خطأ أثناء تنفيذ الإجراء');
     } finally {
       setActionLoading(false);
     }

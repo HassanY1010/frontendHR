@@ -9,6 +9,7 @@ import {
   Layers,
   ChevronRight
 } from 'lucide-react';
+import { jobRequestService } from '@hr/services';
 import { CreateJobRequestModal } from './CreateJobRequestModal';
 import { JobRequestDetailsModal } from './JobRequestDetailsModal';
 
@@ -28,14 +29,8 @@ export const JobRequestsPage: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/job-requests/stats', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
+      const data = await jobRequestService.getStats();
+      setStats(data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
@@ -44,18 +39,12 @@ export const JobRequestsPage: React.FC = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      let url = `/api/job-requests?limit=50`;
-      if (selectedStatus) url += `&status=${selectedStatus}`;
-      if (search) url += `&search=${encodeURIComponent(search)}`;
-
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
+      const result = await jobRequestService.getJobRequests({
+        status: selectedStatus || undefined,
+        search: search || undefined,
+        limit: 50
       });
-      if (res.ok) {
-        const result = await res.json();
-        setRequests(result.data || []);
-      }
+      setRequests(result.data || []);
     } catch (err) {
       console.error('Failed to fetch requests:', err);
     } finally {
