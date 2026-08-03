@@ -1203,16 +1203,7 @@ const AIJobDescriptionPage: React.FC = () => {
               أدخل بيانات الوظيفة وسيقوم AI بإنشاء وصف احترافي كامل يشمل المسؤوليات، المتطلبات، المهارات وأسئلة المقابلة
             </p>
           </div>
-          <div className="mr-auto hidden md:flex items-center gap-3">
-            <div className="text-center bg-white/20 rounded-xl px-4 py-2">
-              <p className="text-lg font-bold">GPT-4o</p>
-              <p className="text-xs opacity-80">النموذج المستخدم</p>
-            </div>
-            <div className="text-center bg-white/20 rounded-xl px-4 py-2">
-              <p className="text-lg font-bold">{'< 10s'}</p>
-              <p className="text-xs opacity-80">متوسط التوليد</p>
-            </div>
-          </div>
+
         </div>
       </div>
 
