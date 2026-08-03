@@ -40,7 +40,7 @@ export const JobRequestsPage: React.FC = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const result = await jobRequestService.getJobRequests({
+      const result: any = await jobRequestService.getJobRequests({
         status: selectedStatus || undefined,
         search: search || undefined,
         limit: 50
