@@ -7,7 +7,8 @@ import {
   Search,
   Briefcase,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import { jobRequestService } from '@hr/services';
 import { CreateJobRequestModal } from './CreateJobRequestModal';
@@ -251,15 +252,36 @@ export const JobRequestsPage: React.FC = () => {
                     <td className="px-6 py-4">{getStatusBadge(r.status)}</td>
                     <td className="px-6 py-4 text-gray-400">{new Date(r.createdAt).toLocaleDateString('ar-SA')}</td>
                     <td className="px-6 py-4 text-left">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedRequestId(r.id);
-                        }}
-                        className="p-1.5 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/50 rounded-lg transition"
-                      >
-                        <ChevronRight className="w-5 h-5 rotate-180" />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`هل أنت تأكد من رغبتك في حذف طلب التوظيف (${r.jobTitle})؟`)) {
+                              try {
+                                await jobRequestService.deleteJobRequest(r.id);
+                                fetchStats();
+                                fetchRequests();
+                              } catch (err: any) {
+                                alert(err?.response?.data?.error || err.message || 'حدث خطأ أثناء الحذف');
+                              }
+                            }
+                          }}
+                          className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition"
+                          title="حذف طلب التوظيف"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRequestId(r.id);
+                          }}
+                          className="p-1.5 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/50 rounded-lg transition"
+                          title="عرض التفاصيل"
+                        >
+                          <ChevronRight className="w-5 h-5 rotate-180" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

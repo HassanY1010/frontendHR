@@ -39,5 +39,9 @@ export const jobRequestService = {
 
   async convertToRecruitmentJob(id: string) {
     return apiClient.post<{ message: string; data: any }>(`/job-requests/${id}/convert-to-job`, {})
+  },
+
+  async deleteJobRequest(id: string) {
+    return apiClient.delete<{ message: string }>(`/job-requests/${id}`)
   }
 }
