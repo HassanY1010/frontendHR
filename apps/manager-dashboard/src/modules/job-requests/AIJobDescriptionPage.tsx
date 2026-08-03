@@ -764,12 +764,134 @@ const AIJobDescriptionPage: React.FC = () => {
   const [loadingTemplates, setLoadingTemplates] = useState(true);
 
   useEffect(() => {
+    const defaultTemplates: Template[] = [
+      {
+        id: 'software-engineer',
+        icon: '💻',
+        category: 'تكنولوجيا',
+        title: 'مهندس برمجيات',
+        description: 'Full Stack / Backend / Frontend',
+        preset: {
+          jobTitle: 'مهندس برمجيات',
+          department: 'تكنولوجيا المعلومات',
+          experience: '3-5 سنوات',
+          employmentType: 'FULL_TIME',
+          workMode: 'HYBRID',
+          seniorityLevel: 'MID',
+          skills: ['JavaScript', 'TypeScript', 'React', 'Node.js'],
+          salaryMin: 12000,
+          salaryMax: 20000,
+          location: 'الرياض'
+        }
+      },
+      {
+        id: 'hr-specialist',
+        icon: '🧑‍💼',
+        category: 'موارد بشرية',
+        title: 'أخصائي موارد بشرية',
+        description: 'HR Generalist / Recruitment',
+        preset: {
+          jobTitle: 'أخصائي موارد بشرية',
+          department: 'الموارد البشرية',
+          experience: '2-4 سنوات',
+          employmentType: 'FULL_TIME',
+          workMode: 'ONSITE',
+          seniorityLevel: 'MID',
+          skills: ['استقطاب المواهب', 'إدارة الأداء', 'نظم الموارد البشرية'],
+          salaryMin: 8000,
+          salaryMax: 14000,
+          location: 'الرياض'
+        }
+      },
+      {
+        id: 'data-analyst',
+        icon: '📊',
+        category: 'تحليل البيانات',
+        title: 'محلل بيانات',
+        description: 'Data Analyst / BI',
+        preset: {
+          jobTitle: 'محلل بيانات',
+          department: 'تكنولوجيا المعلومات',
+          experience: '2-4 سنوات',
+          employmentType: 'FULL_TIME',
+          workMode: 'HYBRID',
+          seniorityLevel: 'MID',
+          skills: ['Python', 'SQL', 'Power BI', 'Excel المتقدم'],
+          salaryMin: 10000,
+          salaryMax: 18000,
+          location: 'الرياض'
+        }
+      },
+      {
+        id: 'product-manager',
+        icon: '🚀',
+        category: 'إدارة المنتج',
+        title: 'مدير المنتج',
+        description: 'Product Manager / Owner',
+        preset: {
+          jobTitle: 'مدير منتج',
+          department: 'إدارة المنتج',
+          experience: '5-8 سنوات',
+          employmentType: 'FULL_TIME',
+          workMode: 'HYBRID',
+          seniorityLevel: 'SENIOR',
+          skills: ['استراتيجية المنتج', 'Agile / Scrum', 'تحليل السوق'],
+          salaryMin: 18000,
+          salaryMax: 30000,
+          location: 'الرياض'
+        }
+      },
+      {
+        id: 'sales-manager',
+        icon: '💰',
+        category: 'مبيعات',
+        title: 'مدير مبيعات',
+        description: 'Sales / Business Development',
+        preset: {
+          jobTitle: 'مدير مبيعات',
+          department: 'التسويق والمبيعات',
+          experience: '5-7 سنوات',
+          employmentType: 'FULL_TIME',
+          workMode: 'ONSITE',
+          seniorityLevel: 'SENIOR',
+          skills: ['إدارة فريق المبيعات', 'CRM', 'تطوير الأعمال'],
+          salaryMin: 15000,
+          salaryMax: 25000,
+          location: 'جدة'
+        }
+      },
+      {
+        id: 'marketing-specialist',
+        icon: '📣',
+        category: 'تسويق',
+        title: 'أخصائي تسويق رقمي',
+        description: 'Digital Marketing / Social',
+        preset: {
+          jobTitle: 'أخصائي تسويق رقمي',
+          department: 'التسويق والمبيعات',
+          experience: '2-4 سنوات',
+          employmentType: 'FULL_TIME',
+          workMode: 'HYBRID',
+          seniorityLevel: 'MID',
+          skills: ['Google Ads', 'Meta Ads', 'SEO/SEM', 'إنشاء المحتوى'],
+          salaryMin: 8000,
+          salaryMax: 14000,
+          location: 'الرياض'
+        }
+      }
+    ];
+
     const fetchTemplates = async () => {
       try {
         const res: any = await apiClient.get('/ai-jd/templates');
-        setTemplates(res?.data?.data || []);
+        const list = res?.data?.data || res?.data;
+        if (Array.isArray(list) && list.length > 0) {
+          setTemplates(list);
+        } else {
+          setTemplates(defaultTemplates);
+        }
       } catch {
-        // fallback to empty
+        setTemplates(defaultTemplates);
       } finally {
         setLoadingTemplates(false);
       }
