@@ -10,7 +10,8 @@ import {
   BarChart,
   Settings,
   Zap,
-  FileCheck
+  FileCheck,
+  Sparkles
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import NotificationCenter from '../components/NotificationCenter'
@@ -24,6 +25,7 @@ const MainLayout: React.FC = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'النظرة العامة' },
     { path: '/job-requests', icon: FileCheck, label: 'طلبات التوظيف' },
+    { path: '/ai-jd', icon: Sparkles, label: 'مولّد الوصف AI' },
     { path: '/recruitment', icon: Briefcase, label: 'التوظيف الذكي' },
     { path: '/intelligence', icon: Zap, label: 'ذكاء 30×3' },
     { path: '/training', icon: BarChart, label: 'إدارة التدريب' },

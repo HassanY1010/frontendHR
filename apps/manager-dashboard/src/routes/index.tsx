@@ -19,6 +19,7 @@ const IntelligencePage = React.lazy(() => import('../modules/dashboard/pages/Int
 const ReportsPage = React.lazy(() => import('../modules/dashboard/pages/ReportsPage'))
 const SettingsPage = React.lazy(() => import('../modules/settings/pages/SettingsPage'))
 const JobRequestsPage = React.lazy(() => import('../modules/job-requests/JobRequestsPage'))
+const AIJobDescriptionPage = React.lazy(() => import('../modules/job-requests/AIJobDescriptionPage'))
 
 const LoadingFallback = () => (
     <div className="min-h-screen flex items-center justify-center">
@@ -61,6 +62,7 @@ const AppRoutes: React.FC = () => {
                         <Route path="interviews" element={<InterviewsPage />} />
                     </Route>
                     <Route path="job-requests" element={<JobRequestsPage />} />
+                    <Route path="ai-jd" element={<AIJobDescriptionPage />} />
                     <Route path="projects">
                         <Route index element={<ProjectsPage />} />
                         <Route path=":id" element={<ProjectDetailsPage />} />
