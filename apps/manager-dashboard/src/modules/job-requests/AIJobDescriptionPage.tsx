@@ -923,22 +923,30 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
       });
       const data = res?.data?.data;
 
-      if (data?.isComplete && data?.jobData) {
+      if (data?.isComplete && (data?.jobDescription || data?.jobData)) {
+        const jd = data.jobDescription || data.jobData;
         const assistantMsg: ChatMessage = {
           role: 'assistant',
-          content: '✅ ممتاز! لديّ كل المعلومات اللازمة. جاري توليد الوصف الوظيفي الكامل...',
+          content: '✅ ممتاز! لديّ كل المعلومات اللازمة. جاري عرض الوصف الوظيفي الكامل...',
         };
         setMessages([...newMessages, assistantMsg]);
-        // Now generate full JD using form endpoint
-        const jdRes: any = await apiClient.post('/ai-jd/generate', {
-          ...data.jobData,
-          skills: data.jobData.skills || [],
-        });
-        onResult(jdRes?.data?.data || jdRes?.data);
+
+        // If jd is already a full structured object, use it directly
+        if (jd?.summary || jd?.jobTitle) {
+          setTimeout(() => onResult(jd), 800);
+        } else {
+          // Otherwise call generate endpoint
+          const jdRes: any = await apiClient.post('/ai-jd/generate', {
+            ...jd,
+            skills: jd?.skills || [],
+          });
+          onResult(jdRes?.data?.data || jdRes?.data);
+        }
       } else {
+        const nextQ = data?.nextQuestion;
         const assistantMsg: ChatMessage = {
           role: 'assistant',
-          content: data?.nextQuestion || 'شكراً، ما هي المعلومات الإضافية؟',
+          content: nextQ && nextQ.trim() ? nextQ : 'حسناً، هل يمكنك إخباري بمزيد من التفاصيل؟',
         };
         setMessages([...newMessages, assistantMsg]);
       }
