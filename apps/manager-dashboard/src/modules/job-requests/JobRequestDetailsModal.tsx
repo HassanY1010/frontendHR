@@ -394,26 +394,6 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
                     <Briefcase className="w-4 h-4" /> تحويل لوظيفة توظيف نشطة
                   </button>
                 )}
-
-                {data.status === 'RECRUITMENT_STARTED' && (
-                  <button
-                    disabled={actionLoading}
-                    onClick={() => handleAction('transition', { targetStatus: 'INTERVIEW_PROCESS', comment: 'الانتقال إلى مرحلة المقابلات' })}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow"
-                  >
-                    الانتقال لمرحلة المقابلات 🎯
-                  </button>
-                )}
-
-                {data.status === 'INTERVIEW_PROCESS' && (
-                  <button
-                    disabled={actionLoading}
-                    onClick={() => handleAction('transition', { targetStatus: 'OFFER_STAGE', comment: 'الانتقال إلى مرحلة تقديم العرض' })}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow"
-                  >
-                    الانتقال لمرحلة العرض 📜
-                  </button>
-                )}
               </div>
             </div>
           </div>
