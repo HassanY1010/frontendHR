@@ -17,12 +17,19 @@ import {
   FileText,
   MessageSquare,
   Zap,
-  ArrowLeft,
   Plus,
   X,
   BookOpen,
-  Target
+  Target,
+  FilePlus,
+  Share2,
+  Linkedin,
+  Twitter,
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
+import { jobRequestService } from '@hr/services';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '@hr/services';
 
 // ============================================================================
@@ -157,8 +164,100 @@ const SectionCard: React.FC<{
 // ============================================================================
 // JD Result Display
 // ============================================================================
-const JDResultView: React.FC<{ result: JDResult; onReset: () => void }> = ({ result, onReset }) => {
+const JDResultView: React.FC<{
+  result: JDResult;
+  onReset: () => void;
+  formData?: Record<string, any>;
+}> = ({ result, onReset, formData = {} }) => {
+  const navigate = useNavigate();
+  const [creatingJR, setCreatingJR] = useState(false);
+  const [jrSuccess, setJrSuccess] = useState<string | null>(null);
+  const [jrError, setJrError] = useState<string | null>(null);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [generatingSocial, setGeneratingSocial] = useState(false);
+  const [socialPost, setSocialPost] = useState<{ linkedin: string; twitter: string } | null>(null);
+  const [copiedSocial, setCopiedSocial] = useState<'linkedin' | 'twitter' | null>(null);
+
   const fullText = `# ${result.jobTitle}\n\n## ملخص الوظيفة\n${result.summary}\n\n## المسؤوليات\n${result.responsibilities.map((r) => `- ${r}`).join('\n')}\n\n## المتطلبات\n${result.requirements.map((r) => `- ${r}`).join('\n')}\n\n## المهارات المطلوبة\n${result.requiredSkills.join('، ')}\n\n## المهارات المفضلة\n${result.preferredSkills.join('، ')}`;
+
+  // ── Create Job Request ──────────────────────────────────────────────────────
+  const handleCreateJobRequest = async () => {
+    setCreatingJR(true);
+    setJrError(null);
+    try {
+      const payload = {
+        jobTitle: result.jobTitle,
+        departmentId: formData.departmentId || 'dep-tech',
+        location: formData.location || 'الرياض',
+        employmentType: result.employmentType || formData.employmentType || 'FULL_TIME',
+        vacancies: formData.vacancies || 1,
+        jobSummary: result.summary,
+        requiredExperience: formData.experience || '',
+        responsibilities: result.responsibilities?.join('\n') || '',
+        skills: result.requiredSkills || [],
+        salaryMin: formData.salaryMin || '',
+        salaryMax: formData.salaryMax || '',
+        priority: 'MEDIUM',
+        hiringReason: 'NEW_POSITION',
+        submitDirectly: true
+      };
+      const res: any = await jobRequestService.createJobRequest(payload);
+      const id = res?.data?.data?.id || res?.data?.id;
+      setJrSuccess(id || 'created');
+    } catch (err: any) {
+      setJrError(err?.response?.data?.error || 'فشل إنشاء طلب التوظيف. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setCreatingJR(false);
+    }
+  };
+
+  // ── Generate Social Post ────────────────────────────────────────────────────
+  const handleGenerateSocialPost = async () => {
+    setGeneratingSocial(true);
+    setSocialPost(null);
+    try {
+      const skills = result.requiredSkills?.slice(0, 5).join(' | ') || '';
+      const salary = formData.salaryMin && formData.salaryMax
+        ? `💰 الراتب: ${Number(formData.salaryMin).toLocaleString()} - ${Number(formData.salaryMax).toLocaleString()} ريال`
+        : '';
+      const location = formData.location || 'الرياض';
+      const empType = result.employmentType === 'FULL_TIME' ? 'دوام كامل' : result.employmentType === 'HYBRID' ? 'هجين' : result.employmentType === 'REMOTE' ? 'عن بُعد' : 'دوام كامل';
+
+      const linkedin = `🚀 نحن نوظّف! | ${result.jobTitle}\n\n` +
+        `${result.summary?.substring(0, 200)}...\n\n` +
+        `📋 المتطلبات الرئيسية:\n` +
+        result.requirements?.slice(0, 3).map(r => `• ${r}`).join('\n') + '\n\n' +
+        `🛠️ المهارات: ${skills}\n` +
+        `📍 الموقع: ${location} | ${empType}\n` +
+        (salary ? `${salary}\n` : '') +
+        `\n📩 للتقديم: تواصل معنا عبر الرسائل المباشرة أو أرسل سيرتك الذاتية.\n\n` +
+        `#توظيف #${result.jobTitle?.replace(/\s/g, '_')} #وظائف_السعودية #${location}`;
+
+      const twitterLines = [
+        `📢 وظيفة شاغرة: ${result.jobTitle}`,
+        `📍 ${location} | ${empType}`,
+        skills ? `🛠️ ${skills}` : '',
+        salary || '',
+        `📩 راسلنا للتقديم!`,
+        `#وظائف #${result.jobTitle?.replace(/\s/g, '_')} #السعودية`
+      ].filter(Boolean).join('\n');
+
+      setSocialPost({ linkedin, twitter: twitterLines });
+    } catch {
+      setSocialPost({
+        linkedin: `🚀 نحن نوظّف ${result.jobTitle}! تواصل معنا للتفاصيل. #وظائف`,
+        twitter: `📢 وظيفة: ${result.jobTitle} | تواصل معنا! #وظائف`
+      });
+    } finally {
+      setGeneratingSocial(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, type: 'linkedin' | 'twitter') => {
+    navigator.clipboard.writeText(text);
+    setCopiedSocial(type);
+    setTimeout(() => setCopiedSocial(null), 2000);
+  };
 
   return (
     <motion.div
@@ -310,30 +409,211 @@ const JDResultView: React.FC<{ result: JDResult; onReset: () => void }> = ({ res
         </SectionCard>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-3 justify-between pt-2">
-        <button
-          onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition"
+      {/* ── Job Request Success Banner ── */}
+      {jrSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-2xl flex items-start gap-3"
         >
-          <ArrowLeft className="w-4 h-4" />
-          توليد وصف جديد
-        </button>
-        <button
-          onClick={() => {
-            const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${result.jobTitle}-JD.txt`;
-            a.click();
-          }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary-600 to-secondary-600 text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition"
-        >
-          <Download className="w-4 h-4" />
-          تحميل الوصف الوظيفي
-        </button>
+          <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center shrink-0">
+            <Check className="w-4 h-4 text-green-600 dark:text-green-300" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-green-800 dark:text-green-200 text-sm">✅ تم إنشاء طلب التوظيف بنجاح!</p>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">تم تقديم الطلب للمراجعة تلقائياً. يمكنك متابعته في صفحة طلبات التوظيف.</p>
+          </div>
+          <button
+            onClick={() => navigate('/job-requests')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition shrink-0"
+          >
+            <ExternalLink className="w-3 h-3" />
+            متابعة الطلب
+          </button>
+        </motion.div>
+      )}
+
+      {jrError && (
+        <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          {jrError}
+        </div>
+      )}
+
+      {/* ── Actions Bar ── */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">الإجراءات</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+          {/* Reset */}
+          <button
+            onClick={onReset}
+            className="flex flex-col items-center gap-2 p-3 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl transition group"
+          >
+            <div className="w-9 h-9 bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 rounded-xl flex items-center justify-center transition">
+              <RefreshCw className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-medium text-center">توليد جديد</span>
+          </button>
+
+          {/* Download */}
+          <button
+            onClick={() => {
+              const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${result.jobTitle}-JD.txt`;
+              a.click();
+            }}
+            className="flex flex-col items-center gap-2 p-3 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-xl transition group"
+          >
+            <div className="w-9 h-9 bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 rounded-xl flex items-center justify-center transition">
+              <Download className="w-4 h-4 text-blue-500" />
+            </div>
+            <span className="text-xs font-medium text-center text-blue-600 dark:text-blue-400">تحميل الوصف</span>
+          </button>
+
+          {/* Create Job Request */}
+          <button
+            onClick={handleCreateJobRequest}
+            disabled={creatingJR || !!jrSuccess}
+            className="flex flex-col items-center gap-2 p-3 hover:bg-primary-50 dark:hover:bg-primary-900/20 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 rounded-xl transition group disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <div className="w-9 h-9 bg-primary-50 dark:bg-primary-900/30 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/50 rounded-xl flex items-center justify-center transition">
+              {creatingJR ? <RefreshCw className="w-4 h-4 text-primary-500 animate-spin" /> : jrSuccess ? <Check className="w-4 h-4 text-green-500" /> : <FilePlus className="w-4 h-4 text-primary-500" />}
+            </div>
+            <span className="text-xs font-medium text-center text-primary-600 dark:text-primary-400">
+              {creatingJR ? 'جاري الإنشاء...' : jrSuccess ? 'تم الإنشاء ✓' : 'إنشاء طلب توظيف'}
+            </span>
+          </button>
+
+          {/* Social Post */}
+          <button
+            onClick={() => { setShowSocialModal(true); handleGenerateSocialPost(); }}
+            className="flex flex-col items-center gap-2 p-3 hover:bg-violet-50 dark:hover:bg-violet-900/20 border border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 rounded-xl transition group"
+          >
+            <div className="w-9 h-9 bg-violet-50 dark:bg-violet-900/30 group-hover:bg-violet-100 rounded-xl flex items-center justify-center transition">
+              <Share2 className="w-4 h-4 text-violet-500" />
+            </div>
+            <span className="text-xs font-medium text-center text-violet-600 dark:text-violet-400">مشاركة على السوشيال</span>
+          </button>
+        </div>
       </div>
+
+      {/* ── Social Media Modal ── */}
+      {showSocialModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" dir="rtl">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-violet-600 to-primary-600">
+              <div className="flex items-center gap-3">
+                <Share2 className="w-5 h-5 text-white" />
+                <div>
+                  <h3 className="text-white font-bold text-sm">مولّد إعلان شبكات التواصل الاجتماعي</h3>
+                  <p className="text-white/70 text-xs">{result.jobTitle}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowSocialModal(false)} className="p-1.5 text-white/70 hover:text-white rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5 flex-1">
+              {generatingSocial ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="w-12 h-12 bg-violet-100 dark:bg-violet-900/30 rounded-2xl flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-violet-500 animate-pulse" />
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">جاري توليد الإعلانات...</p>
+                </div>
+              ) : socialPost ? (
+                <>
+                  {/* LinkedIn */}
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-[#0077B5]/10 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-[#0077B5] rounded-lg flex items-center justify-center">
+                          <Linkedin className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-semibold text-sm text-[#0077B5]">LinkedIn</span>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(socialPost.linkedin, 'linkedin')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0077B5] hover:bg-[#005885] text-white text-xs font-medium rounded-lg transition"
+                      >
+                        {copiedSocial === 'linkedin' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedSocial === 'linkedin' ? 'تم النسخ!' : 'نسخ النص'}
+                      </button>
+                    </div>
+                    <textarea
+                      readOnly
+                      value={socialPost.linkedin}
+                      rows={8}
+                      className="w-full px-4 py-3 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 resize-none outline-none leading-relaxed"
+                    />
+                  </div>
+
+                  {/* X / Twitter */}
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-black/5 dark:bg-white/5 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-black dark:bg-white rounded-lg flex items-center justify-center">
+                          <Twitter className="w-4 h-4 text-white dark:text-black" />
+                        </div>
+                        <span className="font-semibold text-sm text-gray-900 dark:text-white">X (Twitter)</span>
+                        <span className="text-xs text-gray-400">({socialPost.twitter.length} حرف)</span>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(socialPost.twitter, 'twitter')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-black text-xs font-medium rounded-lg transition"
+                      >
+                        {copiedSocial === 'twitter' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedSocial === 'twitter' ? 'تم النسخ!' : 'نسخ النص'}
+                      </button>
+                    </div>
+                    <textarea
+                      readOnly
+                      value={socialPost.twitter}
+                      rows={5}
+                      className="w-full px-4 py-3 text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 resize-none outline-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                    <p className="text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
+                      <Zap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      انسخ النص واذهب مباشرة إلى LinkedIn أو X لنشر الإعلان! يمكنك تعديل النص حسب رغبتك قبل النشر.
+                    </p>
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800">
+              <button
+                onClick={() => { setSocialPost(null); handleGenerateSocialPost(); }}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition"
+              >
+                <RefreshCw className="w-4 h-4" />
+                إعادة التوليد
+              </button>
+              <button
+                onClick={() => setShowSocialModal(false)}
+                className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-xl hover:opacity-90 transition"
+              >
+                تم
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -342,7 +622,7 @@ const JDResultView: React.FC<{ result: JDResult; onReset: () => void }> = ({ res
 // Form Mode
 // ============================================================================
 const FormMode: React.FC<{
-  onResult: (data: JDResult) => void;
+  onResult: (data: JDResult, fd: Record<string, any>) => void;
   initialValues?: Record<string, any>;
 }> = ({ onResult, initialValues = {} }) => {
   const [loading, setLoading] = useState(false);
@@ -398,7 +678,7 @@ const FormMode: React.FC<{
     try {
       const res: any = await apiClient.post('/ai-jd/generate', formData);
       const data = res?.data?.data || res?.data;
-      onResult(data);
+      onResult(data, formData);
     } catch (err: any) {
       setError(err?.response?.data?.error || 'فشل توليد الوصف الوظيفي');
     } finally {
@@ -759,6 +1039,7 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
 const AIJobDescriptionPage: React.FC = () => {
   const [activeMode, setActiveMode] = useState<'form' | 'chat'>('form');
   const [result, setResult] = useState<JDResult | null>(null);
+  const [lastFormData, setLastFormData] = useState<Record<string, any>>({});
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<Record<string, any>>({});
   const [loadingTemplates, setLoadingTemplates] = useState(true);
@@ -936,7 +1217,7 @@ const AIJobDescriptionPage: React.FC = () => {
       </div>
 
       {result ? (
-        <JDResultView result={result} onReset={handleReset} />
+        <JDResultView result={result} onReset={handleReset} formData={lastFormData} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Templates */}
@@ -1016,9 +1297,9 @@ const AIJobDescriptionPage: React.FC = () => {
               <div className="p-6">
                 <AnimatePresence mode="wait">
                   {activeMode === 'form' ? (
-                    <FormMode key="form" onResult={setResult} initialValues={selectedPreset} />
+                    <FormMode key="form" onResult={(data, fd) => { setResult(data); setLastFormData(fd); }} initialValues={selectedPreset} />
                   ) : (
-                    <ChatMode key="chat" onResult={setResult} />
+                    <ChatMode key="chat" onResult={(data) => { setResult(data); setLastFormData(selectedPreset); }} />
                   )}
                 </AnimatePresence>
               </div>
