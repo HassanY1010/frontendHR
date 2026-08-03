@@ -30,8 +30,8 @@ export const JobRequestsPage: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const data = await jobRequestService.getStats();
-      setStats(data);
+      const res = await jobRequestService.getStats();
+      setStats(res?.data || res);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
@@ -45,7 +45,8 @@ export const JobRequestsPage: React.FC = () => {
         search: search || undefined,
         limit: 50
       });
-      setRequests(result.data || []);
+      const list = Array.isArray(result) ? result : (result?.data || []);
+      setRequests(list);
     } catch (err) {
       console.error('Failed to fetch requests:', err);
     } finally {

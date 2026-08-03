@@ -2,11 +2,13 @@ import { apiClient } from './api-client'
 
 export const jobRequestService = {
   async getStats() {
-    return apiClient.get<any>('/job-requests/stats')
+    const res = await apiClient.get<any>('/job-requests/stats')
+    return res.data || res
   },
 
   async getJobRequests(params?: { status?: string; departmentId?: string; priority?: string; search?: string; page?: number; limit?: number }) {
-    return apiClient.get<{ data: any[]; pagination: any }>('/job-requests', { params })
+    const res = await apiClient.get<{ data: any[]; pagination: any }>('/job-requests', { params })
+    return res.data || res
   },
 
   async getJobRequestById(id: string) {
