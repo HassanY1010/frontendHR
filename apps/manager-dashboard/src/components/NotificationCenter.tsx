@@ -43,30 +43,16 @@ const NotificationCenter: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
     const prevCountRef = useRef(0);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
-        const unsub = notificationService.subscribe((data, newCount) => {
+        const unsub = notificationService.subscribe((data) => {
             setNotifications(data);
             const unread = data.filter(n => !n.isRead).length;
             setUnreadCount(unread);
-            if (newCount > 0 && data.length > prevCountRef.current) {
-                playNotificationSound();
-            }
             prevCountRef.current = data.length;
         });
         return unsub;
     }, []);
-
-    const playNotificationSound = () => {
-        try {
-            if (!audioRef.current) {
-                audioRef.current = new Audio('https://cdn.freesound.org/previews/316/316847_4939433-lq.mp3');
-            }
-            audioRef.current.currentTime = 0;
-            audioRef.current.play().catch(() => { });
-        } catch { }
-    };
 
     const handleMarkAsRead = async (id: string) => {
         try {
