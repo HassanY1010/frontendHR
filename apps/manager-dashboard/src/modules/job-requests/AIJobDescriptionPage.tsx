@@ -869,7 +869,7 @@ const FormMode: React.FC<{
 // ============================================================================
 // Chat Mode
 // ============================================================================
-const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }) => {
+const ChatMode: React.FC<{ onResult: (data: JDResult, fd?: Record<string, any>) => void }> = ({ onResult }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -932,6 +932,7 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
 
       if (data?.isComplete && (data?.jobDescription || data?.jobData)) {
         const jd = data.jobDescription || data.jobData;
+        const realFd = data?.formData || { jobTitle: jd?.jobTitle, department: jd?.department || 'تكنولوجيا المعلومات' };
         const assistantMsg: ChatMessage = {
           role: 'assistant',
           content: '✅ ممتاز! لديّ كل المعلومات اللازمة. جاري عرض الوصف الوظيفي الكامل...',
@@ -940,7 +941,7 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
 
         // If jd is already a full structured object, use it directly
         if (jd?.summary || jd?.jobTitle) {
-          setTimeout(() => onResult(jd), 800);
+          setTimeout(() => onResult(jd, realFd), 800);
         } else {
           // Otherwise call generate endpoint
           const jdRes: any = await apiClient.post('/ai-jd/generate', {
@@ -948,7 +949,7 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
             skills: jd?.skills || [],
           });
           const resPayload = jdRes?.data || jdRes;
-          onResult(resPayload?.data || resPayload);
+          onResult(resPayload?.data || resPayload, realFd);
         }
       } else {
         const nextQ = data?.nextQuestion;
@@ -1306,7 +1307,7 @@ const AIJobDescriptionPage: React.FC = () => {
                   {activeMode === 'form' ? (
                     <FormMode key="form" onResult={(data, fd) => { setResult(data); setLastFormData(fd); }} initialValues={selectedPreset} />
                   ) : (
-                    <ChatMode key="chat" onResult={(data) => { setResult(data); setLastFormData(selectedPreset); }} />
+                    <ChatMode key="chat" onResult={(data, fd) => { setResult(data); setLastFormData(fd || { jobTitle: data.jobTitle }); }} />
                   )}
                 </AnimatePresence>
               </div>
