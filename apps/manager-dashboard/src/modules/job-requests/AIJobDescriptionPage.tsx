@@ -1061,7 +1061,7 @@ const AIJobDescriptionPage: React.FC = () => {
     const defaultTemplates: Template[] = [
       {
         id: 'software-engineer',
-        icon: '💻',
+        icon: '⚡',
         category: 'تكنولوجيا',
         title: 'مهندس برمجيات',
         description: 'Full Stack / Backend / Frontend',
@@ -1080,7 +1080,7 @@ const AIJobDescriptionPage: React.FC = () => {
       },
       {
         id: 'hr-specialist',
-        icon: '🧑‍💼',
+        icon: '👥',
         category: 'موارد بشرية',
         title: 'أخصائي موارد بشرية',
         description: 'HR Generalist / Recruitment',
@@ -1137,7 +1137,7 @@ const AIJobDescriptionPage: React.FC = () => {
       },
       {
         id: 'sales-manager',
-        icon: '💰',
+        icon: '💼',
         category: 'مبيعات',
         title: 'مدير مبيعات',
         description: 'Sales / Business Development',
