@@ -185,9 +185,14 @@ const JDResultView: React.FC<{
     setCreatingJR(true);
     setJrError(null);
     try {
+      const targetTitle = result.jobTitle && result.jobTitle !== 'المسمى الوظيفي' ? result.jobTitle : (formData.jobTitle || 'وظيفة جديدة');
+      const targetDepartment = formData.department || 'تكنولوجيا المعلومات';
+
       const payload = {
-        jobTitle: result.jobTitle,
-        departmentId: formData.departmentId || 'dep-tech',
+        jobTitle: targetTitle,
+        department: targetDepartment,
+        departmentName: targetDepartment,
+        departmentId: formData.departmentId || null,
         location: formData.location || 'الرياض',
         employmentType: result.employmentType || formData.employmentType || 'FULL_TIME',
         vacancies: formData.vacancies || 1,
