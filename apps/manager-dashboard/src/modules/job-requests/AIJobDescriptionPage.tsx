@@ -895,7 +895,8 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
       const res: any = await apiClient.post('/ai-jd/chat', {
         messages: [initMsg],
       });
-      const data = res?.data?.data;
+      const responseData = res?.data || res;
+      const data = responseData?.data || responseData;
       const assistantMsg: ChatMessage = {
         role: 'assistant',
         content: data?.nextQuestion || 'مرحباً! ما هو المسمى الوظيفي الذي تريد إنشاء وصف وظيفي له؟',
@@ -926,7 +927,8 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
       const res: any = await apiClient.post('/ai-jd/chat', {
         messages: newMessages,
       });
-      const data = res?.data?.data;
+      const responseData = res?.data || res;
+      const data = responseData?.data || responseData;
 
       if (data?.isComplete && (data?.jobDescription || data?.jobData)) {
         const jd = data.jobDescription || data.jobData;
@@ -945,13 +947,14 @@ const ChatMode: React.FC<{ onResult: (data: JDResult) => void }> = ({ onResult }
             ...jd,
             skills: jd?.skills || [],
           });
-          onResult(jdRes?.data?.data || jdRes?.data);
+          const resPayload = jdRes?.data || jdRes;
+          onResult(resPayload?.data || resPayload);
         }
       } else {
         const nextQ = data?.nextQuestion;
         const assistantMsg: ChatMessage = {
           role: 'assistant',
-          content: nextQ && nextQ.trim() ? nextQ : 'حسناً، هل يمكنك إخباري بمزيد من التفاصيل؟',
+          content: nextQ && typeof nextQ === 'string' && nextQ.trim() ? nextQ : 'ما هي المهارات الرئيسية المطلوبة لهذه الوظيفة؟',
         };
         setMessages([...newMessages, assistantMsg]);
       }
