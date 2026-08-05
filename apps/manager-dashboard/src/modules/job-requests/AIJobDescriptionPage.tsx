@@ -799,7 +799,7 @@ const JDResultView: React.FC<{
                 <Share2 className="w-5 h-5 text-white" />
                 <div>
                   <h3 className="text-white font-bold text-sm">مولّد إعلان شبكات التواصل الاجتماعي</h3>
-                  <p className="text-white/70 text-xs">{result.jobTitle}</p>
+                  <p className="text-white/70 text-xs">{activeResult.jobTitle}</p>
                 </div>
               </div>
               <button onClick={() => setShowSocialModal(false)} className="p-1.5 text-white/70 hover:text-white rounded-lg">
