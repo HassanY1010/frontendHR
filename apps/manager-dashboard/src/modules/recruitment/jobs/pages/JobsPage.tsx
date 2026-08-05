@@ -189,10 +189,102 @@ const JobsPage: React.FC = () => {
     const [generatedJobData, setGeneratedJobData] = useState<Partial<Job> | null>(null)
     const [dynamicDepartments, setDynamicDepartments] = useState<{ id: string, name: string, parentId?: string }[]>([])
 
+    const [descriptionValue, setDescriptionValue] = useState('')
+    const [requirementsValue, setRequirementsValue] = useState('')
+    const [isGeneratingDesc, setIsGeneratingDesc] = useState(false)
+    const [isGeneratingReqs, setIsGeneratingReqs] = useState(false)
+    const [aiError, setAiError] = useState<string | null>(null)
+    const [aiSuccessMsg, setAiSuccessMsg] = useState<string | null>(null)
+
+    React.useEffect(() => {
+        if (selectedJob) {
+            setDescriptionValue(selectedJob.description || '')
+            setRequirementsValue(Array.isArray(selectedJob.requirements) ? selectedJob.requirements.join('\n') : (selectedJob.requirements || ''))
+        } else if (generatedJobData) {
+            setDescriptionValue(generatedJobData.description || '')
+            setRequirementsValue(Array.isArray(generatedJobData.requirements) ? generatedJobData.requirements.join('\n') : (generatedJobData.requirements || ''))
+        } else {
+            setDescriptionValue('')
+            setRequirementsValue('')
+        }
+        setAiError(null)
+        setAiSuccessMsg(null)
+    }, [showCreateModal, showEditModal, selectedJob, generatedJobData])
+
     React.useEffect(() => {
         fetchJobs()
         loadDepartments()
     }, [fetchJobs])
+
+    const handleGenerateDescriptionAI = async (formElement: HTMLFormElement) => {
+        const formData = new FormData(formElement)
+        const title = formData.get('title') as string
+        if (!title || !title.trim()) {
+            setAiError('يرجى كتابة عنوان الوظيفة أولاً لتوليد الوصف الوظيفي بالذكاء الاصطناعي')
+            return
+        }
+        setAiError(null)
+        setAiSuccessMsg(null)
+        setIsGeneratingDesc(true)
+        try {
+            const desc = await recruitmentService.generateRecruitmentDescription({
+                title: title.trim(),
+                department: orderedDepartments.find(d => d.id === formData.get('departmentId'))?.name || formData.get('departmentId'),
+                openingReason: formData.get('openingReason'),
+                city: formData.get('city'),
+                location: formData.get('location'),
+                workMode: formData.get('workMode'),
+                employmentType: formData.get('employmentType'),
+                seniorityLevel: formData.get('seniorityLevel'),
+                yearsOfExperience: formData.get('yearsOfExperience'),
+                previousCompanyType: formData.get('previousCompanyType'),
+                workEnvironment: formData.get('workEnvironment'),
+                managedTeamBefore: formData.get('managedTeamBefore'),
+                teamSize: formData.get('teamSize'),
+                salaryMin: formData.get('salaryMin'),
+                salaryMax: formData.get('salaryMax')
+            })
+            if (desc) {
+                setDescriptionValue(desc)
+                setAiSuccessMsg('✨ تم توليد الوصف الوظيفي بنجاح! يمكنك تعديله وإضافة تفاصيل بحرية.')
+            }
+        } catch (err: any) {
+            setAiError(err?.response?.data?.error || err.message || 'فشل في توليد الوصف الوظيفي. يرجى المحاولة مرة أخرى.')
+        } finally {
+            setIsGeneratingDesc(false)
+        }
+    }
+
+    const handleGenerateRequirementsAI = async (formElement: HTMLFormElement) => {
+        const formData = new FormData(formElement)
+        const title = formData.get('title') as string
+        if (!title || !title.trim()) {
+            setAiError('يرجى كتابة عنوان الوظيفة أولاً لتوليد المتطلبات بالذكاء الاصطناعي')
+            return
+        }
+        setAiError(null)
+        setAiSuccessMsg(null)
+        setIsGeneratingReqs(true)
+        try {
+            const reqs = await recruitmentService.generateRecruitmentRequirements({
+                title: title.trim(),
+                department: orderedDepartments.find(d => d.id === formData.get('departmentId'))?.name || formData.get('departmentId'),
+                workMode: formData.get('workMode'),
+                employmentType: formData.get('employmentType'),
+                seniorityLevel: formData.get('seniorityLevel'),
+                yearsOfExperience: formData.get('yearsOfExperience'),
+                description: descriptionValue
+            })
+            if (reqs) {
+                setRequirementsValue(reqs)
+                setAiSuccessMsg('✨ تم توليد المتطلبات بنجاح متضمنة كل سطر كعنصر مستقل!')
+            }
+        } catch (err: any) {
+            setAiError(err?.response?.data?.error || err.message || 'فشل في توليد المتطلبات. يرجى المحاولة مرة أخرى.')
+        } finally {
+            setIsGeneratingReqs(false)
+        }
+    }
 
     const loadDepartments = async () => {
         try {
@@ -885,26 +977,91 @@ const JobsPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">الوصف الوظيفي</label>
+                             {/* AI Feedback Alerts */}
+                            {aiError && (
+                                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-xs font-bold flex items-center justify-between">
+                                    <span>⚠️ {aiError}</span>
+                                    <button type="button" onClick={() => setAiError(null)} className="text-red-500 hover:text-red-700">✕</button>
+                                </div>
+                            )}
+                            {aiSuccessMsg && (
+                                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between">
+                                    <span>{aiSuccessMsg}</span>
+                                    <button type="button" onClick={() => setAiSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">✕</button>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Description Field */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="block text-xs font-bold text-gray-900 dark:text-white">الوصف الوظيفي (Job Description)</label>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                const form = (e.target as HTMLElement).closest('form');
+                                                if (form) handleGenerateDescriptionAI(form);
+                                            }}
+                                            disabled={isGeneratingDesc}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            {isGeneratingDesc ? (
+                                                <>
+                                                    <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                                                    <span>جارٍ توليد الوصف الوظيفي...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="w-3.5 h-3.5" />
+                                                    <span>✨ توليد الوصف الوظيفي بالذكاء الاصطناعي</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                     <textarea
                                         name="description"
-                                        defaultValue={selectedJob?.description || generatedJobData?.description}
-                                        rows={4}
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
-                                        placeholder="وصف الوظيفة..."
+                                        value={descriptionValue}
+                                        onChange={(e) => setDescriptionValue(e.target.value)}
+                                        rows={5}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm leading-relaxed"
+                                        placeholder="أدخل الوصف الوظيفي يدويًا أو اضغط زر ✨ التوليد لإنشائه بالذكاء الاصطناعي..."
                                         required
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">المتطلبات (كل سطر متطلب جديد)</label>
+
+                                {/* Requirements Field */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="block text-xs font-bold text-gray-900 dark:text-white">المتطلبات (كل سطر متطلب جديد)</label>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                const form = (e.target as HTMLElement).closest('form');
+                                                if (form) handleGenerateRequirementsAI(form);
+                                            }}
+                                            disabled={isGeneratingReqs}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                        >
+                                            {isGeneratingReqs ? (
+                                                <>
+                                                    <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                                                    <span>جارٍ توليد المتطلبات...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Sparkles className="w-3.5 h-3.5" />
+                                                    <span>✨ توليد المتطلبات بالذكاء الاصطناعي</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                     <textarea
                                         name="requirements"
-                                        defaultValue={Array.isArray(selectedJob?.requirements) ? selectedJob?.requirements.join('\n') : Array.isArray(generatedJobData?.requirements) ? generatedJobData?.requirements.join('\n') : ''}
-                                        rows={4}
-                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
-                                        placeholder="المتطلبات..."
+                                        value={requirementsValue}
+                                        onChange={(e) => setRequirementsValue(e.target.value)}
+                                        rows={5}
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm leading-relaxed"
+                                        placeholder="أدخل المتطلبات يدويًا (سطر منفصل لكل متطلب) أو اضغط زر ✨ التوليد..."
                                     />
                                 </div>
                             </div>

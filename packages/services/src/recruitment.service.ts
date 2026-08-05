@@ -60,6 +60,16 @@ class RecruitmentService {
     return response.data.aiDescription
   }
 
+  async generateRecruitmentDescription(data: any): Promise<string> {
+    const res = await apiClient.post<{ status: string; description: string }>('/ai-jd/generate-recruitment-description', data)
+    return res.description || (res as any).data?.description
+  }
+
+  async generateRecruitmentRequirements(data: any): Promise<string> {
+    const res = await apiClient.post<{ status: string; requirements: string }>('/ai-jd/generate-recruitment-requirements', data)
+    return res.requirements || (res as any).data?.requirements
+  }
+
   async getAiJobConversationResponse(messages: any[]): Promise<{
     nextQuestion: string | null
     isComplete: boolean
