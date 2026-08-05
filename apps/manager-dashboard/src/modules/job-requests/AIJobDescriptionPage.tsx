@@ -47,6 +47,7 @@ interface JDResult {
   employmentType: string;
   workMode: string;
   seniorityLevel: string;
+  educationLevel?: string;
   confidence_score: number;
 }
 
