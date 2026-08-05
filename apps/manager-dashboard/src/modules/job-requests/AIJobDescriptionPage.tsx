@@ -185,10 +185,39 @@ const JDResultView: React.FC<{
   const [generatingSocial, setGeneratingSocial] = useState(false);
   const [socialPost, setSocialPost] = useState<{ linkedin: string; twitter: string } | null>(null);
   const [copiedSocial, setCopiedSocial] = useState<'linkedin' | 'twitter' | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   useEffect(() => {
     setActiveResult(initialResult);
   }, [initialResult]);
+
+  const handleCopyEntireJD = () => {
+    const formattedFullJD = [
+      `📌 الوصف الوظيفي الكامل: ${activeResult.jobTitle}`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `🏢 نوع التوظيف: ${EMPLOYMENT_LABELS[activeResult.employmentType] || activeResult.employmentType || 'دوام كامل'}`,
+      `📍 نظام العمل: ${WORK_MODE_LABELS[activeResult.workMode] || activeResult.workMode || 'هجين'}`,
+      `⭐ مستوى الخبرة: ${SENIORITY_LABELS[activeResult.seniorityLevel] || activeResult.seniorityLevel || 'متوسط'}`,
+      activeResult.educationLevel ? `🎓 المؤهل العلمي: ${activeResult.educationLevel}` : null,
+      activeResult.salaryInsight ? `💰 نطاق الراتب: ${activeResult.salaryInsight}` : null,
+      `\n📝 ملخص الوظيفة:`,
+      `${activeResult.summary}`,
+      `\n🎯 المسؤوليات الوظيفية:`,
+      activeResult.responsibilities?.map((r, i) => `${i + 1}. ${r}`).join('\n') || 'غير محددة',
+      `\n📋 المتطلبات والاشتراطات:`,
+      activeResult.requirements?.map((r) => `• ${r}`).join('\n') || 'غير محددة',
+      `\n🛠️ المهارات الأساسية المطلوبة:`,
+      activeResult.requiredSkills?.map((s) => `• ${s}`).join('\n') || 'غير محددة',
+      activeResult.preferredSkills?.length > 0 ? `\n✨ المهارات المفضلة:\n` + activeResult.preferredSkills.map((s) => `• ${s}`).join('\n') : null,
+      activeResult.interviewQuestions?.length > 0 ? `\n❓ أسئلة المقابلة المقترحة:\n` + activeResult.interviewQuestions.map((q, i) => `${i + 1}. ${q.question} [${q.category}]`).join('\n') : null,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `تم التوليد والنشر عبر منصة HR Platform 🚀`
+    ].filter(Boolean).join('\n');
+
+    navigator.clipboard.writeText(formattedFullJD);
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2500);
+  };
 
   const fullText = `# ${activeResult.jobTitle}\n\n## ملخص الوظيفة\n${activeResult.summary}\n\n## المؤهل العلمي\n${activeResult.educationLevel || ''}\n\n## المسؤوليات\n${activeResult.responsibilities?.map((r) => `- ${r}`).join('\n')}\n\n## المتطلبات\n${activeResult.requirements?.map((r) => `- ${r}`).join('\n')}\n\n## المهارات المطلوبة\n${activeResult.requiredSkills?.join('، ')}\n\n## المهارات المفضلة\n${activeResult.preferredSkills?.join('، ')}`;
 
@@ -413,6 +442,18 @@ const JDResultView: React.FC<{
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleCopyEntireJD}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition shadow-md ${
+                copiedAll
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-white/20 hover:bg-white/30 text-white border border-white/40'
+              }`}
+            >
+              {copiedAll ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copiedAll ? 'تم نسخ الوصف بالكامل ✓' : 'نسخ الوصف بالكامل'}
+            </button>
+
             <button
               onClick={() => setIsEditing(!isEditing)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition shadow-md ${
@@ -708,7 +749,26 @@ const JDResultView: React.FC<{
       {/* ── Actions Bar ── */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
         <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">الإجراءات</p>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+
+          {/* Copy Entire JD Button */}
+          <button
+            onClick={handleCopyEntireJD}
+            className={`flex flex-col items-center gap-2 p-3 border rounded-xl transition group ${
+              copiedAll
+                ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 text-emerald-700 dark:text-emerald-300'
+                : 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-gray-200 dark:border-gray-700 hover:border-emerald-300'
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+              copiedAll ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-emerald-50 dark:bg-emerald-900/30'
+            }`}>
+              {copiedAll ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-300" /> : <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+            </div>
+            <span className="text-xs font-bold text-center text-emerald-700 dark:text-emerald-300">
+              {copiedAll ? 'تم النسخ ✓' : 'نسخ الوصف بالكامل'}
+            </span>
+          </button>
 
           {/* Edit / Save Toggle */}
           <button
