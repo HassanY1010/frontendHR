@@ -45,5 +45,19 @@ export const jobRequestService = {
 
   async deleteJobRequest(id: string) {
     return apiClient.delete<{ message: string }>(`/job-requests/${id}`)
+  },
+
+  async generateSummary(data: {
+    jobTitle: string
+    department?: string
+    location?: string
+    employmentType?: string
+    requiredExperience?: string
+    skills?: string[]
+    educationLevel?: string
+    hiringReason?: string
+  }) {
+    const res = await apiClient.post<{ status: string; summary: string }>('/ai-jd/generate-summary', data)
+    return res.summary || (res as any).data?.summary
   }
 }

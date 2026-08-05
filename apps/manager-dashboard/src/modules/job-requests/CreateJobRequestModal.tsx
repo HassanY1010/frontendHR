@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, AlertCircle, FileText, DollarSign, Briefcase, Calendar, Award } from 'lucide-react';
+import { X, AlertCircle, FileText, DollarSign, Briefcase, Calendar, Award, Sparkles } from 'lucide-react';
 import { jobRequestService } from '@hr/services';
 
 interface CreateJobRequestModalProps {
@@ -14,6 +14,8 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
   const [error, setError] = useState<string | null>(null);
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>(['TypeScript', 'Node.js', 'React']);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [summarySuccessMessage, setSummarySuccessMessage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     jobTitle: '',
@@ -37,6 +39,45 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
   });
 
   if (!isOpen) return null;
+
+  const handleGenerateSummary = async () => {
+    if (!formData.jobTitle.trim()) {
+      setError('يرجى كتابة المسمى الوظيفي أولاً لتوليد ملخص الوظيفة بالذكاء الاصطناعي');
+      return;
+    }
+    setError(null);
+    setSummarySuccessMessage(null);
+    setIsGeneratingSummary(true);
+    try {
+      const departmentNameMap: Record<string, string> = {
+        'dep-tech': 'تكنولوجيا المعلومات والبرمجيات',
+        'dep-hr': 'الموارد البشرية',
+        'dep-finance': 'الإدارة المالية',
+        'dep-marketing': 'التسويق والمبيعات',
+        'dep-operations': 'العمليات والتشغيل'
+      };
+
+      const summaryText = await jobRequestService.generateSummary({
+        jobTitle: formData.jobTitle.trim(),
+        department: departmentNameMap[formData.departmentId] || 'تكنولوجيا المعلومات',
+        location: formData.location,
+        employmentType: formData.employmentType,
+        requiredExperience: formData.requiredExperience,
+        skills,
+        educationLevel: formData.educationLevel,
+        hiringReason: formData.hiringReason
+      });
+
+      if (summaryText) {
+        setFormData(prev => ({ ...prev, jobSummary: summaryText }));
+        setSummarySuccessMessage('✨ تم توليد ملخص الوظيفة بنجاح! يمكنك تعديله كاملاً بالأسفل كما ترغب.');
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.error || err.message || 'فشل توليد ملخص الوظيفة بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
 
   const handleAddSkill = () => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
@@ -201,14 +242,43 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">ملخص الوظيفة (Job Summary)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
+                    ملخص الوظيفة (Job Summary)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateSummary}
+                    disabled={isGeneratingSummary}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isGeneratingSummary ? (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                        <span>جارٍ توليد ملخص الوظيفة...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>✨ توليد بالذكاء الاصطناعي</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 <textarea
-                  rows={2}
-                  placeholder="وصف مختصر لمسؤوليات وأهداف الوظيفة..."
+                  rows={3}
+                  placeholder="أدخل ملخص الوظيفة يدويًا أو اضغط زر ✨ توليد بالذكاء الاصطناعي لتوليده أوتوماتيكيًا..."
                   value={formData.jobSummary}
                   onChange={(e) => setFormData({ ...formData, jobSummary: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm"
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 leading-relaxed"
                 />
+
+                {summarySuccessMessage && (
+                  <p className="mt-1 text-xs text-green-600 dark:text-green-400 font-medium">
+                    {summarySuccessMessage}
+                  </p>
+                )}
               </div>
 
               <div>
