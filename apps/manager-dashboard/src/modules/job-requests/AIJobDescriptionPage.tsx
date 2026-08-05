@@ -647,6 +647,7 @@ const FormMode: React.FC<{
     seniorityLevel: initialValues.seniorityLevel || 'MID',
     salaryMin: initialValues.salaryMin || '',
     salaryMax: initialValues.salaryMax || '',
+    educationLevel: initialValues.educationLevel || '',
     skills: initialValues.skills || [] as string[],
   });
 
@@ -662,6 +663,7 @@ const FormMode: React.FC<{
         seniorityLevel: initialValues.seniorityLevel || 'MID',
         salaryMin: initialValues.salaryMin || '',
         salaryMax: initialValues.salaryMax || '',
+        educationLevel: initialValues.educationLevel || '',
         skills: initialValues.skills || [],
       });
     }
@@ -772,7 +774,7 @@ const FormMode: React.FC<{
       </div>
 
       {/* Row 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label className={labelClass}>المدينة / الموقع</label>
           <input
@@ -789,6 +791,15 @@ const FormMode: React.FC<{
             placeholder="مثال: 3-5 سنوات"
             value={formData.experience}
             onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>المؤهل العلمي</label>
+          <input
+            className={inputClass}
+            placeholder="مثال: بكالوريوس علوم حاسب / دبلوم"
+            value={formData.educationLevel}
+            onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
           />
         </div>
         <div>
@@ -1077,6 +1088,7 @@ const AIJobDescriptionPage: React.FC = () => {
           jobTitle: 'مهندس برمجيات',
           department: 'تكنولوجيا المعلومات',
           experience: '3-5 سنوات',
+          educationLevel: 'بكالوريوس علوم حاسب / هندسة برمجيات',
           employmentType: 'FULL_TIME',
           workMode: 'HYBRID',
           seniorityLevel: 'MID',
@@ -1096,6 +1108,7 @@ const AIJobDescriptionPage: React.FC = () => {
           jobTitle: 'أخصائي موارد بشرية',
           department: 'الموارد البشرية',
           experience: '2-4 سنوات',
+          educationLevel: 'بكالوريوس إدارة موارد بشرية / إدارة أعمال',
           employmentType: 'FULL_TIME',
           workMode: 'ONSITE',
           seniorityLevel: 'MID',
@@ -1115,6 +1128,7 @@ const AIJobDescriptionPage: React.FC = () => {
           jobTitle: 'محلل بيانات',
           department: 'تكنولوجيا المعلومات',
           experience: '2-4 سنوات',
+          educationLevel: 'بكالوريوس إحصاء / علوم حاسب / نظم معلومات',
           employmentType: 'FULL_TIME',
           workMode: 'HYBRID',
           seniorityLevel: 'MID',
@@ -1134,6 +1148,7 @@ const AIJobDescriptionPage: React.FC = () => {
           jobTitle: 'مدير منتج',
           department: 'إدارة المنتج',
           experience: '5-8 سنوات',
+          educationLevel: 'بكالوريوس إدارة أعمال / تقنية معلومات',
           employmentType: 'FULL_TIME',
           workMode: 'HYBRID',
           seniorityLevel: 'SENIOR',
@@ -1153,6 +1168,7 @@ const AIJobDescriptionPage: React.FC = () => {
           jobTitle: 'مدير مبيعات',
           department: 'التسويق والمبيعات',
           experience: '5-7 سنوات',
+          educationLevel: 'دبلوم أو بكالوريوس إدارة أعمال / تسويق',
           employmentType: 'FULL_TIME',
           workMode: 'ONSITE',
           seniorityLevel: 'SENIOR',
@@ -1172,6 +1188,7 @@ const AIJobDescriptionPage: React.FC = () => {
           jobTitle: 'أخصائي تسويق رقمي',
           department: 'التسويق والمبيعات',
           experience: '2-4 سنوات',
+          educationLevel: 'بكالوريوس تسويق رقمي / إعلام وترويج',
           employmentType: 'FULL_TIME',
           workMode: 'HYBRID',
           seniorityLevel: 'MID',
