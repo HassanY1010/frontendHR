@@ -198,6 +198,7 @@ const JDResultView: React.FC<{
         vacancies: formData.vacancies || 1,
         jobSummary: result.summary,
         requiredExperience: formData.experience || '',
+        educationLevel: result.educationLevel || formData.educationLevel || 'بكالوريوس (Bachelor)',
         responsibilities: result.responsibilities?.join('\n') || '',
         skills: result.requiredSkills || [],
         salaryMin: formData.salaryMin || '',
