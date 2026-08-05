@@ -1,8 +1,17 @@
 // Workflow Service — communicates with backend workflow API
-const API_BASE = import.meta.env.VITE_API_URL || 'https://hr-backend-api.onrender.com/api';
+const getBaseUrl = () => {
+  const url = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://backendhr-ovjw.onrender.com/api';
+  let cleanUrl = url.trim();
+  if (cleanUrl.endsWith('/')) {
+    cleanUrl = cleanUrl.slice(0, -1);
+  }
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+};
+
+const API_BASE = getBaseUrl();
 
 const getHeaders = () => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const token = localStorage.getItem('access_token') || localStorage.getItem('token') || sessionStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {})
