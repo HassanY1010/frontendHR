@@ -8,9 +8,11 @@ import {
   Briefcase,
   DollarSign,
   ShieldCheck,
-  Send
+  Send,
+  GitBranch
 } from 'lucide-react';
 import { jobRequestService } from '@hr/services';
+import WorkflowTimeline from '../workflow/WorkflowTimeline';
 
 interface JobRequestDetailsModalProps {
   requestId: string | null;
@@ -41,7 +43,7 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [comment, setComment] = useState('');
-  const [activeTab, setActiveTab] = useState<'details' | 'approvals' | 'history'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'approvals' | 'history' | 'workflow'>('details');
 
   React.useEffect(() => {
     if (isOpen && requestId) {
@@ -193,10 +195,26 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
               >
                 سجل التغييرات (Audit Trail)
               </button>
+              <button
+                onClick={() => setActiveTab('workflow')}
+                className={`py-3 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
+                  activeTab === 'workflow'
+                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <GitBranch className="w-3.5 h-3.5" />
+                مسار التوظيف
+              </button>
             </div>
 
             {/* Tab Body */}
             <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {activeTab === 'workflow' && (
+                <div style={{ background: '#0f172a', borderRadius: '12px', padding: '16px' }}>
+                  <WorkflowTimeline jobRequestId={data.id} canAdvance={true} />
+                </div>
+              )}
               {activeTab === 'details' && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Column 1 & 2: Overview */}
