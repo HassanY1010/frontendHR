@@ -29,8 +29,8 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
     responsibilities: '',
     salaryMin: '',
     salaryMax: '',
-    budgetCode: '',
-    costCenter: '',
+    budgetCode: `BUD-${new Date().getFullYear()}-101`,
+    costCenter: 'CC-101',
     hiringReason: 'NEW_POSITION',
     requiredDate: '',
     priority: 'MEDIUM'

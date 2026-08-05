@@ -202,6 +202,8 @@ const JDResultView: React.FC<{
         skills: result.requiredSkills || [],
         salaryMin: formData.salaryMin || '',
         salaryMax: formData.salaryMax || '',
+        budgetCode: `BUD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        costCenter: 'CC-101',
         priority: 'MEDIUM',
         hiringReason: 'NEW_POSITION',
         submitDirectly: true
