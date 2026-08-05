@@ -26,7 +26,10 @@ import {
   Linkedin,
   Twitter,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Edit3,
+  Save,
+  Trash2
 } from 'lucide-react';
 import { jobRequestService } from '@hr/services';
 import { useNavigate } from 'react-router-dom';
@@ -169,8 +172,12 @@ const JDResultView: React.FC<{
   result: JDResult;
   onReset: () => void;
   formData?: Record<string, any>;
-}> = ({ result, onReset, formData = {} }) => {
+}> = ({ result: initialResult, onReset, formData = {} }) => {
   const navigate = useNavigate();
+  const [activeResult, setActiveResult] = useState<JDResult>(initialResult);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newSkillInput, setNewSkillInput] = useState('');
+
   const [creatingJR, setCreatingJR] = useState(false);
   const [jrSuccess, setJrSuccess] = useState<string | null>(null);
   const [jrError, setJrError] = useState<string | null>(null);
@@ -179,14 +186,75 @@ const JDResultView: React.FC<{
   const [socialPost, setSocialPost] = useState<{ linkedin: string; twitter: string } | null>(null);
   const [copiedSocial, setCopiedSocial] = useState<'linkedin' | 'twitter' | null>(null);
 
-  const fullText = `# ${result.jobTitle}\n\n## ملخص الوظيفة\n${result.summary}\n\n## المسؤوليات\n${result.responsibilities.map((r) => `- ${r}`).join('\n')}\n\n## المتطلبات\n${result.requirements.map((r) => `- ${r}`).join('\n')}\n\n## المهارات المطلوبة\n${result.requiredSkills.join('، ')}\n\n## المهارات المفضلة\n${result.preferredSkills.join('، ')}`;
+  useEffect(() => {
+    setActiveResult(initialResult);
+  }, [initialResult]);
+
+  const fullText = `# ${activeResult.jobTitle}\n\n## ملخص الوظيفة\n${activeResult.summary}\n\n## المؤهل العلمي\n${activeResult.educationLevel || ''}\n\n## المسؤوليات\n${activeResult.responsibilities?.map((r) => `- ${r}`).join('\n')}\n\n## المتطلبات\n${activeResult.requirements?.map((r) => `- ${r}`).join('\n')}\n\n## المهارات المطلوبة\n${activeResult.requiredSkills?.join('، ')}\n\n## المهارات المفضلة\n${activeResult.preferredSkills?.join('، ')}`;
+
+  // ── Responsibilities Handlers ──────────────────────────────────────────────
+  const handleUpdateResponsibility = (index: number, val: string) => {
+    const list = [...(activeResult.responsibilities || [])];
+    list[index] = val;
+    setActiveResult({ ...activeResult, responsibilities: list });
+  };
+  const handleAddResponsibility = () => {
+    const list = [...(activeResult.responsibilities || []), 'مسؤولية جديدة...'];
+    setActiveResult({ ...activeResult, responsibilities: list });
+  };
+  const handleRemoveResponsibility = (index: number) => {
+    const list = activeResult.responsibilities.filter((_, i) => i !== index);
+    setActiveResult({ ...activeResult, responsibilities: list });
+  };
+
+  // ── Requirements Handlers ──────────────────────────────────────────────────
+  const handleUpdateRequirement = (index: number, val: string) => {
+    const list = [...(activeResult.requirements || [])];
+    list[index] = val;
+    setActiveResult({ ...activeResult, requirements: list });
+  };
+  const handleAddRequirement = () => {
+    const list = [...(activeResult.requirements || []), 'متطلب جديد...'];
+    setActiveResult({ ...activeResult, requirements: list });
+  };
+  const handleRemoveRequirement = (index: number) => {
+    const list = activeResult.requirements.filter((_, i) => i !== index);
+    setActiveResult({ ...activeResult, requirements: list });
+  };
+
+  // ── Skills Handlers ────────────────────────────────────────────────────────
+  const handleAddSkill = () => {
+    if (!newSkillInput.trim()) return;
+    const skills = [...(activeResult.requiredSkills || []), newSkillInput.trim()];
+    setActiveResult({ ...activeResult, requiredSkills: skills });
+    setNewSkillInput('');
+  };
+  const handleRemoveSkill = (skillName: string) => {
+    const skills = activeResult.requiredSkills.filter(s => s !== skillName);
+    setActiveResult({ ...activeResult, requiredSkills: skills });
+  };
+
+  // ── Questions Handlers ─────────────────────────────────────────────────────
+  const handleUpdateQuestion = (index: number, field: string, val: string) => {
+    const qList = [...(activeResult.interviewQuestions || [])];
+    qList[index] = { ...qList[index], [field]: val };
+    setActiveResult({ ...activeResult, interviewQuestions: qList });
+  };
+  const handleAddQuestion = () => {
+    const qList = [...(activeResult.interviewQuestions || []), { question: 'سؤال جديد للمقابلة...', category: 'تقني' }];
+    setActiveResult({ ...activeResult, interviewQuestions: qList });
+  };
+  const handleRemoveQuestion = (index: number) => {
+    const qList = activeResult.interviewQuestions.filter((_, i) => i !== index);
+    setActiveResult({ ...activeResult, interviewQuestions: qList });
+  };
 
   // ── Create Job Request ──────────────────────────────────────────────────────
   const handleCreateJobRequest = async () => {
     setCreatingJR(true);
     setJrError(null);
     try {
-      const targetTitle = result.jobTitle && result.jobTitle !== 'المسمى الوظيفي' ? result.jobTitle : (formData.jobTitle || 'وظيفة جديدة');
+      const targetTitle = activeResult.jobTitle && activeResult.jobTitle !== 'المسمى الوظيفي' ? activeResult.jobTitle : (formData.jobTitle || 'وظيفة جديدة');
       const targetDepartment = formData.department || 'تكنولوجيا المعلومات';
 
       const payload = {
@@ -195,13 +263,13 @@ const JDResultView: React.FC<{
         departmentName: targetDepartment,
         departmentId: formData.departmentId || null,
         location: formData.location || 'الرياض',
-        employmentType: result.employmentType || formData.employmentType || 'FULL_TIME',
+        employmentType: activeResult.employmentType || formData.employmentType || 'FULL_TIME',
         vacancies: formData.vacancies || 1,
-        jobSummary: result.summary,
+        jobSummary: activeResult.summary,
         requiredExperience: formData.experience || '',
-        educationLevel: result.educationLevel || formData.educationLevel || 'بكالوريوس (Bachelor)',
-        responsibilities: result.responsibilities?.join('\n') || '',
-        skills: result.requiredSkills || [],
+        educationLevel: activeResult.educationLevel || formData.educationLevel || 'بكالوريوس (Bachelor)',
+        responsibilities: activeResult.responsibilities?.join('\n') || '',
+        skills: activeResult.requiredSkills || [],
         salaryMin: formData.salaryMin || '',
         salaryMax: formData.salaryMax || '',
         budgetCode: `BUD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -225,37 +293,37 @@ const JDResultView: React.FC<{
     setGeneratingSocial(true);
     setSocialPost(null);
     try {
-      const skills = result.requiredSkills?.slice(0, 5).join(' | ') || '';
+      const skills = activeResult.requiredSkills?.slice(0, 5).join(' | ') || '';
       const salary = formData.salaryMin && formData.salaryMax
         ? `💰 الراتب: ${Number(formData.salaryMin).toLocaleString()} - ${Number(formData.salaryMax).toLocaleString()} ريال`
         : '';
       const location = formData.location || 'الرياض';
-      const empType = result.employmentType === 'FULL_TIME' ? 'دوام كامل' : result.employmentType === 'HYBRID' ? 'هجين' : result.employmentType === 'REMOTE' ? 'عن بُعد' : 'دوام كامل';
+      const empType = activeResult.employmentType === 'FULL_TIME' ? 'دوام كامل' : activeResult.employmentType === 'HYBRID' ? 'هجين' : activeResult.employmentType === 'REMOTE' ? 'عن بُعد' : 'دوام كامل';
 
-      const linkedin = `🚀 نحن نوظّف! | ${result.jobTitle}\n\n` +
-        `${result.summary?.substring(0, 200)}...\n\n` +
+      const linkedin = `🚀 نحن نوظّف! | ${activeResult.jobTitle}\n\n` +
+        `${activeResult.summary?.substring(0, 200)}...\n\n` +
         `📋 المتطلبات الرئيسية:\n` +
-        result.requirements?.slice(0, 3).map(r => `• ${r}`).join('\n') + '\n\n' +
+        activeResult.requirements?.slice(0, 3).map(r => `• ${r}`).join('\n') + '\n\n' +
         `🛠️ المهارات: ${skills}\n` +
         `📍 الموقع: ${location} | ${empType}\n` +
         (salary ? `${salary}\n` : '') +
         `\n📩 للتقديم: تواصل معنا عبر الرسائل المباشرة أو أرسل سيرتك الذاتية.\n\n` +
-        `#توظيف #${result.jobTitle?.replace(/\s/g, '_')} #وظائف_السعودية #${location}`;
+        `#توظيف #${activeResult.jobTitle?.replace(/\s/g, '_')} #وظائف_السعودية #${location}`;
 
       const twitterLines = [
-        `📢 وظيفة شاغرة: ${result.jobTitle}`,
+        `📢 وظيفة شاغرة: ${activeResult.jobTitle}`,
         `📍 ${location} | ${empType}`,
         skills ? `🛠️ ${skills}` : '',
         salary || '',
         `📩 راسلنا للتقديم!`,
-        `#وظائف #${result.jobTitle?.replace(/\s/g, '_')} #السعودية`
+        `#وظائف #${activeResult.jobTitle?.replace(/\s/g, '_')} #السعودية`
       ].filter(Boolean).join('\n');
 
       setSocialPost({ linkedin, twitter: twitterLines });
     } catch {
       setSocialPost({
-        linkedin: `🚀 نحن نوظّف ${result.jobTitle}! تواصل معنا للتفاصيل. #وظائف`,
-        twitter: `📢 وظيفة: ${result.jobTitle} | تواصل معنا! #وظائف`
+        linkedin: `🚀 نحن نوظّف ${activeResult.jobTitle}! تواصل معنا للتفاصيل. #وظائف`,
+        twitter: `📢 وظيفة: ${activeResult.jobTitle} | تواصل معنا! #وظائف`
       });
     } finally {
       setGeneratingSocial(false);
@@ -274,6 +342,27 @@ const JDResultView: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
+      {/* Edit Mode Alert Banner */}
+      {isEditing && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-2xl flex items-center justify-between gap-3 text-amber-800 dark:text-amber-200 text-sm"
+        >
+          <div className="flex items-center gap-2">
+            <Edit3 className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            <span className="font-bold">✏️ أنت الآن في وضع التعديل المباشر: يمكنك تعديل أي حقل، مسؤولية، أو متطلب بالأسفل ثم النقر على "حفظ التعديلات".</span>
+          </div>
+          <button
+            onClick={() => setIsEditing(false)}
+            className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition shrink-0"
+          >
+            <Save className="w-4 h-4" />
+            حفظ التعديلات
+          </button>
+        </motion.div>
+      )}
+
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-primary-600 via-violet-600 to-secondary-600 rounded-2xl p-6 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -281,32 +370,60 @@ const JDResultView: React.FC<{
           <div className="absolute bottom-0 right-8 w-24 h-24 rounded-full bg-white blur-2xl" />
         </div>
         <div className="relative flex items-start justify-between gap-4">
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="w-4 h-4 opacity-80" />
               <span className="text-xs font-medium opacity-80">تم التوليد بالذكاء الاصطناعي</span>
             </div>
-            <h2 className="text-2xl font-bold mb-1">{result.jobTitle}</h2>
+            
+            {isEditing ? (
+              <div className="mb-2">
+                <label className="text-xs text-white/80 block mb-1">المسمى الوظيفي:</label>
+                <input
+                  type="text"
+                  value={activeResult.jobTitle}
+                  onChange={(e) => setActiveResult({ ...activeResult, jobTitle: e.target.value })}
+                  className="w-full text-xl font-bold bg-white/20 border border-white/40 text-white placeholder-white/60 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-white"
+                />
+              </div>
+            ) : (
+              <h2 className="text-2xl font-bold mb-1">{activeResult.jobTitle}</h2>
+            )}
+
             <div className="flex flex-wrap gap-3 text-sm opacity-90">
               <span className="flex items-center gap-1.5">
                 <Briefcase className="w-3.5 h-3.5" />
-                {EMPLOYMENT_LABELS[result.employmentType] || result.employmentType}
+                {EMPLOYMENT_LABELS[activeResult.employmentType] || activeResult.employmentType}
               </span>
               <span className="flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
-                {WORK_MODE_LABELS[result.workMode] || result.workMode}
+                {WORK_MODE_LABELS[activeResult.workMode] || activeResult.workMode}
               </span>
               <span className="flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5" />
-                {SENIORITY_LABELS[result.seniorityLevel] || result.seniorityLevel}
+                {SENIORITY_LABELS[activeResult.seniorityLevel] || activeResult.seniorityLevel}
               </span>
+              {activeResult.educationLevel && (
+                <span className="flex items-center gap-1.5 bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  {activeResult.educationLevel}
+                </span>
+              )}
             </div>
           </div>
+
           <div className="flex items-center gap-2 shrink-0">
-            <div className="text-center bg-white/20 rounded-xl px-3 py-2">
-              <p className="text-2xl font-bold">{Math.round((result.confidence_score || 0.9) * 100)}%</p>
-              <p className="text-xs opacity-80">دقة AI</p>
-            </div>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition shadow-md ${
+                isEditing
+                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  : 'bg-white/20 hover:bg-white/30 text-white border border-white/40'
+              }`}
+            >
+              {isEditing ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+              {isEditing ? 'حفظ التعديلات' : 'تعديل البيانات'}
+            </button>
           </div>
         </div>
       </div>
@@ -315,14 +432,39 @@ const JDResultView: React.FC<{
       <SectionCard
         icon={<FileText className="w-4 h-4" />}
         title="ملخص الوظيفة"
-        headerRight={<CopyButton text={result.summary} />}
+        headerRight={<CopyButton text={activeResult.summary} />}
       >
-        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{result.summary}</p>
-        {result.salaryInsight && (
+        {isEditing ? (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-1">نص ملخص الوظيفة:</label>
+              <textarea
+                rows={4}
+                value={activeResult.summary}
+                onChange={(e) => setActiveResult({ ...activeResult, summary: e.target.value })}
+                className="w-full p-3 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-1">المؤهل العلمي المطلوب:</label>
+              <input
+                type="text"
+                value={activeResult.educationLevel || ''}
+                onChange={(e) => setActiveResult({ ...activeResult, educationLevel: e.target.value })}
+                className="w-full p-2 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                placeholder="مثال: بكالوريوس علوم حاسب / دبلوم"
+              />
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{activeResult.summary}</p>
+        )}
+
+        {activeResult.salaryInsight && (
           <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
             <div className="flex items-start gap-2 text-green-700 dark:text-green-300 text-xs">
               <DollarSign className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span>{result.salaryInsight}</span>
+              <span>{activeResult.salaryInsight}</span>
             </div>
           </div>
         )}
@@ -331,35 +473,87 @@ const JDResultView: React.FC<{
       {/* Responsibilities */}
       <SectionCard
         icon={<Target className="w-4 h-4" />}
-        title={`المسؤوليات الوظيفية (${result.responsibilities?.length || 0})`}
-        headerRight={<CopyButton text={result.responsibilities?.join('\n') || ''} />}
+        title={`المسؤوليات الوظيفية (${activeResult.responsibilities?.length || 0})`}
+        headerRight={<CopyButton text={activeResult.responsibilities?.join('\n') || ''} />}
       >
         <ul className="space-y-2">
-          {result.responsibilities?.map((item, i) => (
-            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
-              <span className="w-5 h-5 bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+          {activeResult.responsibilities?.map((item, i) => (
+            <li key={i} className="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+              <span className="w-5 h-5 bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                 {i + 1}
               </span>
-              {item}
+              {isEditing ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleUpdateResponsibility(i, e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                  <button
+                    onClick={() => handleRemoveResponsibility(i)}
+                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                    title="حذف المسؤولية"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <span>{item}</span>
+              )}
             </li>
           ))}
         </ul>
+        {isEditing && (
+          <button
+            onClick={handleAddResponsibility}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline"
+          >
+            <Plus className="w-4 h-4" /> إضافة مسؤولية جديدة
+          </button>
+        )}
       </SectionCard>
 
       {/* Requirements */}
       <SectionCard
         icon={<BookOpen className="w-4 h-4" />}
-        title={`المتطلبات (${result.requirements?.length || 0})`}
-        headerRight={<CopyButton text={result.requirements?.join('\n') || ''} />}
+        title={`المتطلبات (${activeResult.requirements?.length || 0})`}
+        headerRight={<CopyButton text={activeResult.requirements?.join('\n') || ''} />}
       >
         <ul className="space-y-2">
-          {result.requirements?.map((item, i) => (
-            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
-              <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-              {item}
+          {activeResult.requirements?.map((item, i) => (
+            <li key={i} className="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+              <Check className="w-4 h-4 text-green-500 shrink-0" />
+              {isEditing ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleUpdateRequirement(i, e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                  <button
+                    onClick={() => handleRemoveRequirement(i)}
+                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                    title="حذف المتطلب"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <span>{item}</span>
+              )}
             </li>
           ))}
         </ul>
+        {isEditing && (
+          <button
+            onClick={handleAddRequirement}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-green-600 dark:text-green-400 hover:underline"
+          >
+            <Plus className="w-4 h-4" /> إضافة متطلب جديد
+          </button>
+        )}
       </SectionCard>
 
       {/* Skills */}
@@ -368,33 +562,56 @@ const JDResultView: React.FC<{
           <div>
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">مهارات أساسية (مطلوبة)</p>
             <div className="flex flex-wrap gap-2">
-              {result.requiredSkills?.map((s, i) => <SkillTag key={i} skill={s} variant="required" />)}
+              {activeResult.requiredSkills?.map((s, i) => (
+                <div key={i} className="inline-flex items-center gap-1">
+                  <SkillTag skill={s} variant="required" />
+                  {isEditing && (
+                    <button
+                      onClick={() => handleRemoveSkill(s)}
+                      className="text-red-500 hover:text-red-700 text-xs font-bold px-1"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-          {result.preferredSkills?.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">مهارات مفضلة (إضافية)</p>
-              <div className="flex flex-wrap gap-2">
-                {result.preferredSkills?.map((s, i) => <SkillTag key={i} skill={s} variant="preferred" />)}
+            {isEditing && (
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  placeholder="أضف مهارة جديدة واضغط إضافة..."
+                  value={newSkillInput}
+                  onChange={(e) => setNewSkillInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
+                  className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddSkill}
+                  className="px-3 py-1.5 bg-primary-600 text-white text-xs font-bold rounded-xl hover:bg-primary-700"
+                >
+                  إضافة
+                </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </SectionCard>
 
       {/* Interview Questions */}
-      {result.interviewQuestions?.length > 0 && (
+      {activeResult.interviewQuestions?.length > 0 && (
         <SectionCard
           icon={<MessageSquare className="w-4 h-4" />}
-          title={`أسئلة المقابلة المقترحة (${result.interviewQuestions.length})`}
+          title={`أسئلة المقابلة المقترحة (${activeResult.interviewQuestions.length})`}
           headerRight={
             <CopyButton
-              text={result.interviewQuestions.map((q, i) => `${i + 1}. ${q.question}`).join('\n')}
+              text={activeResult.interviewQuestions.map((q, i) => `${i + 1}. ${q.question}`).join('\n')}
             />
           }
         >
           <div className="space-y-3">
-            {result.interviewQuestions.map((q, i) => (
+            {activeResult.interviewQuestions.map((q, i) => (
               <div
                 key={i}
                 className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl"
@@ -403,18 +620,57 @@ const JDResultView: React.FC<{
                   {i + 1}
                 </span>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-800 dark:text-gray-200">{q.question}</p>
-                  <span
-                    className={`mt-1.5 inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-                      QUESTION_CATEGORY_COLORS[q.category] || 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {q.category}
-                  </span>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={q.question}
+                        onChange={(e) => handleUpdateQuestion(i, 'question', e.target.value)}
+                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      />
+                      <select
+                        value={q.category}
+                        onChange={(e) => handleUpdateQuestion(i, 'category', e.target.value)}
+                        className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      >
+                        <option value="تقني">تقني</option>
+                        <option value="سلوكي">سلوكي</option>
+                        <option value="استراتيجي">استراتيجي</option>
+                        <option value="قيادي">قيادي</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-800 dark:text-gray-200">{q.question}</p>
+                      <span
+                        className={`mt-1.5 inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
+                          QUESTION_CATEGORY_COLORS[q.category] || 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {q.category}
+                      </span>
+                    </>
+                  )}
                 </div>
+                {isEditing && (
+                  <button
+                    onClick={() => handleRemoveQuestion(i)}
+                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
+          {isEditing && (
+            <button
+              onClick={handleAddQuestion}
+              className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline"
+            >
+              <Plus className="w-4 h-4" /> إضافة سؤال جديد للمقابلة
+            </button>
+          )}
         </SectionCard>
       )}
 
@@ -429,7 +685,7 @@ const JDResultView: React.FC<{
             <Check className="w-4 h-4 text-green-600 dark:text-green-300" />
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-green-800 dark:text-green-200 text-sm">✅ تم إنشاء طلب التوظيف بنجاح!</p>
+            <p className="font-semibold text-green-800 dark:text-green-200 text-sm">✅ تم إنشاء طلب التوظيف بنجاح بالبيانات المحدثة!</p>
             <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">تم تقديم الطلب للمراجعة تلقائياً. يمكنك متابعته في صفحة طلبات التوظيف.</p>
           </div>
           <button
@@ -452,7 +708,26 @@ const JDResultView: React.FC<{
       {/* ── Actions Bar ── */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4">
         <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">الإجراءات</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+
+          {/* Edit / Save Toggle */}
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className={`flex flex-col items-center gap-2 p-3 border rounded-xl transition group ${
+              isEditing
+                ? 'bg-green-50 dark:bg-green-900/30 border-green-400 text-green-700 dark:text-green-300'
+                : 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition ${
+              isEditing ? 'bg-green-100 dark:bg-green-800' : 'bg-indigo-50 dark:bg-indigo-900/30'
+            }`}>
+              {isEditing ? <Save className="w-4 h-4 text-green-600 dark:text-green-300" /> : <Edit3 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+            </div>
+            <span className="text-xs font-bold text-center">
+              {isEditing ? 'حفظ التعديلات' : 'تعديل البيانات'}
+            </span>
+          </button>
 
           {/* Reset */}
           <button
@@ -472,7 +747,7 @@ const JDResultView: React.FC<{
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
-              a.download = `${result.jobTitle}-JD.txt`;
+              a.download = `${activeResult.jobTitle}-JD.txt`;
               a.click();
             }}
             className="flex flex-col items-center gap-2 p-3 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-xl transition group"
