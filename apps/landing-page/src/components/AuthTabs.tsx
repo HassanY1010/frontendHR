@@ -15,6 +15,20 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
     const [mode, setMode] = useState<'login' | 'register'>(initialMode)
     const [view, setView] = useState<'auth' | 'forgot'>('auth')
     const [isLoading, setIsLoading] = useState(false)
+    const [loadingSeconds, setLoadingSeconds] = useState(0)
+
+    React.useEffect(() => {
+        let interval: any
+        if (isLoading) {
+            setLoadingSeconds(0)
+            interval = setInterval(() => {
+                setLoadingSeconds((prev) => prev + 1)
+            }, 1000)
+        } else {
+            setLoadingSeconds(0)
+        }
+        return () => clearInterval(interval)
+    }, [isLoading])
 
     React.useEffect(() => {
         setMode(initialMode)
@@ -246,7 +260,7 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                                             disabled={isLoading}
                                             className="w-full h-13 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-all"
                                         >
-                                            {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div> : 'استعلام عن طريقة الاستعادة'}
+                                            {isLoading ? 'جارٍ المعالجة...' : 'استعلام عن طريقة الاستعادة'}
                                         </Button>
                                         <button
                                             type="button"
@@ -438,7 +452,12 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                     <div className="relative z-10 flex items-center justify-center gap-3">
                                         {isLoading ? (
-                                            <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            <>
+                                                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                <span className="font-bold text-white text-base">
+                                                    {mode === 'login' ? 'جاري تسجيل الدخول...' : 'جاري إنشاء الحساب...'}
+                                                </span>
+                                            </>
                                         ) : (
                                             <>
                                                 <span>{mode === 'login' ? 'دخول آمن للنظام' : 'إنشاء حسابي الآن'}</span>
@@ -447,6 +466,27 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                                         )}
                                     </div>
                                 </Button>
+
+                                {/* ── Loading Status Overlay Card ── */}
+                                {isLoading && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="w-full mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center gap-3.5 shadow-sm"
+                                    >
+                                        <div className="w-8 h-8 rounded-full border-3 border-indigo-600/30 border-t-indigo-600 animate-spin shrink-0"></div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-bold text-indigo-900">
+                                                {mode === 'login' ? 'جارٍ تسجيل الدخول وإعداد الجلسة...' : 'جارٍ إنشاء وتجهيز حساب الشركة...'}
+                                            </p>
+                                            <p className="text-xs text-indigo-600 mt-0.5 font-medium">
+                                                {loadingSeconds < 4
+                                                    ? 'يرجى الانتظار قليلاً للتحقق من البيانات والانتقال...'
+                                                    : 'تنبيه: الخادم يستجيب الآن أوتوماتيكياً (استيقاظ خدمة الويب). يرجى عدم إغلاق الصفحة.'}
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                )}
 
                                 {mode === 'login' && (
                                     <div className="text-center mt-6">
@@ -465,19 +505,17 @@ const AuthTabs: React.FC<AuthTabsProps> = ({ initialMode = 'login', onToggleMode
                 </AnimatePresence>
             </form>
             {generalError && (
-                <div className="w-full mt-4 p-3 bg-red-50/10 border border-red-500/30 rounded-lg text-right" role="alert">
-                    <p className="text-red-400 text-sm font-medium">{generalError}</p>
-                    {(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL) && (
-                        <p className="text-gray-500 text-xs mt-1 dir-ltr text-left">
-                            {import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL}
-                        </p>
-                    )}
+                <div className="w-full mt-4 p-4 bg-red-50 border border-red-200 rounded-2xl text-right space-y-2" role="alert">
+                    <div className="flex items-center gap-2 text-red-700 font-bold text-sm">
+                        <span>⚠️ تعذر الاتصال أو انتهاء المهلة</span>
+                    </div>
+                    <p className="text-red-600 text-xs leading-relaxed font-medium">{generalError}</p>
                     <button
                         type="button"
-                        onClick={() => setGeneralError(null)}
-                        className="mt-2 text-xs text-gray-500 hover:text-gray-300 underline"
+                        onClick={(e) => handleSubmit(e)}
+                        className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition shadow"
                     >
-                        محاولة مرة أخرى
+                        إعادة المحاولة الآن 🔄
                     </button>
                 </div>
             )}

@@ -19,7 +19,7 @@ const MOCK_MODE = env.VITE_MOCK_MODE === 'true'
 export class ApiClient {
   private client = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000,
+    timeout: 90000, // 90s timeout to gracefully accommodate Render cold starts
     withCredentials: true
   })
 
@@ -38,8 +38,6 @@ export class ApiClient {
 
         // Dynamic Content-Type handling
         if (config.data instanceof FormData) {
-          // For FormData, explicitly ensure no Content-Type is set
-          // so the browser can set it with the correct boundary.
           if (config.headers) {
             delete config.headers['Content-Type'];
             delete config.headers['content-type'];
@@ -50,7 +48,6 @@ export class ApiClient {
           }
           logger.info('[DEBUG-CLIENT] FormData detected, cleared Content-Type');
         } else if (!config.headers['Content-Type'] && !config.headers['content-type']) {
-          // Default to JSON for other requests
           config.headers['Content-Type'] = 'application/json';
         }
 
@@ -78,7 +75,25 @@ export class ApiClient {
         })
         return response
       },
-      (error) => {
+      async (error) => {
+        const originalRequest = error.config
+
+        // Auto-retry once on cold-start timeout for auth requests
+        if (
+          (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || error.response?.status === 504) &&
+          originalRequest &&
+          !originalRequest._retry &&
+          (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/'))
+        ) {
+          originalRequest._retry = true
+          logger.info('Auto-retrying auth request after cold-start warmup...', { url: originalRequest.url })
+          try {
+            return await this.client(originalRequest)
+          } catch (retryErr) {
+            return Promise.reject(retryErr)
+          }
+        }
+
         const errorData = {
           status: error.response?.status,
           url: error.config?.url,
@@ -87,6 +102,15 @@ export class ApiClient {
         }
 
         logger.error('API Response Error', errorData)
+
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+          if (error.response && error.response.data) {
+            error.response.data.error = {
+              message: 'استغرق الخادم وقتاً في الاستجابة (جاري تهيئة الخدمة). يرجى الضغط على "محاولة مرة أخرى".'
+            }
+          }
+        }
+
         if (error.response?.status === 401) {
           const isAuthRequest =
             error.config?.url?.includes('/auth/login') ||
@@ -95,8 +119,6 @@ export class ApiClient {
           if (!isAuthRequest) {
             localStorage.removeItem('access_token')
             localStorage.removeItem('user')
-
-            // تحويل دائم إلى الصفحة الرئيسية
             window.location.href = import.meta.env.VITE_LANDING_PAGE_URL || 'https://landing-page-cyan-eta-81.vercel.app'
           }
         }
