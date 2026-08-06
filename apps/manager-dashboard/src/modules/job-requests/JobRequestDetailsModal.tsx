@@ -359,6 +359,12 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {activeTab === 'workflow' && (
+                <div className="space-y-4 pt-2">
+                  <WorkflowTimeline jobRequestId={requestId!} canAdvance={true} />
+                </div>
+              )}
             </div>
 
             {/* Actions Bar */}
