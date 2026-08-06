@@ -35,8 +35,9 @@ const WorkflowTimeline: React.FC<WorkflowTimelineProps> = ({ jobRequestId, canAd
     try {
       setLoading(true);
       setError(null);
-      const res = await getWorkflowInstance(jobRequestId);
-      setInstance(res.data);
+      const res: any = await getWorkflowInstance(jobRequestId);
+      const data = res?.stepInstances ? res : (res?.data?.stepInstances ? res.data : res);
+      setInstance(data);
     } catch (e: any) {
       setError(e.message);
     } finally {

@@ -22,12 +22,18 @@ const WorkflowPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const [dash, breaches] = await Promise.all([
+      const [dashRes, breachesRes]: [any, any] = await Promise.all([
         getWorkflowDashboard(),
         getSLABreaches()
       ]);
-      setDashboardData(dash.data);
-      setBreachesData(breaches.data || []);
+
+      const dash = dashRes?.kpis ? dashRes : (dashRes?.data?.kpis ? dashRes.data : dashRes);
+      const breaches = Array.isArray(breachesRes)
+        ? breachesRes
+        : (Array.isArray(breachesRes?.data) ? breachesRes.data : (breachesRes?.recentBreaches || []));
+
+      setDashboardData(dash);
+      setBreachesData(breaches);
     } catch (err: any) {
       setError(err.message);
     } finally {
