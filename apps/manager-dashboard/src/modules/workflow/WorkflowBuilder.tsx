@@ -66,8 +66,11 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({ onSaved }) => {
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      const res = await getWorkflowTemplates();
-      setTemplates(res.data || []);
+      const res: any = await getWorkflowTemplates();
+      const list = Array.isArray(res)
+        ? res
+        : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.data?.data) ? res.data.data : []));
+      setTemplates(list);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -79,7 +82,13 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({ onSaved }) => {
 
   const startNew = () => {
     setSelectedTemplateId(null);
-    setEditingTemplate({ ...DEFAULT_NEW_TEMPLATE, steps: DEFAULT_NEW_TEMPLATE.steps.map(s => ({ ...s })) });
+    setEditingTemplate({
+      name: 'قالب توظيف مخصص جديد',
+      nameAr: 'قالب توظيف مخصص جديد',
+      description: 'مسار اعتماد وتوظيف مخصص',
+      isDefault: false,
+      steps: DEFAULT_NEW_TEMPLATE.steps.map(s => ({ ...s }))
+    });
   };
 
   const startEdit = (template: any) => {
@@ -150,16 +159,21 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({ onSaved }) => {
     setSaving(true);
     setError('');
     try {
+      const payload = {
+        ...editingTemplate,
+        name: editingTemplate.name || editingTemplate.nameAr
+      };
+
       if (selectedTemplateId) {
-        await updateWorkflowTemplate(selectedTemplateId, editingTemplate);
+        await updateWorkflowTemplate(selectedTemplateId, payload);
         setSuccess('تم تحديث القالب بنجاح ✅');
       } else {
-        await createWorkflowTemplate(editingTemplate);
+        await createWorkflowTemplate(payload);
         setSuccess('تم إنشاء القالب بنجاح ✅');
       }
       await loadTemplates();
       onSaved();
-      setTimeout(() => { cancelEdit(); setSuccess(''); }, 2000);
+      setTimeout(() => { cancelEdit(); setSuccess(''); }, 1500);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -187,6 +201,19 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({ onSaved }) => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
               {[...Array(2)].map((_, i) => <div key={i} className="h-40 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)' }} />)}
+            </div>
+          ) : templates.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl border border-dashed border-gray-700 bg-gray-900/40 p-6">
+              <Settings className="w-12 h-12 mx-auto text-indigo-400 mb-3 opacity-60" />
+              <h3 className="text-lg font-bold text-white mb-1">لا توجد قوالب توظيف مخصصة حتى الآن</h3>
+              <p className="text-sm text-gray-400 mb-4">اضغط على الزر أدناه لإنشاء أول قالب توظيف مخصص لشركتك</p>
+              <button
+                onClick={startNew}
+                className="px-5 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white transition-all inline-flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                إنشاء أول قالب
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -223,9 +250,9 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({ onSaved }) => {
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {(tmpl.steps || []).map((step: any) => (
-                      <span key={step.id} className="px-2 py-1 rounded-lg text-xs"
+                      <span key={step.id || step.stepOrder} className="px-2 py-1 rounded-lg text-xs"
                         style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
-                        {step.nameAr} ({step.slaDurationHours}h)
+                        {step.nameAr || step.name} ({step.slaDurationHours}h)
                       </span>
                     ))}
                   </div>
