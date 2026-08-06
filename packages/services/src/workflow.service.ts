@@ -43,5 +43,9 @@ export const workflowService = {
 
   async getSLABreaches() {
     return apiClient.get<any>('/workflow/sla-breaches')
+  },
+
+  async resetTestData(confirmCode: string = 'RESET') {
+    return apiClient.post<any>('/workflow/reset-test-data', { confirmCode })
   }
 }

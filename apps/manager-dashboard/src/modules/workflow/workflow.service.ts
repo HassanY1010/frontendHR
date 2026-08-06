@@ -49,3 +49,8 @@ export const getSLABreaches = async () => {
   const res: any = await workflowService.getSLABreaches();
   return res?.data?.data || res?.data || res;
 };
+
+export const resetTestData = async (confirmCode: string = 'RESET') => {
+  const res: any = await workflowService.resetTestData(confirmCode);
+  return res?.data?.data || res?.data || res;
+};
