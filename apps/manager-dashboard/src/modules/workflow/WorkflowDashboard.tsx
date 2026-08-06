@@ -101,16 +101,9 @@ const WorkflowDashboard: React.FC<WorkflowDashboardProps> = ({ data, loading }) 
 
   const { kpis = {}, stepSummary = [], recentBreaches = [], bottleneck } = data;
 
-  const stepSummaryWithSLA = DEFAULT_STEPS.map((defStep) => {
-    const found = stepSummary.find((s: any) => s.name === defStep.name);
-    return {
-      name: defStep.name,
-      avgHours: found?.avgHours || 0,
-      breaches: found?.breaches || 0,
-      total: found?.total || 0,
-      slaHours: defStep.slaHours
-    };
-  });
+  const displaySteps = stepSummary.length > 0
+    ? stepSummary
+    : DEFAULT_STEPS.map(d => ({ name: d.name, role: 'HR_MANAGER', slaHours: d.slaHours, avgHours: 0, breaches: 0, total: 0 }));
 
   return (
     <div className="space-y-6">
@@ -126,7 +119,7 @@ const WorkflowDashboard: React.FC<WorkflowDashboardProps> = ({ data, loading }) 
       </div>
 
       {/* Bottleneck Alert */}
-      {bottleneck && bottleneck.breaches > 0 && (
+      {bottleneck && (bottleneck.breaches > 0 || bottleneck.avgHours > bottleneck.slaHours) && (
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -155,13 +148,13 @@ const WorkflowDashboard: React.FC<WorkflowDashboardProps> = ({ data, loading }) 
             <h3 className="text-white font-semibold">أداء كل مرحلة مقارنة بـ SLA</h3>
           </div>
           <div className="space-y-3">
-            {stepSummaryWithSLA.map((step, i) => (
+            {displaySteps.map((step: any, i: number) => (
               <ProgressBar
                 key={i}
                 label={step.name}
                 value={step.avgHours}
-                max={step.slaHours * 2}
-                slaHours={step.slaHours}
+                max={(step.slaHours || 24) * 2}
+                slaHours={step.slaHours || 24}
                 color="#6366f1"
                 breaches={step.breaches}
               />
@@ -190,14 +183,14 @@ const WorkflowDashboard: React.FC<WorkflowDashboardProps> = ({ data, loading }) 
                     <AlertTriangle className="w-4 h-4 text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white font-medium truncate">{b.step?.nameAr || b.step?.name}</div>
+                    <div className="text-sm text-white font-medium truncate">{b.stepName || b.step?.nameAr || b.step?.name}</div>
                     <div className="text-xs text-gray-400 mt-0.5">
-                      {b.instance?.jobRequest?.jobTitle} · {b.instance?.jobRequest?.requestId}
+                      {b.jobTitle || b.instance?.jobRequest?.jobTitle} · {b.requestId || b.instance?.jobRequest?.requestId}
                     </div>
                   </div>
                   <span className="text-xs px-2 py-1 rounded-full flex-shrink-0"
                     style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171' }}>
-                    متأخر
+                    متأخر ({b.hoursOverdue || 0}h)
                   </span>
                 </div>
               ))}
@@ -210,52 +203,43 @@ const WorkflowDashboard: React.FC<WorkflowDashboardProps> = ({ data, loading }) 
       <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(99,102,241,0.2)' }}>
         <div className="p-4 flex items-center gap-2" style={{ background: 'rgba(99,102,241,0.1)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
           <Target className="w-5 h-5 text-indigo-400" />
-          <h3 className="text-white font-semibold">جدول SLA المرجعي</h3>
+          <h3 className="text-white font-semibold">جدول SLA المرجعي والمؤشرات الحقيقية</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                {['#', 'المرحلة', 'المسؤول', 'SLA المحدد', 'متوسط الأداء', 'الخروقات'].map((h) => (
+                {['#', 'المرحلة', 'المسؤول', 'SLA المحدد', 'متوسط الأداء الحقيقي', 'الخروقات الحية'].map((h) => (
                   <th key={h} className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {[
-                { step: 'إنشاء طلب التوظيف', role: 'Hiring Manager', sla: '24 ساعة' },
-                { step: 'مراجعة HR', role: 'HR Manager', sla: '48 ساعة' },
-                { step: 'الموافقة الإدارية', role: 'Management', sla: '72 ساعة' },
-                { step: 'البحث عن المرشحين', role: 'Recruiter', sla: '7 أيام' },
-                { step: 'عملية المقابلات', role: 'Recruiter / HR', sla: '10 أيام' },
-                { step: 'مرحلة العرض', role: 'HR Manager', sla: '72 ساعة' },
-                { step: 'اكتمال التعيين', role: 'HR Manager', sla: '24 ساعة' },
-              ].map((row, i) => {
-                const stat = stepSummaryWithSLA[i];
-                const isOver = stat?.avgHours > 0 && stat?.slaHours && stat.avgHours > stat.slaHours;
+              {displaySteps.map((row: any, i: number) => {
+                const isOver = row.avgHours > 0 && row.slaHours && row.avgHours > row.slaHours;
                 return (
                   <tr key={i} className="border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                     <td className="px-4 py-3 text-indigo-400 font-bold">{i + 1}</td>
-                    <td className="px-4 py-3 text-gray-200 font-medium">{row.step}</td>
-                    <td className="px-4 py-3 text-gray-400 text-sm">{row.role}</td>
+                    <td className="px-4 py-3 text-gray-200 font-medium">{row.name}</td>
+                    <td className="px-4 py-3 text-gray-400 text-sm">{row.role || 'HR Manager'}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-1 rounded-lg text-xs font-medium"
                         style={{ background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
-                        {row.sla}
+                        {row.slaHours ? `${row.slaHours} ساعة` : '24 ساعة'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {stat?.avgHours > 0 ? (
+                      {row.avgHours > 0 ? (
                         <span className="text-sm font-medium" style={{ color: isOver ? '#f87171' : '#34d399' }}>
-                          {stat.avgHours}h {isOver ? '⚠️' : '✅'}
+                          {row.avgHours}h {isOver ? '⚠️' : '✅'}
                         </span>
                       ) : <span className="text-gray-600 text-xs">لا بيانات</span>}
                     </td>
                     <td className="px-4 py-3">
-                      {stat?.breaches > 0 ? (
+                      {row.breaches > 0 ? (
                         <span className="px-2 py-1 rounded-full text-xs font-bold"
                           style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171' }}>
-                          {stat.breaches}
+                          {row.breaches}
                         </span>
                       ) : <span className="text-green-500 text-xs">✅ لا خروقات</span>}
                     </td>
