@@ -5,14 +5,14 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Briefcase,
   DollarSign,
   ShieldCheck,
   Send,
   GitBranch
 } from 'lucide-react';
-import { jobRequestService } from '@hr/services';
+import { jobRequestService, hiringPlanService } from '@hr/services';
 import WorkflowTimeline from '../workflow/WorkflowTimeline';
+import { Snowflake, Play } from 'lucide-react';
 
 interface JobRequestDetailsModalProps {
   requestId: string | null;
@@ -45,6 +45,12 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
   const [comment, setComment] = useState('');
   const [activeTab, setActiveTab] = useState<'details' | 'approvals' | 'history' | 'workflow'>('details');
 
+  // Freeze Modal state
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
+  const [freezeReason, setFreezeReason] = useState('BUDGET_PENDING');
+  const [resumeDate, setResumeDate] = useState('');
+  const [freezeComment, setFreezeComment] = useState('');
+
   React.useEffect(() => {
     if (isOpen && requestId) {
       fetchDetails();
@@ -64,6 +70,37 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
   };
 
   if (!isOpen) return null;
+
+  const handleFreeze = async () => {
+    setActionLoading(true);
+    try {
+      await hiringPlanService.freezeJobRequest(requestId!, {
+        freezeReason,
+        resumeDate,
+        comment: freezeComment
+      });
+      setShowFreezeModal(false);
+      fetchDetails();
+      onRefresh();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err.message || 'فشل تجميد الطلب');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnfreeze = async () => {
+    setActionLoading(true);
+    try {
+      await hiringPlanService.unfreezeJobRequest(requestId!, comment || 'فك التجميد واستئناف التوظيف');
+      fetchDetails();
+      onRefresh();
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err.message || 'فشل فك تجميد الطلب');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleAction = async (actionType: string, payload: any = {}) => {
     setActionLoading(true);
@@ -115,6 +152,21 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   {data.jobTitle}
+                  {data.hiringType === 'IMMEDIATE' && (
+                    <span className="px-2.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300 text-[10px] font-extrabold rounded-full flex items-center gap-1">
+                      ⚡ توظيف فوري عاجل
+                    </span>
+                  )}
+                  {data.hiringType === 'PLANNED' && (
+                    <span className="px-2.5 py-0.5 bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 text-[10px] font-extrabold rounded-full flex items-center gap-1">
+                      📅 خطة سنوية (2027)
+                    </span>
+                  )}
+                  {data.hiringType === 'ON_HOLD' && (
+                    <span className="px-2.5 py-0.5 bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 text-[10px] font-extrabold rounded-full flex items-center gap-1">
+                      ❄️ توظيف مجمد
+                    </span>
+                  )}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   القسم: {data.department?.name || 'غير محدد'} | الشواغر: {data.vacancies}
@@ -409,13 +461,21 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
                   </>
                 )}
 
-                {['APPROVED', 'RECRUITMENT_STARTED'].includes(data.status) && (
+                {data.status === 'ON_HOLD' ? (
                   <button
                     disabled={actionLoading}
-                    onClick={() => handleAction('convert-to-job')}
-                    className="px-4 py-2 bg-gradient-to-r from-secondary-600 to-primary-600 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow"
+                    onClick={handleUnfreeze}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow"
                   >
-                    <Briefcase className="w-4 h-4" /> تحويل لوظيفة توظيف نشطة
+                    <Play className="w-4 h-4" /> فك التجميد واستئناف التوظيف ⚡
+                  </button>
+                ) : (
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => setShowFreezeModal(true)}
+                    className="px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold rounded-xl flex items-center gap-1 border border-amber-500/30 transition-all"
+                  >
+                    <Snowflake className="w-3.5 h-3.5" /> تجميد التوظيف
                   </button>
                 )}
               </div>
@@ -423,6 +483,76 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
           </div>
         )}
       </motion.div>
+
+      {/* Freeze Request Confirmation Modal */}
+      {showFreezeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" dir="rtl">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-amber-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                <Snowflake className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-gray-900 dark:text-white">تجميد طلب التوظيف (Freeze Request)</h3>
+                <p className="text-xs text-amber-600">تعليق التوظيف مؤقتاً لحين استيفاء الملاحظات</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">سبب التجميد (Freeze Reason) *</label>
+                <select
+                  value={freezeReason}
+                  onChange={(e) => setFreezeReason(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl"
+                >
+                  <option value="BUDGET_PENDING">Budget Pending (الميزانية قيد الانتظار)</option>
+                  <option value="MANAGEMENT_APPROVAL">Management Approval (موافقة الإدارة العليا)</option>
+                  <option value="BUSINESS_CHANGE">Business Change (تغيير خطة العمل)</option>
+                  <option value="OTHER">Other (أسباب أخرى)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">التاريخ المتوقع للاستئناف (Resume Date)</label>
+                <input
+                  type="date"
+                  value={resumeDate}
+                  onChange={(e) => setResumeDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 dark:text-gray-300 mb-1">سبب قرار التجميد / ملاحظات</label>
+                <textarea
+                  rows={2}
+                  placeholder="اكتب ملاحظات إضافية عن سبب التجميد..."
+                  value={freezeComment}
+                  onChange={(e) => setFreezeComment(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowFreezeModal(false)}
+                className="px-4 py-2 rounded-xl text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                إلغاء
+              </button>
+              <button
+                disabled={actionLoading}
+                onClick={handleFreeze}
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-600/20"
+              >
+                {actionLoading ? 'جاري التجميد...' : 'تأكيد تجميد التوظيف ❄️'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

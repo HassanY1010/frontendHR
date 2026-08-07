@@ -35,7 +35,13 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
     costCenter: 'CC-101',
     hiringReason: 'NEW_POSITION',
     requiredDate: '',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    hiringType: 'IMMEDIATE',
+    hiringDeadline: '',
+    freezeReason: 'BUDGET_PENDING',
+    frozenDate: new Date().toISOString().slice(0, 10),
+    resumeDate: '',
+    ownerName: ''
   });
 
   if (!isOpen) return null;
@@ -147,6 +153,120 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
               <span>{error}</span>
             </div>
           )}
+
+          {/* Hiring Type Selection (أنواع التوظيف الثلاثة) */}
+          <div>
+            <label className="block text-xs font-bold text-gray-900 dark:text-white mb-2">نوع التوظيف المطلوب (Hiring Type) *</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div
+                onClick={() => setFormData({ ...formData, hiringType: 'IMMEDIATE', priority: 'URGENT' })}
+                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                  formData.hiringType === 'IMMEDIATE'
+                    ? 'border-red-500 bg-red-50/50 dark:bg-red-950/20 shadow-md ring-2 ring-red-500/20'
+                    : 'border-gray-200 dark:border-gray-800 hover:border-red-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">⚡</span>
+                  <span className="font-bold text-xs text-red-600 dark:text-red-400">1. Immediate Hiring</span>
+                </div>
+                <div className="text-xs font-semibold text-gray-900 dark:text-white">توظيف فوري عاجل</div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">تلبية الاحتياجات العاجلة جداً مع SLA سريع وأولوية Urgent.</p>
+              </div>
+
+              <div
+                onClick={() => setFormData({ ...formData, hiringType: 'PLANNED', priority: 'MEDIUM' })}
+                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                  formData.hiringType === 'PLANNED'
+                    ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 shadow-md ring-2 ring-purple-500/20'
+                    : 'border-gray-200 dark:border-gray-800 hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">📅</span>
+                  <span className="font-bold text-xs text-purple-600 dark:text-purple-400">2. Manpower Force Plan</span>
+                </div>
+                <div className="text-xs font-semibold text-gray-900 dark:text-white">خطة التوظيف السنوية</div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">التخطيط المسبق للوظائف والميزانيات لعام 2027.</p>
+              </div>
+
+              <div
+                onClick={() => setFormData({ ...formData, hiringType: 'ON_HOLD', priority: 'LOW' })}
+                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                  formData.hiringType === 'ON_HOLD'
+                    ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 shadow-md ring-2 ring-amber-500/20'
+                    : 'border-gray-200 dark:border-gray-800 hover:border-amber-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">❄️</span>
+                  <span className="font-bold text-xs text-amber-600 dark:text-amber-400">3. On Hold Hiring</span>
+                </div>
+                <div className="text-xs font-semibold text-gray-900 dark:text-white">توظيف مجمد / معلق</div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">تعليق طلب التوظيف لحين الموافقة أو توفر الميزانية.</p>
+              </div>
+            </div>
+
+            {/* Conditional Type Fields */}
+            {formData.hiringType === 'IMMEDIATE' && (
+              <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-semibold">
+                  <span>🚀 مسار التوظيف الفوري (Fast SLA): Priority تلقائياً URGENT</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-gray-700 dark:text-gray-300 font-medium">الموعد النهائي للتوظيف (Deadline):</label>
+                  <input
+                    type="date"
+                    value={formData.hiringDeadline}
+                    onChange={(e) => setFormData({ ...formData, hiringDeadline: e.target.value })}
+                    className="px-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.hiringType === 'ON_HOLD' && (
+              <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-3">
+                <div className="text-xs font-semibold text-amber-600 dark:text-amber-400">❄️ خصائص التوظيف المجمد (On Hold Properties):</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">سبب التجميد (Freeze Reason) *</label>
+                    <select
+                      value={formData.freezeReason}
+                      onChange={(e) => setFormData({ ...formData, freezeReason: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs"
+                    >
+                      <option value="BUDGET_PENDING">Budget Pending (الميزانية قيد الانتظار)</option>
+                      <option value="MANAGEMENT_APPROVAL">Management Approval (موافقة الإدارة العليا)</option>
+                      <option value="BUSINESS_CHANGE">Business Change (تغيير خطة العمل)</option>
+                      <option value="OTHER">Other (أسباب أخرى)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">التاريخ المتوقع للاستئناف (Resume Date)</label>
+                    <input
+                      type="date"
+                      value={formData.resumeDate}
+                      onChange={(e) => setFormData({ ...formData, resumeDate: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">المسؤول / المتابع (Owner)</label>
+                    <input
+                      type="text"
+                      placeholder="اسم المتابع أو المدير..."
+                      value={formData.ownerName}
+                      onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Section 1: Basic Information */}
           <div>

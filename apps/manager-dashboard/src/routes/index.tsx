@@ -21,6 +21,8 @@ const SettingsPage = React.lazy(() => import('../modules/settings/pages/Settings
 const JobRequestsPage = React.lazy(() => import('../modules/job-requests/JobRequestsPage'))
 const AIJobDescriptionPage = React.lazy(() => import('../modules/job-requests/AIJobDescriptionPage'))
 const WorkflowPage = React.lazy(() => import('../modules/workflow/WorkflowPage'))
+const ManpowerPlanPage = React.lazy(() => import('../modules/recruitment/pages/ManpowerPlanPage'))
+const HiringTypesReportPage = React.lazy(() => import('../modules/dashboard/pages/HiringTypesReportPage'))
 
 const LoadingFallback = () => (
     <div className="min-h-screen flex items-center justify-center">
@@ -61,6 +63,7 @@ const AppRoutes: React.FC = () => {
                         <Route path="jobs" element={<JobsPage />} />
                         <Route path="candidates" element={<CandidatesPage />} />
                         <Route path="interviews" element={<InterviewsPage />} />
+                        <Route path="manpower-plan" element={<ManpowerPlanPage />} />
                     </Route>
                     <Route path="job-requests" element={<JobRequestsPage />} />
                     <Route path="ai-jd" element={<AIJobDescriptionPage />} />
@@ -72,6 +75,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="training" element={<TrainingPage />} />
                     <Route path="intelligence" element={<IntelligencePage />} />
                     <Route path="reports" element={<ReportsPage />} />
+                    <Route path="reports/hiring-types" element={<HiringTypesReportPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                 </Route>
 

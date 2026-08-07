@@ -12,6 +12,8 @@ import {
   Zap,
   FileCheck,
   Sparkles,
+  Calendar,
+  PieChart,
   GitBranch
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
@@ -27,6 +29,8 @@ const MainLayout: React.FC = () => {
     { path: '/', icon: Home, label: 'النظرة العامة' },
     { path: '/job-requests', icon: FileCheck, label: 'طلبات التوظيف' },
     { path: '/workflow', icon: GitBranch, label: 'إجراءات التوظيف' },
+    { path: '/recruitment/manpower-plan', icon: Calendar, label: 'خطة القوى العاملة 2027' },
+    { path: '/reports/hiring-types', icon: PieChart, label: 'تقارير أنواع التوظيف' },
     { path: '/ai-jd', icon: Sparkles, label: 'مولّد الوصف AI' },
     { path: '/recruitment', icon: Briefcase, label: 'التوظيف الذكي' },
     { path: '/intelligence', icon: Zap, label: 'ذكاء 30×3' },
