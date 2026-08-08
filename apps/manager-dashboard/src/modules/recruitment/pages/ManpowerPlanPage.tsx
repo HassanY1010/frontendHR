@@ -258,71 +258,73 @@ export const ManpowerPlanPage: React.FC = () => {
       )}
 
       {/* Manpower Force Plan Items Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden">
+        <div className="p-4 bg-gray-50/70 dark:bg-gray-700/40 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-purple-600" /> بنود خطة القوى العاملة لعام {selectedYear} ({plans.length})
           </h2>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[160px]">
           <table className="w-full text-right text-xs">
-            <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-semibold border-b border-gray-100 dark:border-gray-700">
+            <thead className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold border-b border-gray-200 dark:border-gray-600">
               <tr>
-                <th className="p-3.5">الوظيفة (Position)</th>
-                <th className="p-3.5">القسم (Department)</th>
-                <th className="p-3.5 text-center">العدد المطلوب (Quantity)</th>
-                <th className="p-3.5 text-center">المنجز (Fulfilled)</th>
-                <th className="p-3.5">التاريخ المتوقع (Expected Date)</th>
-                <th className="p-3.5">الميزانية (Budget)</th>
-                <th className="p-3.5 text-center">الحالة (Status)</th>
-                <th className="p-3.5 text-center">الإجراءات</th>
+                <th className="p-4">الوظيفة (Position)</th>
+                <th className="p-4">القسم (Department)</th>
+                <th className="p-4 text-center">العدد المطلوب (Quantity)</th>
+                <th className="p-4 text-center">المنجز (Fulfilled)</th>
+                <th className="p-4">التاريخ المتوقع (Expected Date)</th>
+                <th className="p-4">الميزانية (Budget)</th>
+                <th className="p-4 text-center">الحالة (Status)</th>
+                <th className="p-4 text-center">الإجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
               {plans.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={8} className="p-10 text-center text-gray-500 dark:text-gray-400 font-medium">
                     لا توجد بنود مضافة لخطة التوظيف السنوية لعام {selectedYear} بعد. اضغط على "إضافة بند للخطة السنوية" للبدء!
                   </td>
                 </tr>
               ) : (
                 plans.map((plan: any) => (
-                  <tr key={plan.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-all">
-                    <td className="p-3.5 font-bold text-gray-900 dark:text-white">{plan.position}</td>
-                    <td className="p-3.5 text-gray-600 dark:text-gray-300">{plan.department?.name || 'غير محدد'}</td>
-                    <td className="p-3.5 text-center font-bold text-purple-600 dark:text-purple-400">{plan.quantity}</td>
-                    <td className="p-3.5 text-center font-bold text-emerald-600 dark:text-emerald-400">{plan.fulfilledCount}</td>
-                    <td className="p-3.5 text-gray-600 dark:text-gray-300">
+                  <tr key={plan.id} className="hover:bg-purple-50/40 dark:hover:bg-gray-700/50 transition-all border-b border-gray-100 dark:border-gray-700">
+                    <td className="p-4 font-bold text-gray-900 dark:text-white text-sm">{plan.position}</td>
+                    <td className="p-4 text-gray-700 dark:text-gray-300 font-medium">{plan.department?.name || 'تكنولوجيا المعلومات'}</td>
+                    <td className="p-4 text-center font-extrabold text-purple-600 dark:text-purple-400 text-sm">{plan.quantity}</td>
+                    <td className="p-4 text-center font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">{plan.fulfilledCount}</td>
+                    <td className="p-4 text-gray-700 dark:text-gray-300 font-medium">
                       {plan.expectedDate ? new Date(plan.expectedDate).toLocaleDateString('ar-SA') : '-'}
                     </td>
-                    <td className="p-3.5 font-semibold text-gray-800 dark:text-gray-200">
+                    <td className="p-4 font-bold text-gray-900 dark:text-gray-100">
                       {plan.budget ? plan.budget.toLocaleString('ar-SA') + ' ر.س' : '-'}
                     </td>
-                    <td className="p-3.5 text-center">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        plan.status === 'FULFILLED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' :
-                        plan.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' :
-                        'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
+                    <td className="p-4 text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        plan.status === 'FULFILLED' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300' :
+                        plan.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300' :
+                        'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300'
                       }`}>
                         {plan.status === 'FULFILLED' ? 'مكتمل' : plan.status === 'IN_PROGRESS' ? 'قيد التوظيف' : 'مخطط'}
                       </span>
                     </td>
-                    <td className="p-3.5 text-center flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleOpenEditModal(plan)}
-                        className="p-1.5 text-gray-500 hover:text-purple-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        title="تعديل البند"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeletePlan(plan.id)}
-                        className="p-1.5 text-gray-500 hover:text-red-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                        title="حذف البند"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenEditModal(plan)}
+                          className="p-2 text-purple-600 hover:bg-purple-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                          title="تعديل البند"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeletePlan(plan.id)}
+                          className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                          title="حذف البند"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

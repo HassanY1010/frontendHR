@@ -189,22 +189,27 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
                   const isCompleted = idx <= currentStepIdx && data.status !== 'REJECTED' && data.status !== 'CANCELLED';
                   const isCurrent = idx === currentStepIdx;
                   return (
-                    <div key={step.key} className="flex flex-col items-center relative z-10">
+                    <button
+                      key={step.key}
+                      onClick={() => handleAction('transition', { targetStatus: step.key })}
+                      title={`اضغط للانتقال المباشر إلى مرحلة: ${step.label}`}
+                      className="flex flex-col items-center relative z-10 cursor-pointer group focus:outline-none"
+                    >
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                           isCurrent
-                            ? 'bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900/50 scale-110'
+                            ? 'bg-primary-600 text-white ring-4 ring-primary-100 dark:ring-primary-900/50 scale-110 shadow-lg'
                             : isCompleted
-                            ? 'bg-green-500 text-white'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                            ? 'bg-green-500 text-white group-hover:scale-105'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-primary-200'
                         }`}
                       >
                         {isCompleted && !isCurrent ? <CheckCircle className="w-4 h-4" /> : idx + 1}
                       </div>
-                      <span className={`text-[11px] font-medium mt-1 ${isCurrent ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                      <span className={`text-[11px] font-medium mt-1 transition-all ${isCurrent ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-gray-500 dark:text-gray-400 group-hover:text-primary-500'}`}>
                         {step.label}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
