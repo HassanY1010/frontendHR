@@ -467,7 +467,7 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
                 )}
 
                 {/* Publish to Active Recruitment Jobs Page */}
-                {['SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'RECRUITMENT_STARTED'].includes(data.status) && (
+                {['SUBMITTED', 'UNDER_REVIEW', 'APPROVED'].includes(data.status) && (
                   <button
                     disabled={actionLoading}
                     onClick={() => handleAction('convert-to-job')}
@@ -476,6 +476,12 @@ export const JobRequestDetailsModal: React.FC<JobRequestDetailsModalProps> = ({
                   >
                     <Send className="w-3.5 h-3.5" /> نشر الوظيفة في قسم التوظيف 🚀
                   </button>
+                )}
+
+                {['RECRUITMENT_STARTED', 'INTERVIEW_PROCESS', 'OFFER_STAGE', 'HIRED'].includes(data.status) && (
+                  <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-xs font-bold rounded-xl flex items-center gap-1.5 border border-emerald-300">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> تم نشر الوظيفة والتوظيف نشط ✨
+                  </span>
                 )}
 
                 {data.status === 'ON_HOLD' ? (
