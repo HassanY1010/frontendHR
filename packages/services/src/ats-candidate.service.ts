@@ -38,32 +38,32 @@ export interface CreateCandidatePayload {
 export const atsCandidateService = {
     // 1. Create candidate profile
     createCandidate: async (payload: CreateCandidatePayload) => {
-        return await apiClient.post('/api/candidates', payload);
+        return await apiClient.post('/candidates', payload);
     },
 
     // 2. Upload & Parse CV
     uploadAndParseCV: async (formData: FormData) => {
-        return await apiClient.post('/api/candidates/upload-cv', formData);
+        return await apiClient.post('/candidates/upload-cv', formData);
     },
 
     // 3. Get candidates with filters & search
     getCandidates: async (filters: ATSCandidateFilter = {}) => {
-        return await apiClient.get('/api/candidates', { params: filters });
+        return await apiClient.get('/candidates', { params: filters });
     },
 
     // 4. Get candidate profile by ID
     getCandidateById: async (id: string) => {
-        return await apiClient.get(`/api/candidates/${id}`);
+        return await apiClient.get(`/candidates/${id}`);
     },
 
     // 5. Run AI Matching Candidate vs Job
     matchCandidateWithJob: async (id: string, jobId?: string) => {
-        return await apiClient.post(`/api/candidates/${id}/match`, { jobId });
+        return await apiClient.post(`/candidates/${id}/match`, { jobId });
     },
 
     // 6. Update Pipeline Stage / Status
     updateCandidateStatus: async (id: string, status: string, comment?: string) => {
-        return await apiClient.put(`/api/candidates/${id}/status`, { status, comment });
+        return await apiClient.put(`/candidates/${id}/status`, { status, comment });
     }
 };
 
