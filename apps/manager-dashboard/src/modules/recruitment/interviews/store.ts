@@ -23,9 +23,9 @@ export const useInterviewsStore = create<InterviewsState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const interviews = await recruitmentService.getInterviews();
-            set({ interviews, isLoading: false });
+            set({ interviews: Array.isArray(interviews) ? interviews : [], isLoading: false });
         } catch (error) {
-            set({ error: 'Failed to fetch interviews', isLoading: false });
+            set({ interviews: [], error: 'Failed to fetch interviews', isLoading: false });
         }
     },
     fetchSmartNotes: async () => {
