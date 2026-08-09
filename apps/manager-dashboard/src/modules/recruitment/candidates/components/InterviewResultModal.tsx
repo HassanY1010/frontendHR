@@ -37,9 +37,12 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
         return `${baseUrl}${url}`;
     };
 
-    const aiAnalysis = typeof interview.aiAnalysis === 'string'
+    const aiAnalysis = typeof interview?.aiAnalysis === 'string'
         ? JSON.parse(interview.aiAnalysis)
-        : interview.aiAnalysis || {};
+        : (interview?.aiAnalysis || (candidate?.aiAnalysisDetails ? (typeof candidate.aiAnalysisDetails === 'string' ? JSON.parse(candidate.aiAnalysisDetails) : candidate.aiAnalysisDetails) : {}));
+
+    const score = interview?.aiScore || candidate?.aiScore || 0;
+    const isHire = score >= 75 || aiAnalysis.recommendation === 'hire';
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -64,7 +67,7 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">تحليل المقابلة الذكي</h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">للمرشح: {candidate.fullName || candidate.name}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">للمرشح: {candidate?.fullName || candidate?.name || 'غير حدد'}</p>
                         </div>
                     </div>
                     <button
@@ -85,12 +88,12 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <Star className="w-5 h-5 text-indigo-500 fill-indigo-500" />
                             </div>
                             <div className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
-                                {interview.aiScore || 0}%
+                                {score}%
                             </div>
                             <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
                                 <div
                                     className="bg-indigo-600 h-full rounded-full"
-                                    style={{ width: `${interview.aiScore || 0}%` }}
+                                    style={{ width: `${score}%` }}
                                 />
                             </div>
                         </div>
@@ -101,7 +104,7 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <ShieldCheck className="w-5 h-5 text-emerald-500" />
                             </div>
                             <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
-                                {aiAnalysis.recommendation === 'hire' ? 'توظيف مقترح' : aiAnalysis.recommendation === 'borderline' ? 'مقابلة فنية إضافية' : 'غير ملائم'}
+                                {isHire ? 'توظيف مقترح' : aiAnalysis.recommendation === 'borderline' ? 'مقابلة فنية إضافية' : 'غير ملائم'}
                             </div>
                             <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">بناءً على المعايير المحددة للوظيفة</p>
                         </div>
@@ -112,7 +115,7 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <Clock className="w-5 h-5 text-blue-500" />
                             </div>
                             <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">
-                                {interview.duration ? `${Math.floor(interview.duration / 60)}:${(interview.duration % 60).toString().padStart(2, '0')}` : '04:12'}
+                                {interview?.duration ? `${Math.floor(interview.duration / 60)}:${(interview.duration % 60).toString().padStart(2, '0')}` : '--:--'}
                             </div>
                             <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">دقيقة ثانية</p>
                         </div>
