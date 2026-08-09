@@ -22,6 +22,7 @@ import type { Job, WorkMode } from '@hr/types'
 import JobActionsMenu from '../components/JobActionsMenu'
 import JobAiChat from '../components/JobAiChat'
 import { recruitmentService } from '@hr/services'
+import { toast } from 'sonner'
 
 // Status config mapping
 const STATUS_CONFIG = {
@@ -483,8 +484,13 @@ const JobsPage: React.FC = () => {
     }
 
     const handleDeleteJob = async (jobId: string) => {
-        if (window.confirm('هل أنت متأكد من حذف هذه الوظيفة؟')) {
-            await deleteJob(jobId)
+        if (window.confirm('هل أنت متأكد من رغبتك في حذف هذه الوظيفة؟')) {
+            try {
+                await deleteJob(jobId)
+                toast.success('تم حذف الوظيفة بنجاح 🗑️')
+            } catch (err) {
+                toast.error('حدث خطأ أثناء حذف الوظيفة')
+            }
         }
     }
 
