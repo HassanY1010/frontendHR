@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users, Search, Filter, Sparkles, Plus, Upload, CheckCircle2,
-  Eye, MapPin, Briefcase, Award, RefreshCw, X
+  Eye, MapPin, Briefcase, Award, RefreshCw, X, Trash2
 } from 'lucide-react';
 import { atsCandidateService } from '@hr/services';
 import CandidateProfileModal from '../components/CandidateProfileModal';
@@ -75,6 +75,16 @@ export const ATSCandidateDashboard: React.FC = () => {
   useEffect(() => {
     loadCandidates();
   }, [statusFilter]);
+
+  const handleDeleteCandidate = async (id: string, name: string) => {
+    if (!window.confirm(`هل أنت تأكد من رغبتك في حذف المرشح (${name})؟`)) return;
+    try {
+      await atsCandidateService.deleteCandidate(id);
+      await loadCandidates();
+    } catch (err) {
+      console.error('Failed to delete candidate:', err);
+    }
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,12 +334,21 @@ export const ATSCandidateDashboard: React.FC = () => {
                     {cand.status}
                   </span>
 
-                  <button
-                    onClick={() => setSelectedCandidateId(cand.id)}
-                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> معاينة الملف
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDeleteCandidate(cand.id, cand.fullName)}
+                      className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/40 dark:hover:bg-red-900/60 dark:text-red-300 rounded-xl transition-all border border-red-200 dark:border-red-800"
+                      title="حذف المرشح"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setSelectedCandidateId(cand.id)}
+                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> معاينة الملف
+                    </button>
+                  </div>
                 </div>
               </div>
             );

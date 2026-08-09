@@ -64,6 +64,11 @@ export const atsCandidateService = {
     // 6. Update Pipeline Stage / Status
     updateCandidateStatus: async (id: string, status: string, comment?: string) => {
         return await apiClient.put(`/candidates/${id}/status`, { status, comment });
+    },
+
+    // 7. Delete Candidate
+    deleteCandidate: async (id: string) => {
+        return await apiClient.delete(`/candidates/${id}`);
     }
 };
 

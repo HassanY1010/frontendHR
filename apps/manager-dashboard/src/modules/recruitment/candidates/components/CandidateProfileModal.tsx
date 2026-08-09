@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, User, Briefcase, GraduationCap, Award, Sparkles, Clock, MapPin, Phone, Mail, Globe,
-  ChevronRight, Brain, ThumbsUp, ThumbsDown
+  ChevronRight, Brain, ThumbsUp, ThumbsDown, Trash2
 } from 'lucide-react';
 import { atsCandidateService } from '@hr/services';
 
@@ -64,6 +64,17 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
       console.error('AI Matching failed:', err);
     } finally {
       setMatchingLoading(false);
+    }
+  };
+
+  const handleDeleteCandidate = async () => {
+    if (!window.confirm(`هل أنت تأكد من رغبتك في حذف المرشح (${candidate?.fullName})؟`)) return;
+    try {
+      await atsCandidateService.deleteCandidate(candidateId);
+      onUpdate();
+      onClose();
+    } catch (err) {
+      console.error('Failed to delete candidate:', err);
     }
   };
 
@@ -138,6 +149,13 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
             >
               <Brain className={`w-4 h-4 ${matchingLoading ? 'animate-spin' : ''}`} />
               {matchingLoading ? 'جاري التحليل...' : 'تشغيل AI Matching 🤖'}
+            </button>
+            <button
+              onClick={handleDeleteCandidate}
+              className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-xl transition-all"
+              title="حذف المرشح"
+            >
+              <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
