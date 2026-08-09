@@ -456,22 +456,29 @@ const InterviewsPage: React.FC = () => {
                                     }) : (
                                         <tr>
                                             <td colSpan={7}>
-                                                <div className="max-w-md mx-auto py-10 flex flex-col items-center gap-3">
-                                                    <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center mb-1">
-                                                        <CalendarIcon className="h-8 w-8" />
+                                                {isLoading ? (
+                                                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                                                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                                        <p className="font-bold text-gray-500 text-sm">جاري إحضار البيانات...</p>
                                                     </div>
-                                                    <p className="text-lg font-extrabold text-gray-800 dark:text-gray-200">
-                                                        {searchQuery ? 'لا توجد نتائج بحث مطابقة' : 'لا توجد مقابلات مسجلة حالياً'}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 font-medium text-center">
-                                                        {searchQuery ? 'جرب البحث بكلمات أخرى أو مسح حقل البحث' : 'يمكنك جدولة مقابلة جديدة للمرشحين للبدء في تقييمهم واستعراض التقارير الذكية'}
-                                                    </p>
-                                                    {!searchQuery && (
-                                                        <Button variant="primary" size="sm" className="mt-2 font-bold px-6 py-2 rounded-xl" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowScheduleModal(true)}>
-                                                            جدولة مقابلة جديدة
-                                                        </Button>
-                                                    )}
-                                                </div>
+                                                ) : (
+                                                    <div className="max-w-md mx-auto py-10 flex flex-col items-center gap-3 text-center">
+                                                        <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center mb-1">
+                                                            <CalendarIcon className="h-8 w-8" />
+                                                        </div>
+                                                        <p className="text-lg font-extrabold text-gray-800 dark:text-gray-200">
+                                                            {searchQuery ? 'لا توجد نتائج بحث مطابقة' : 'لا توجد مقابلات مسجلة حالياً'}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 font-medium text-center">
+                                                            {searchQuery ? 'جرب البحث بكلمات أخرى أو مسح حقل البحث' : 'يمكنك جدولة مقابلة جديدة للمرشحين للبدء في تقييمهم واستعراض التقارير الذكية'}
+                                                        </p>
+                                                        {!searchQuery && (
+                                                            <Button variant="primary" size="sm" className="mt-2 font-bold px-6 py-2 rounded-xl" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowScheduleModal(true)}>
+                                                                جدولة مقابلة جديدة
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     )}
