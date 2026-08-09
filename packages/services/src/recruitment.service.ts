@@ -200,8 +200,12 @@ class RecruitmentService {
 
   async getSmartInterviewNotes(): Promise<string[]> {
     logger.info('Get smart interview notes')
-    const response = await apiClient.get<{ status: string, data: { notes: string[] } }>('/recruitment/interviews/ai/smart-notes')
-    return response.data.notes
+    try {
+      const response = await apiClient.get<any>('/recruitment/interviews/ai/smart-notes')
+      return response?.data?.notes || response?.notes || [];
+    } catch (e) {
+      return [];
+    }
   }
 
   async parseCV(file: File): Promise<{
@@ -216,21 +220,9 @@ class RecruitmentService {
     const formData = new FormData()
     formData.append('resume', file)
 
-    const response = await apiClient.post<{
-      status: string
-      data: {
-        extracted: {
-          name: string
-          email: string
-          phone: string
-          title: string
-          experience: number
-          location: string
-        }
-      }
-    }>('/recruitment/parse-cv', formData)
+    const response = await apiClient.post<any>('/recruitment/parse-cv', formData)
 
-    return response.data.extracted
+    return response?.data?.extracted || response?.extracted || { name: '', email: '', phone: '', title: '', experience: 0, location: '' }
   }
 
   async acceptTerms(candidateId: string): Promise<void> {
@@ -247,36 +239,32 @@ class RecruitmentService {
     logger.info('Upload interview video', { candidateId })
     const formData = new FormData()
 
-    // Ensure we are sending a proper File object with a filename and correct mimetype.
-    // MediaRecorder usually outputs 'video/webm'
     const videoFile = new File([file], `interview-${candidateId}.webm`, { type: 'video/webm' });
     formData.append('video', videoFile)
 
-    // Using apiClient directly but ensuring we don't accidentally send a JSON Content-Type
-    // Axios will automatically set the correct Content-Type with Boundary for FormData
-    const response = await apiClient.post<{ status: string, data: { url: string } }>(
+    const response = await apiClient.post<any>(
       '/recruitment/interviews/upload-video-file',
       formData,
       {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        timeout: 120000 // 2 minutes timeout for large video files
+        timeout: 120000
       }
     )
-    return response.data
+    return response?.data || response
   }
 
   async scheduleInterview(data: Partial<Interview>): Promise<Interview> {
     logger.info('Schedule interview', { candidateId: data.candidateId })
-    const response = await apiClient.post<{ status: string, data: { interview: Interview } }>('/recruitment/interviews', data)
-    return response.data.interview
+    const response = await apiClient.post<any>('/recruitment/interviews', data)
+    return response?.data?.interview || response?.interview || response
   }
 
   async submitInterview(data: { candidateId: string, videoUrl?: string, notes?: string, token?: string }): Promise<Interview> {
     logger.info('Submit interview', { candidateId: data.candidateId, token: data.token })
-    const response = await apiClient.post<{ status: string, data: { interview: Interview } }>('/recruitment/interviews/submit', data)
-    return response.data.interview
+    const response = await apiClient.post<any>('/recruitment/interviews/submit', data)
+    return response?.data?.interview || response?.interview || response
   }
 
   async getInterviews(params?: {
@@ -284,29 +272,34 @@ class RecruitmentService {
     from?: string
     to?: string
   }): Promise<Interview[]> {
-    const response = await apiClient.get<{ status: string, data: { interviews: any[] } }>('/recruitment/interviews', { params })
-    return response.data.interviews.map((interview: any) => {
-      // Parse aiAnalysis if it's a string
-      let aiAnalysis = interview.aiAnalysis;
-      if (typeof aiAnalysis === 'string') {
-        try {
-          aiAnalysis = JSON.parse(aiAnalysis);
-        } catch (e) {
-          aiAnalysis = { summary: aiAnalysis };
+    try {
+      const response = await apiClient.get<any>('/recruitment/interviews', { params })
+      const rawList = response?.data?.interviews || response?.interviews || (Array.isArray(response) ? response : []);
+      return rawList.map((interview: any) => {
+        let aiAnalysis = interview.aiAnalysis;
+        if (typeof aiAnalysis === 'string') {
+          try {
+            aiAnalysis = JSON.parse(aiAnalysis);
+          } catch (e) {
+            aiAnalysis = { summary: aiAnalysis };
+          }
         }
-      }
 
-      return {
-        ...interview,
-        aiAnalysis,
-        candidateName: interview.candidate?.name || 'Unknown',
-        jobId: interview.candidate?.jobId,
-        candidate: interview.candidate ? {
-          ...interview.candidate,
-          job: interview.candidate.recruitmentjob // Map recruitmentjob to job for frontend
-        } : undefined
-      };
-    })
+        return {
+          ...interview,
+          aiAnalysis,
+          candidateName: interview.candidate?.fullName || interview.candidate?.name || 'Unknown',
+          jobId: interview.candidate?.jobId,
+          candidate: interview.candidate ? {
+            ...interview.candidate,
+            job: interview.candidate.recruitmentjob
+          } : undefined
+        };
+      })
+    } catch (err) {
+      logger.error('Failed to getInterviews', { error: (err as any)?.message });
+      return [];
+    }
   }
 
   async evaluateInterview(candidateId: string, notes: string): Promise<Interview> {
