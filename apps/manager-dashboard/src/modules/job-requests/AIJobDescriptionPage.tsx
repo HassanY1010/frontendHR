@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
@@ -1452,131 +1452,592 @@ const AIJobDescriptionPage: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<Record<string, any>>({});
   const [loadingTemplates, setLoadingTemplates] = useState(true);
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('الكل');
+
+  const defaultTemplates: Template[] = [
+    // ── Tech & Engineering ──────────────────────────────────────────
+    {
+      id: 'software-engineer',
+      icon: '💻',
+      category: 'تكنولوجيا المعلومات',
+      title: 'مهندس برمجيات (Full Stack)',
+      description: 'React, Node.js, TypeScript & Cloud',
+      preset: {
+        jobTitle: 'مهندس برمجيات (Full Stack)',
+        department: 'تكنولوجيا المعلومات',
+        experience: '3-5 سنوات',
+        educationLevel: 'بكالوريوس علوم حاسب / هندسة برمجيات',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['TypeScript', 'React.js', 'Node.js', 'PostgreSQL', 'Docker', 'RESTful APIs'],
+        salaryMin: 14000,
+        salaryMax: 22000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'backend-engineer',
+      icon: '⚙️',
+      category: 'تكنولوجيا المعلومات',
+      title: 'مطور واجهات خلفية (Backend)',
+      description: 'Microservices, APIs, Node.js & Database',
+      preset: {
+        jobTitle: 'مطور خلفيات برمجية (Senior Backend Developer)',
+        department: 'تكنولوجيا المعلومات',
+        experience: '5-7 سنوات',
+        educationLevel: 'بكالوريوس علوم حاسب أو هندسة تقنية',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'SENIOR',
+        skills: ['Node.js', 'Prisma ORM', 'Redis Caching', 'PostgreSQL', 'System Architecture', 'CI/CD'],
+        salaryMin: 18000,
+        salaryMax: 28000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'frontend-engineer',
+      icon: '🎨',
+      category: 'تكنولوجيا المعلومات',
+      title: 'مطور واجهات أمامية (Frontend)',
+      description: 'React, Next.js, TailwindCSS & UI/UX',
+      preset: {
+        jobTitle: 'مطور واجهات أمامية (Frontend Developer)',
+        department: 'تكنولوجيا المعلومات',
+        experience: '3-5 سنوات',
+        educationLevel: 'بكالوريوس علوم حاسب أو تصميم تفاعلي',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['React.js', 'Next.js', 'TailwindCSS', 'Redux / Zustand', 'Responsive Design', 'Web Performance'],
+        salaryMin: 13000,
+        salaryMax: 20000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'mobile-developer',
+      icon: '📱',
+      category: 'تكنولوجيا المعلومات',
+      title: 'مطور تطبيقات جوال (Mobile App)',
+      description: 'Flutter / React Native / iOS & Android',
+      preset: {
+        jobTitle: 'مطور تطبيقات جوال (Mobile Developer)',
+        department: 'تكنولوجيا المعلومات',
+        experience: '3-5 سنوات',
+        educationLevel: 'بكالوريوس علوم حاسب أو هندسة برمجيات',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['Flutter', 'React Native', 'Dart', 'State Management', 'Mobile Security', 'App Store Publishing'],
+        salaryMin: 14000,
+        salaryMax: 22000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'devops-engineer',
+      icon: '☁️',
+      category: 'تكنولوجيا المعلومات',
+      title: 'مهندس ديف أوبس وسحابي (DevOps/Cloud)',
+      description: 'AWS, Kubernetes, CI/CD & Terraform',
+      preset: {
+        jobTitle: 'مهندس سحابي وعمليات (Senior DevOps Engineer)',
+        department: 'تكنولوجيا المعلومات',
+        experience: '5-8 سنوات',
+        educationLevel: 'بكالوريوس علوم حاسب أو هندسة شبكات',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'SENIOR',
+        skills: ['AWS / GCP', 'Kubernetes', 'Docker', 'Terraform', 'CI/CD Pipelines', 'Linux Administration'],
+        salaryMin: 20000,
+        salaryMax: 32000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'cybersecurity-analyst',
+      icon: '🔒',
+      category: 'تكنولوجيا المعلومات',
+      title: 'أخصائي أمن سيبراني (Cybersecurity)',
+      description: 'SOC, Compliance, Penetration Testing & NCA',
+      preset: {
+        jobTitle: 'أخصائي أمن سيبراني (Cybersecurity Specialist)',
+        department: 'الأمن السيبراني والمخاطر',
+        experience: '3-6 سنوات',
+        educationLevel: 'بكالوريوس أمن سيبراني أو أمن معلومات',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'MID',
+        skills: ['معايير الهيئة الوطنية للأمن السيبراني (NCA)', 'SOC Monitoring', 'SIEM Tools', 'Vulnerability Assessment', 'Incident Response'],
+        salaryMin: 16000,
+        salaryMax: 25000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'ai-engineer',
+      icon: '🤖',
+      category: 'الذكاء الاصطناعي والبيانات',
+      title: 'مهندس ذكاء اصطناعي (AI & ML Engineer)',
+      description: 'LLMs, PyTorch, LangChain & Machine Learning',
+      preset: {
+        jobTitle: 'مهندس ذكاء اصطناعي وتعلّم آلي (AI/ML Engineer)',
+        department: 'الذكاء الاصطناعي والبيانات',
+        experience: '3-6 سنوات',
+        educationLevel: 'بكالوريوس أو ماجستير علوم حاسب / ذكاء اصطناعي',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['Python', 'Large Language Models (LLMs)', 'PyTorch / TensorFlow', 'LangChain', 'Prompt Engineering', 'Vector Databases'],
+        salaryMin: 18000,
+        salaryMax: 30000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'data-analyst',
+      icon: '📊',
+      category: 'الذكاء الاصطناعي والبيانات',
+      title: 'محلل بيانات ذكاء أعمال (BI Data Analyst)',
+      description: 'Power BI, SQL, Python & Dashboards',
+      preset: {
+        jobTitle: 'محلل بيانات وذكاء أعمال (BI & Data Analyst)',
+        department: 'إدارة البيانات والتحليلات',
+        experience: '2-4 سنوات',
+        educationLevel: 'بكالوريوس إحصاء / نظم معلومات إدارية / علوم حاسب',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['SQL المتقدم', 'Power BI / Tableau', 'Python for Data Analysis', 'بناء لوحات التحكم التفاعلية', 'تحليل المؤشرات والـ KPIs'],
+        salaryMin: 11000,
+        salaryMax: 18000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'data-engineer',
+      icon: '🗄️',
+      category: 'الذكاء الاصطناعي والبيانات',
+      title: 'مهندس بيانات (Data Engineer)',
+      description: 'ETL Pipelines, Data Warehouse, Spark & Snowflake',
+      preset: {
+        jobTitle: 'مهندس بيانات أول (Senior Data Engineer)',
+        department: 'إدارة البيانات والتحليلات',
+        experience: '4-7 سنوات',
+        educationLevel: 'بكالوريوس علوم حاسب أو هندسة برمجيات',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'SENIOR',
+        skills: ['Apache Spark', 'ETL/ELT Pipelines', 'Snowflake / BigQuery', 'SQL & Python', 'Data Modeling', 'Airflow'],
+        salaryMin: 18000,
+        salaryMax: 29000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Product & Design ─────────────────────────────────────────────
+    {
+      id: 'product-manager',
+      icon: '🚀',
+      category: 'إدارة المنتجات والتصميم',
+      title: 'مدير منتج رقمي (Product Manager)',
+      description: 'Agile/Scrum, Roadmap & User Experience',
+      preset: {
+        jobTitle: 'مدير منتج رقمي (Product Manager)',
+        department: 'إدارة المنتجات',
+        experience: '4-7 سنوات',
+        educationLevel: 'بكالوريوس إدارة أعمال أو نظم معلومات حاسوبية',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'SENIOR',
+        skills: ['استراتيجية المنتج وخارطة الطريق', 'Agile / Scrum Methodology', 'تحليل متطلبات المستخدمين', 'KPIs & Metrics Tracking', 'Jira / Confluence'],
+        salaryMin: 18000,
+        salaryMax: 30000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'ui-ux-designer',
+      icon: '✨',
+      category: 'إدارة المنتجات والتصميم',
+      title: 'مصمم تجربة وواجهة المستخدم (UI/UX)',
+      description: 'Figma, Design Systems, User Research & Prototyping',
+      preset: {
+        jobTitle: 'مصمم تجربة وواجهة المستخدم (Senior UI/UX Designer)',
+        department: 'إدارة المنتجات والتصميم',
+        experience: '4-6 سنوات',
+        educationLevel: 'بكالوريوس تصميم جرافيك / تفاعلي أو علوم حاسب',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'SENIOR',
+        skills: ['Figma المتقدم', 'بناء وإدارة أنظمة التصميم (Design Systems)', 'أبحاث واختبارات المستخدمين (User Research)', 'Wireframing & Prototyping', 'Micro-interactions'],
+        salaryMin: 14000,
+        salaryMax: 23000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Human Resources ──────────────────────────────────────────────
+    {
+      id: 'hr-manager',
+      icon: '👔',
+      category: 'الموارد البشرية',
+      title: 'مدير الموارد البشرية (HR Manager)',
+      description: 'نظام العمل السعودي، استراتيجية الموارد وإدارة المواهب',
+      preset: {
+        jobTitle: 'مدير الموارد البشرية (HR Manager)',
+        department: 'الموارد البشرية',
+        experience: '6-9 سنوات',
+        educationLevel: 'بكالوريوس أو ماجستير إدارة موارد بشرية / إدارة أعمال',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'MANAGER',
+        skills: ['إتقان نظام العمل والعمال السعودي', 'التخطيط الاستراتيجي للقوى العاملة (Manpower Planning)', 'إدارة الأداء والتقييم السنوي', 'العلاقات الحكومية ومنصات قوى ومقيم والتأمينات', 'إدارة سياسات ولائحة العمل'],
+        salaryMin: 20000,
+        salaryMax: 35000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'recruitment-specialist',
+      icon: '🎯',
+      category: 'الموارد البشرية',
+      title: 'أخصائي استقطاب مواهب وتوظيف (Talent Acquisition)',
+      description: 'ATS, Headhunting, مقابلة وتقييم المرشحين',
+      preset: {
+        jobTitle: 'أخصائي استقطاب مواهب أول (Senior Talent Acquisition Specialist)',
+        department: 'الموارد البشرية',
+        experience: '3-6 سنوات',
+        educationLevel: 'بكالوريوس إدارة موارد بشرية أو علوم إدارية',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['أنظمة إدارة المرشحين (ATS)', 'استقطاب الكفاءات والبحث المباشر (Headhunting)', 'المقابلات السلوكية والفنية (Competency-based Interviews)', 'إدارة عروض العمل والتفاوض', 'بناء خطط التوظيف وتحديد الـ SLAs'],
+        salaryMin: 11000,
+        salaryMax: 17000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'hr-operations',
+      icon: '📋',
+      category: 'الموارد البشرية',
+      title: 'أخصائي عمليات الموارد البشرية والرواتب (HR Operations & Payroll)',
+      description: 'مسير الرواتب (Payroll), التأمينات, مدد, قوى',
+      preset: {
+        jobTitle: 'أخصائي عمليات الموارد البشرية ومسير الرواتب (HR Operations Specialist)',
+        department: 'الموارد البشرية',
+        experience: '3-5 سنوات',
+        educationLevel: 'بكالوريوس إدارة أعمال أو محاسبة أو موارد بشرية',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'MID',
+        skills: ['إعداد ومعالجة مسيرات الرواتب (WPS)', 'منصة مدد ومنصة قوى', 'التأمينات الاجتماعية (GOSI)', 'إدارة الإجازات ومستحقات نهاية الخدمة', 'أتمتة ملفات الموظفين ونظم الـ HRIS'],
+        salaryMin: 9000,
+        salaryMax: 15000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'training-development-specialist',
+      icon: '🎓',
+      category: 'الموارد البشرية',
+      title: 'أخصائي تدريب وتطوير كفاءات (L&D Specialist)',
+      description: 'Training Needs Analysis, KPIs & Career Paths',
+      preset: {
+        jobTitle: 'أخصائي تدريب وتطوير مؤسسي (Learning & Development Specialist)',
+        department: 'الموارد البشرية',
+        experience: '3-5 سنوات',
+        educationLevel: 'بكالوريوس موارد بشرية أو علوم تربوية وإدارية',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['تحليل الاحتياجات التدريبية (TNA)', 'تصميم وتقييم الحقائب التدريبية', 'قياس أثر التدريب (Kirkpatrick Model)', 'تخطيط المسارات الوظيفية والإحلال الوظيفي', 'إدارة منصات التدريب الإلكتروني (LMS)'],
+        salaryMin: 10000,
+        salaryMax: 16000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Finance & Accounting ─────────────────────────────────────────
+    {
+      id: 'financial-controller',
+      icon: '💰',
+      category: 'المالية والمحاسبة',
+      title: 'مدير مالي / مراقب مالي (Financial Controller)',
+      description: 'ZATCA E-invoicing, IFRS, Budgeting & Auditing',
+      preset: {
+        jobTitle: 'مراقب مالي أول (Financial Controller)',
+        department: 'الإدارة المالية',
+        experience: '6-10 سنوات',
+        educationLevel: 'بكالوريوس محاسبة أو مالية (يفضل SOCPA / CMA / CPA)',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'MANAGER',
+        skills: ['معايير المحاسبة الدولية (IFRS)', 'أنظمة الفوترة الإلكترونية وهيئة الزكاة والضريبة والجمارك (ZATCA)', 'إعداد الموازنات التقديرية والتدفقات النقدية', 'إدارة التدقيق المالي الداخلي والخارجي', 'أنظمة ERP المالية (Oracle / SAP / Odoo)'],
+        salaryMin: 22000,
+        salaryMax: 38000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'senior-accountant',
+      icon: '📑',
+      category: 'المالية والمحاسبة',
+      title: 'محاسب عام أول (Senior Accountant)',
+      description: 'General Ledger, VAT, Financial Reports & Reconciliation',
+      preset: {
+        jobTitle: 'محاسب عام أول (Senior Accountant)',
+        department: 'الإدارة المالية',
+        experience: '4-7 سنوات',
+        educationLevel: 'بكالوريوس محاسبة مع اعتماد SOCPA',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'SENIOR',
+        skills: ['إعداد الإقرارات الضريبية والزكوية (VAT & Zakat)', 'تسوية الحسابات البنكية وإقفال الفترات المالية', 'إعداد القوائم المالية الشهرية والسنوية', 'محاسبة التكاليف والأصول الثابتة', 'إجادة برامج ERP المحاسبية'],
+        salaryMin: 10000,
+        salaryMax: 16000,
+        location: 'جدة'
+      }
+    },
+    {
+      id: 'financial-analyst',
+      icon: '📈',
+      category: 'المالية والمحاسبة',
+      title: 'محلل مالي واستثماري (Financial Analyst)',
+      description: 'Financial Modeling, Valuation, ROI & Feasibility Studies',
+      preset: {
+        jobTitle: 'محلل مالي واستثماري (Financial Analyst)',
+        department: 'الإدارة المالية والاستثمار',
+        experience: '3-6 سنوات',
+        educationLevel: 'بكالوريوس مالية أو اقتصاد (يفضل شهادة CFA)',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['النمذجة والتحليل المالي المتقدم (Financial Modeling)', 'دراسات الجدوى وتقييم الاستثمارات (Valuation & ROI)', 'تحليل التباين والأداء المالي الفعلي مقابل المخطط', 'إعداد تقارير المستثمرين ومجلس الإدارة', 'إتقان Excel المتقدم وبناء السيناريوهات المالية'],
+        salaryMin: 13000,
+        salaryMax: 22000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Sales & Business Development ─────────────────────────────────
+    {
+      id: 'sales-director',
+      icon: '💼',
+      category: 'المبيعات وتطوير الأعمال',
+      title: 'مدير مبيعات إقليمي (Regional Sales Director)',
+      description: 'B2B Enterprise Sales, Revenue Strategy & Team Leadership',
+      preset: {
+        jobTitle: 'مدير مبيعات إقليمي (Regional Sales Director)',
+        department: 'المبيعات وتطوير الأعمال',
+        experience: '7-12 سنة',
+        educationLevel: 'بكالوريوس إدارة أعمال أو تسويق (يفضل ماجستير MBA)',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'LEAD',
+        skills: ['قيادة فرق المبيعات وتحقيق مستهدفات الإيرادات (Target Achievement)', 'مبيعات الشركات والقطاع الحكومي (B2B & B2G Enterprise Sales)', 'التفاوض وإبرام الصفقات والعقود الكبرى', 'إدارة خط المبيعات وعلاقات العملاء (Pipeline Management & CRM)', 'استراتيجيات التسعير والتوسع في السوق السعودي'],
+        salaryMin: 25000,
+        salaryMax: 45000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'key-account-manager',
+      icon: '🤝',
+      category: 'المبيعات وتطوير الأعمال',
+      title: 'مدير كبار العملاء (Key Account Manager)',
+      description: 'B2B Account Growth, Retention & Strategic Partnerships',
+      preset: {
+        jobTitle: 'مدير كبار العملاء (Key Account Manager)',
+        department: 'المبيعات وتطوير الأعمال',
+        experience: '4-7 سنوات',
+        educationLevel: 'بكالوريوس إدارة أعمال أو علاقات عامة أو تسويق',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'SENIOR',
+        skills: ['إدارة وتنمية حسابات كبار العملاء (Account Management)', 'بناء الشراكات الاستراتيجية طويلة المدى', 'التفاوض وحل النزاعات التجارية', 'Upselling & Cross-selling Solutions', 'تقديم العروض التقديمية التنفيذية'],
+        salaryMin: 14000,
+        salaryMax: 22000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Marketing & Communications ───────────────────────────────────
+    {
+      id: 'marketing-director',
+      icon: '📣',
+      category: 'التسويق والإعلام الرقمي',
+      title: 'مدير إدارة التسويق والاتصال المؤسسي (Marketing Director)',
+      description: 'Brand Strategy, Growth Marketing, PR & Performance',
+      preset: {
+        jobTitle: 'مدير إدارة التسويق والاتصال المؤسسي (Marketing Director)',
+        department: 'التسويق والاتصال المؤسسي',
+        experience: '7-10 سنوات',
+        educationLevel: 'بكالوريوس أو ماجستير تسويق أو اتصال مؤسسي',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MANAGER',
+        skills: ['بناء الهوية والعلامة التجارية (Brand Strategy)', 'إدارة الحملات الإعلانية متعددة القنوات 360', 'التسويق الرقمي القائم على الأداء (Performance Marketing)', 'الاتصال المؤسسي والعلاقات العامة وإدارة الأزمات الإعلامية', 'إدارة الميزانيات التسويقية وحساب العائد على الاستثمار (ROAS)'],
+        salaryMin: 22000,
+        salaryMax: 36000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'performance-marketer',
+      icon: '🎯',
+      category: 'التسويق والإعلام الرقمي',
+      title: 'أخصائي تسويق رقمي ونمو (Growth & Performance Marketer)',
+      description: 'Google Ads, Meta Ads, SEO, Analytics & Conversion Rate',
+      preset: {
+        jobTitle: 'أخصائي تسويق رقمي ونمو (Growth Marketing Specialist)',
+        department: 'التسويق والاتصال المؤسسي',
+        experience: '3-6 سنوات',
+        educationLevel: 'بكالوريوس تسويق رقمي أو نظم معلومات حاسوبية',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['Google Search & Display Ads (PPC)', 'إدارة إعلانات منصات التواصل (Meta, TikTok, Snapchat, LinkedIn)', 'تحسين محركات البحث (SEO/SEM)', 'تحسين معدل التحويل (CRO & A/B Testing)', 'Google Analytics 4 & Tag Manager'],
+        salaryMin: 10000,
+        salaryMax: 17000,
+        location: 'الرياض'
+      }
+    },
+    {
+      id: 'content-creator',
+      icon: '✍️',
+      category: 'التسويق والإعلام الرقمي',
+      title: 'كاتب محتوى إبداعي وصانع وسائط (Creative Content Creator)',
+      description: 'Copywriting, Social Media Content, Storytelling & Scripts',
+      preset: {
+        jobTitle: 'كاتب ومحرر محتوى إبداعي (Creative Copywriter & Content Specialist)',
+        department: 'التسويق والاتصال المؤسسي',
+        experience: '2-5 سنوات',
+        educationLevel: 'بكالوريوس إعلام، لغة عربية، أو تسويق',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'MID',
+        skills: ['كتابة النصوص الإعلانية الجذابة (Copywriting)', 'إدارة وجدولة قنوات التواصل الاجتماعي', 'كتابة السيناريوهات الإعلانية والفيديوهات القصيرة', 'إتقان الصياغة باللغتين العربية والإنجليزية', 'التسويق بالمحتوى والـ Storytelling المؤثر'],
+        salaryMin: 8000,
+        salaryMax: 14000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Operations & Supply Chain ────────────────────────────────────
+    {
+      id: 'operations-manager',
+      icon: '🏭',
+      category: 'العمليات وسلاسل الإمداد',
+      title: 'مدير العمليات التشغيلية (Operations Manager)',
+      description: 'Operational Excellence, SLA Management & Process Automation',
+      preset: {
+        jobTitle: 'مدير العمليات التشغيلية (Operations Manager)',
+        department: 'الإدارة التشغيلية',
+        experience: '6-9 سنوات',
+        educationLevel: 'بكالوريوس هندسة صناعية أو إدارة أعمال',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'MANAGER',
+        skills: ['هندسة وتحسين الإجراءات التشغيلية (Process Optimization)', 'تطبيق منهجيات اللين وسيكس سيجما (Lean Six Sigma)', 'إدارة اتفاقيات مستوى الخدمة (SLAs & KPIs)', 'إدارة سلاسل الإمداد والمشتريات التشغيلية', 'قيادة فرق الميدان ومتابعة مؤشرات الجودة'],
+        salaryMin: 20000,
+        salaryMax: 32000,
+        location: 'الدمام'
+      }
+    },
+    {
+      id: 'procurement-specialist',
+      icon: '📦',
+      category: 'العمليات وسلاسل الإمداد',
+      title: 'أخصائي مشتريات ومناقصات (Procurement Specialist)',
+      description: 'Vendor Management, Tenders, RFP & Cost Negotiation',
+      preset: {
+        jobTitle: 'أخصائي مشتريات ومناقصات أول (Senior Procurement Specialist)',
+        department: 'إدارة المشتريات وسلاسل الإمداد',
+        experience: '4-7 سنوات',
+        educationLevel: 'بكالوريوس إدارة أعمال أو سلاسل إمداد أو هندسة',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'SENIOR',
+        skills: ['إدارة المناقصات وطلبات العروض (RFP / RFQ)', 'تقييم وتأهيل الموردين (Vendor Management)', 'التفاوض التجاري وخفض التكاليف التشغيلية', 'أنظمة اعتماد منصة اعتماد الحكومية أو أنظمة ERP للمشتريات', 'إدارة عقود التوريد ومراقبة سلاسل الإمداد'],
+        salaryMin: 12000,
+        salaryMax: 18000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Customer Success & Support ───────────────────────────────────
+    {
+      id: 'customer-success-lead',
+      icon: '🌟',
+      category: 'خدمة ونجاح العملاء',
+      title: 'قائد تجربة ونجاح العملاء (Customer Success Lead)',
+      description: 'Onboarding, Churn Reduction, CSAT & NPS Management',
+      preset: {
+        jobTitle: 'قائد تجربة ونجاح العملاء (Customer Success Lead)',
+        department: 'خدمة ونجاح العملاء',
+        experience: '4-7 سنوات',
+        educationLevel: 'بكالوريوس إدارة أعمال أو علاقات عامة أو نظم معلومات',
+        employmentType: 'FULL_TIME',
+        workMode: 'HYBRID',
+        seniorityLevel: 'LEAD',
+        skills: ['إدارة وتهيئة العملاء الجدد (Customer Onboarding)', 'تقليل معدل التسرب والاحتفاظ بالعملاء (Churn Reduction)', 'متابعة وتطوير مؤشرات رضا العملاء (CSAT, NPS, CES)', 'أنظمة خدمة العملاء والتذاكر (Zendesk / Freshdesk / HubSpot)', 'تدريب فرق الدعم وتأسيس معايير الجودة'],
+        salaryMin: 13000,
+        salaryMax: 20000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Legal & Compliance ───────────────────────────────────────────
+    {
+      id: 'legal-counsel',
+      icon: '⚖️',
+      category: 'الشؤون القانونية والامتثال',
+      title: 'مستشار قانوني للشركات (Corporate Legal Counsel)',
+      description: 'العقود التجارية، الامتثال والأنظمة واللوائح السعودية',
+      preset: {
+        jobTitle: 'مستشار قانوني للشركات (Corporate Legal Counsel)',
+        department: 'الإدارة القانونية والامتثال',
+        experience: '5-8 سنوات',
+        educationLevel: 'بكالوريوس شريعة أو قانون / حقوق (يفضل ماجستير قانون شركات)',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'SENIOR',
+        skills: ['صياغة ومراجعة العقود التجارية والاتفاقيات الدولية', 'نظام الشركات ونظام العمل والاستثمار الأجنبي السعودي', 'حوكمة الشركات والامتثال للوائح والتعليمات الحكومية', 'إدارة النزاعات القانونية والتحكيم والتسويات', 'حماية الملكية الفكرية والبيانات الشخصية (PDPL)'],
+        salaryMin: 18000,
+        salaryMax: 32000,
+        location: 'الرياض'
+      }
+    },
+
+    // ── Healthcare & Medical ─────────────────────────────────────────
+    {
+      id: 'occupational-health-officer',
+      icon: '🩺',
+      category: 'الصحة والسلامة المهنية',
+      title: 'مسؤول الصحة والسلامة المهنية والبيئة (HSE Specialist)',
+      description: 'OHSAS, ISO 45001, Safety Audits & Risk Assessment',
+      preset: {
+        jobTitle: 'أخصائي الصحة والسلامة المهنية والبيئة (HSE Specialist)',
+        department: 'الصحة والسلامة المهنية',
+        experience: '3-6 سنوات',
+        educationLevel: 'بكالوريوس علوم بيئية أو هندسة سلامة (شهادة NEBOSH / OSHA)',
+        employmentType: 'FULL_TIME',
+        workMode: 'ONSITE',
+        seniorityLevel: 'MID',
+        skills: ['تطبيق معايير ISO 45001 و ISO 14001', 'تقييم المخاطر المهنية وإجراءات الطوارئ (Risk Assessment)', 'التفتيش الميداني والتحقيق في الحوادث المهنية', 'إعداد خطط الإخلاء وتدريب الموظفين على السلامة', 'الامتثال للوائح الدفاع المدني ووزارة الموارد البشرية'],
+        salaryMin: 11000,
+        salaryMax: 18000,
+        location: 'الرياض'
+      }
+    }
+  ];
 
   useEffect(() => {
-    const defaultTemplates: Template[] = [
-      {
-        id: 'software-engineer',
-        icon: '⚡',
-        category: 'تكنولوجيا',
-        title: 'مهندس برمجيات',
-        description: 'Full Stack / Backend / Frontend',
-        preset: {
-          jobTitle: 'مهندس برمجيات',
-          department: 'تكنولوجيا المعلومات',
-          experience: '3-5 سنوات',
-          educationLevel: 'بكالوريوس علوم حاسب / هندسة برمجيات',
-          employmentType: 'FULL_TIME',
-          workMode: 'HYBRID',
-          seniorityLevel: 'MID',
-          skills: ['JavaScript', 'TypeScript', 'React', 'Node.js'],
-          salaryMin: 12000,
-          salaryMax: 20000,
-          location: 'الرياض'
-        }
-      },
-      {
-        id: 'hr-specialist',
-        icon: '👥',
-        category: 'موارد بشرية',
-        title: 'أخصائي موارد بشرية',
-        description: 'HR Generalist / Recruitment',
-        preset: {
-          jobTitle: 'أخصائي موارد بشرية',
-          department: 'الموارد البشرية',
-          experience: '2-4 سنوات',
-          educationLevel: 'بكالوريوس إدارة موارد بشرية / إدارة أعمال',
-          employmentType: 'FULL_TIME',
-          workMode: 'ONSITE',
-          seniorityLevel: 'MID',
-          skills: ['استقطاب المواهب', 'إدارة الأداء', 'نظم الموارد البشرية'],
-          salaryMin: 8000,
-          salaryMax: 14000,
-          location: 'الرياض'
-        }
-      },
-      {
-        id: 'data-analyst',
-        icon: '📊',
-        category: 'تحليل البيانات',
-        title: 'محلل بيانات',
-        description: 'Data Analyst / BI',
-        preset: {
-          jobTitle: 'محلل بيانات',
-          department: 'تكنولوجيا المعلومات',
-          experience: '2-4 سنوات',
-          educationLevel: 'بكالوريوس إحصاء / علوم حاسب / نظم معلومات',
-          employmentType: 'FULL_TIME',
-          workMode: 'HYBRID',
-          seniorityLevel: 'MID',
-          skills: ['Python', 'SQL', 'Power BI', 'Excel المتقدم'],
-          salaryMin: 10000,
-          salaryMax: 18000,
-          location: 'الرياض'
-        }
-      },
-      {
-        id: 'product-manager',
-        icon: '🚀',
-        category: 'إدارة المنتج',
-        title: 'مدير المنتج',
-        description: 'Product Manager / Owner',
-        preset: {
-          jobTitle: 'مدير منتج',
-          department: 'إدارة المنتج',
-          experience: '5-8 سنوات',
-          educationLevel: 'بكالوريوس إدارة أعمال / تقنية معلومات',
-          employmentType: 'FULL_TIME',
-          workMode: 'HYBRID',
-          seniorityLevel: 'SENIOR',
-          skills: ['استراتيجية المنتج', 'Agile / Scrum', 'تحليل السوق'],
-          salaryMin: 18000,
-          salaryMax: 30000,
-          location: 'الرياض'
-        }
-      },
-      {
-        id: 'sales-manager',
-        icon: '💼',
-        category: 'مبيعات',
-        title: 'مدير مبيعات',
-        description: 'Sales / Business Development',
-        preset: {
-          jobTitle: 'مدير مبيعات',
-          department: 'التسويق والمبيعات',
-          experience: '5-7 سنوات',
-          educationLevel: 'دبلوم أو بكالوريوس إدارة أعمال / تسويق',
-          employmentType: 'FULL_TIME',
-          workMode: 'ONSITE',
-          seniorityLevel: 'SENIOR',
-          skills: ['إدارة فريق المبيعات', 'CRM', 'تطوير الأعمال'],
-          salaryMin: 15000,
-          salaryMax: 25000,
-          location: 'جدة'
-        }
-      },
-      {
-        id: 'marketing-specialist',
-        icon: '📣',
-        category: 'تسويق',
-        title: 'أخصائي تسويق رقمي',
-        description: 'Digital Marketing / Social',
-        preset: {
-          jobTitle: 'أخصائي تسويق رقمي',
-          department: 'التسويق والمبيعات',
-          experience: '2-4 سنوات',
-          educationLevel: 'بكالوريوس تسويق رقمي / إعلام وترويج',
-          employmentType: 'FULL_TIME',
-          workMode: 'HYBRID',
-          seniorityLevel: 'MID',
-          skills: ['Google Ads', 'Meta Ads', 'SEO/SEM', 'إنشاء المحتوى'],
-          salaryMin: 8000,
-          salaryMax: 14000,
-          location: 'الرياض'
-        }
-      }
-    ];
-
     const fetchTemplates = async () => {
       try {
         const res: any = await apiClient.get('/ai-jd/templates');
@@ -1600,25 +2061,51 @@ const AIJobDescriptionPage: React.FC = () => {
     setSelectedPreset({});
   };
 
+  // Categories list
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(templates.map(t => t.category)));
+    return ['الكل', ...cats];
+  }, [templates]);
+
+  // Filtered templates
+  const filteredTemplates = useMemo(() => {
+    return templates.filter(t => {
+      const matchesCategory = selectedCategory === 'الكل' || t.category === selectedCategory;
+      const q = templateSearch.toLowerCase().trim();
+      const matchesSearch = !q ||
+        t.title.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.category.toLowerCase().includes(q) ||
+        t.preset?.skills?.some((s: string) => s.toLowerCase().includes(q));
+      return matchesCategory && matchesSearch;
+    });
+  }, [templates, selectedCategory, templateSearch]);
+
   return (
     <div className="space-y-6" dir="rtl">
       {/* Page Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary-600 via-violet-600 to-secondary-600 rounded-2xl p-6 text-white">
+      <div className="relative overflow-hidden bg-gradient-to-r from-primary-600 via-violet-600 to-secondary-600 rounded-2xl p-6 text-white shadow-lg">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 left-8 w-40 h-40 rounded-full bg-white blur-3xl" />
           <div className="absolute bottom-0 right-16 w-32 h-32 rounded-full bg-white blur-2xl" />
         </div>
-        <div className="relative flex items-center gap-4">
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
-            <Sparkles className="w-7 h-7" />
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+              <Sparkles className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">مولّد الوصف الوظيفي الذكي بالذكاء الاصطناعي</h1>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/30">
+                  {templates.length}+ قالب احترافي
+                </span>
+              </div>
+              <p className="text-sm opacity-90 mt-1">
+                اختر قالباً جاهزاً معتمداً لسوق العمل السعودي أو أنشئ وصفاً مخصصاً بالكامل يشمل المتطلبات، المهارات والأسئلة
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold mb-1">مولّد الوصف الوظيفي بالذكاء الاصطناعي</h1>
-            <p className="text-sm opacity-85">
-              أدخل بيانات الوظيفة وسيقوم AI بإنشاء وصف احترافي كامل يشمل المسؤوليات، المتطلبات، المهارات وأسئلة المقابلة
-            </p>
-          </div>
-
         </div>
       </div>
 
@@ -1628,44 +2115,140 @@ const AIJobDescriptionPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Templates */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">قوالب جاهزة</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 shadow-sm flex flex-col h-[750px]">
+              {/* Header & Badges */}
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white text-sm">مكتبة القوالب الجاهزة</h3>
+                    <p className="text-[11px] text-gray-500">{filteredTemplates.length} قالب متاح</p>
+                  </div>
+                </div>
+                {selectedCategory !== 'الكل' && (
+                  <button
+                    onClick={() => setSelectedCategory('الكل')}
+                    className="text-xs text-primary-600 hover:underline"
+                  >
+                    إعادة ضبط
+                  </button>
+                )}
               </div>
+
+              {/* Search Bar */}
+              <div className="relative mb-3">
+                <input
+                  type="text"
+                  placeholder="ابحث عن وظيفة، مهارة، أو تخصص..."
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="w-full pl-3 pr-8 py-2 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 outline-none transition"
+                />
+                <div className="absolute right-2.5 top-2.5 text-gray-400 pointer-events-none">
+                  🔍
+                </div>
+                {templateSearch && (
+                  <button
+                    onClick={() => setTemplateSearch('')}
+                    className="absolute left-2.5 top-2.5 text-gray-400 hover:text-gray-600 text-xs"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 scrollbar-thin">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                      selectedCategory === cat
+                        ? 'bg-primary-600 text-white shadow-sm'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Templates List */}
               {loadingTemplates ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
+                <div className="space-y-2 overflow-hidden">
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
                   ))}
                 </div>
+              ) : filteredTemplates.length === 0 ? (
+                <div className="flex flex-col items-center justify-center flex-1 text-center py-8 text-gray-400">
+                  <span className="text-3xl mb-2">🔍</span>
+                  <p className="text-xs font-medium">لم يتم العثور على قوالب مطابقة للبحث</p>
+                  <button
+                    onClick={() => { setTemplateSearch(''); setSelectedCategory('الكل'); }}
+                    className="mt-2 text-xs text-primary-600 hover:underline"
+                  >
+                    عرض جميع القوالب
+                  </button>
+                </div>
               ) : (
-                <div className="space-y-2">
-                  {templates.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => {
-                        setSelectedPreset(t.preset);
-                        setActiveMode('form');
-                      }}
-                      className={`w-full text-right p-3 rounded-xl border transition-all hover:shadow-sm ${
-                        JSON.stringify(selectedPreset) === JSON.stringify(t.preset)
-                          ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/30'
-                          : 'border-gray-100 dark:border-gray-800 hover:border-primary-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{t.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{t.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{t.description}</p>
+                <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+                  {filteredTemplates.map((t) => {
+                    const isSelected = JSON.stringify(selectedPreset) === JSON.stringify(t.preset);
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setSelectedPreset(t.preset);
+                          setActiveMode('form');
+                        }}
+                        className={`w-full text-right p-3 rounded-xl border transition-all duration-200 group ${
+                          isSelected
+                            ? 'border-primary-500 bg-primary-50/80 dark:bg-primary-900/40 shadow-sm ring-1 ring-primary-400'
+                            : 'border-gray-100 dark:border-gray-800 hover:border-primary-300 hover:bg-gray-50/80 dark:hover:bg-gray-800/60'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl p-1 bg-white dark:bg-gray-800 rounded-lg shadow-xs border border-gray-100 dark:border-gray-700/60 shrink-0">
+                            {t.icon}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1 mb-0.5">
+                              <p className="text-xs font-bold text-gray-900 dark:text-white truncate group-hover:text-primary-600 transition-colors">
+                                {t.title}
+                              </p>
+                              <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-md shrink-0">
+                                {t.preset?.seniorityLevel ? SENIORITY_LABELS[t.preset.seniorityLevel] || t.preset.seniorityLevel : t.category}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mb-1.5">
+                              {t.description}
+                            </p>
+                            {t.preset?.skills && (
+                              <div className="flex flex-wrap gap-1">
+                                {t.preset.skills.slice(0, 3).map((sk: string, sIdx: number) => (
+                                  <span
+                                    key={sIdx}
+                                    className="text-[10px] px-1.5 py-0.2 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded border border-gray-200/50"
+                                  >
+                                    {sk}
+                                  </span>
+                                ))}
+                                {t.preset.skills.length > 3 && (
+                                  <span className="text-[10px] text-gray-400">
+                                    +{t.preset.skills.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-md shrink-0">
-                          {t.category}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
