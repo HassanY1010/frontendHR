@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, AlertCircle, FileText, DollarSign, Briefcase, Calendar, Award, Sparkles } from 'lucide-react';
-import { jobRequestService } from '@hr/services';
+import { jobRequestService, hiringPlanService } from '@hr/services';
 
 interface CreateJobRequestModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
   const [skills, setSkills] = useState<string[]>(['TypeScript', 'Node.js', 'React']);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [summarySuccessMessage, setSummarySuccessMessage] = useState<string | null>(null);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     jobTitle: '',
@@ -38,11 +39,23 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
     priority: 'MEDIUM',
     hiringType: 'IMMEDIATE',
     hiringDeadline: '',
+    hiringPlanId: '',
     freezeReason: 'BUDGET_PENDING',
     frozenDate: new Date().toISOString().slice(0, 10),
     resumeDate: '',
     ownerName: ''
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      hiringPlanService.getHiringPlans()
+        .then(res => {
+          const list = res?.data?.data || res?.data || res || [];
+          setAvailablePlans(Array.isArray(list) ? list : []);
+        })
+        .catch(() => setAvailablePlans([]));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -100,6 +113,31 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
     setError(null);
     if (!formData.jobTitle.trim()) {
       setError('يرجى إدخال المسمى الوظيفي');
+      return;
+    }
+
+    if (formData.hiringType === 'IMMEDIATE') {
+      if (!formData.requiredDate) {
+        setError('تاريخ الاحتياج (Required Date) إلزامي للتوظيف الفوري');
+        return;
+      }
+      if (!formData.hiringDeadline) {
+        setError('الموعد النهائي للتوظيف (Hiring Deadline) إلزامي للتوظيف الفوري');
+        return;
+      }
+      if (new Date(formData.hiringDeadline) < new Date(formData.requiredDate)) {
+        setError('الموعد النهائي للتوظيف لا يمكن أن يسبق تاريخ الاحتياج');
+        return;
+      }
+    }
+
+    if (formData.hiringType === 'PLANNED' && !formData.hiringPlanId) {
+      setError('يرجى اختيار بند خطة التوظيف السنوية (Hiring Plan) لربط الطلب بها');
+      return;
+    }
+
+    if (formData.hiringType === 'ON_HOLD' && !formData.freezeReason) {
+      setError('سبب التجميد إلزامي للطلبات المعلقة (On Hold)');
       return;
     }
 
@@ -221,6 +259,38 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
                     onChange={(e) => setFormData({ ...formData, hiringDeadline: e.target.value })}
                     className="px-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-xs"
                   />
+                </div>
+              </div>
+            )}
+
+            {formData.hiringType === 'PLANNED' && (
+              <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-purple-700 dark:text-purple-300">📅 ربط الطلب بالخطة السنوية (Manpower Force Plan):</span>
+                  <span className="text-[11px] text-gray-500">الخطط المتاحة: {availablePlans.length}</span>
+                </div>
+                <div>
+                  <select
+                    value={formData.hiringPlanId}
+                    onChange={(e) => {
+                      const selectedPlanId = e.target.value;
+                      const selPlan = availablePlans.find(p => p.id === selectedPlanId);
+                      setFormData({
+                        ...formData,
+                        hiringPlanId: selectedPlanId,
+                        jobTitle: selPlan ? selPlan.position : formData.jobTitle,
+                        departmentId: selPlan ? selPlan.departmentId : formData.departmentId
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-700 rounded-xl text-xs"
+                  >
+                    <option value="">-- اختر بند الخطة السنوية المطلوب --</option>
+                    {availablePlans.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.year} | {p.department?.name || 'القسم'} - {p.position} (المتبقي: {Math.max(0, p.quantity - p.fulfilledCount)} من {p.quantity})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}

@@ -250,6 +250,67 @@ const WorkflowDashboard: React.FC<WorkflowDashboardProps> = ({ data, loading }) 
           </table>
         </div>
       </div>
+      {/* Employee Performance Section */}
+      {data?.employeePerformance && data.employeePerformance.length > 0 && (
+        <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(99,102,241,0.2)', background: 'rgba(30,27,75,0.6)' }}>
+          <div className="p-4 flex items-center justify-between" style={{ background: 'rgba(99,102,241,0.1)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-400" />
+              <h3 className="text-white font-semibold">مؤشرات أداء الموظفين الحقيقية (Employee Performance & SLA Compliance)</h3>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-full text-indigo-300 font-medium" style={{ background: 'rgba(99,102,241,0.2)' }}>
+              {data.employeePerformance.length} موظف مسند
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  {['الموظف', 'المراحل المسندة', 'المكتملة', 'المتأخرة', 'في الموعد', 'متوسط الإنجاز', 'نسبة الالتزام بـ SLA'].map((h) => (
+                    <th key={h} className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.employeePerformance.map((emp: any, i: number) => {
+                  const isLowCompliance = emp.complianceRate < 80;
+                  return (
+                    <tr key={i} className="border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                      <td className="px-4 py-3 text-white font-medium flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs font-bold">
+                          {emp.name?.[0] || 'U'}
+                        </div>
+                        {emp.name}
+                      </td>
+                      <td className="px-4 py-3 text-gray-300 font-medium">{emp.assignedSteps}</td>
+                      <td className="px-4 py-3 text-emerald-400 font-medium">{emp.completedSteps}</td>
+                      <td className="px-4 py-3">
+                        {emp.overdueSteps > 0 ? (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171' }}>
+                            {emp.overdueSteps} خرق
+                          </span>
+                        ) : <span className="text-gray-500 text-xs">0</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-300 text-sm">{emp.completedOnTime}</td>
+                      <td className="px-4 py-3 text-gray-300 text-sm">{emp.avgHours > 0 ? `${emp.avgHours} ساعة` : '-'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold" style={{ color: isLowCompliance ? '#f87171' : '#34d399' }}>
+                            {emp.complianceRate}%
+                          </span>
+                          <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${emp.complianceRate}%`, background: isLowCompliance ? '#ef4444' : '#10b981' }} />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

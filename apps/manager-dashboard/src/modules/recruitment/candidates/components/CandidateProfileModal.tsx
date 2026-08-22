@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, User, Briefcase, GraduationCap, Award, Sparkles, Clock, MapPin, Phone, Mail, Globe,
-  ChevronRight, Brain, ThumbsUp, ThumbsDown, Trash2
+  ChevronRight, Brain, ThumbsUp, ThumbsDown, Trash2, FileText, StickyNote, Plus, Layers,
+  DollarSign, Calendar, ExternalLink, Edit3, Check
 } from 'lucide-react';
 import { atsCandidateService } from '@hr/services';
 
@@ -19,9 +20,22 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
   const [candidate, setCandidate] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [matchingLoading, setMatchingLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'ai' | 'documents' | 'history'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'ai' | 'applications' | 'notes' | 'documents' | 'history'>('profile');
   const [statusComment, setStatusComment] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Notes state
+  const [notes, setNotes] = useState<any[]>([]);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
+
+  // Applications state
+  const [applications, setApplications] = useState<any[]>([]);
+
+  // Edit Profile state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const pipelineStages = [
     { id: 'APPLIED', label: 'تقديم الطلب (Applied)', color: 'blue' },
@@ -42,7 +56,20 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
     try {
       setLoading(true);
       const res: any = await atsCandidateService.getCandidateById(candidateId);
-      setCandidate(res?.data || res);
+      const data = res?.data || res;
+      setCandidate(data);
+      setEditForm({
+        fullName: data.fullName || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        location: data.location || '',
+        nationality: data.nationality || '',
+        currentTitle: data.currentTitle || '',
+        yearsOfExperience: data.yearsOfExperience || data.experience || 0,
+        salaryExpectation: data.salaryExpectation || '',
+        availability: data.availability || '',
+        education: data.education || ''
+      });
     } catch (err) {
       console.error('Failed to load candidate profile:', err);
     } finally {
@@ -50,8 +77,28 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
     }
   };
 
+  const loadNotes = async () => {
+    try {
+      const res: any = await atsCandidateService.getNotes(candidateId);
+      setNotes(res?.data || []);
+    } catch (err) {
+      console.error('Failed to load notes:', err);
+    }
+  };
+
+  const loadApplications = async () => {
+    try {
+      const res: any = await atsCandidateService.getApplications(candidateId);
+      setApplications(res?.data || []);
+    } catch (err) {
+      console.error('Failed to load applications:', err);
+    }
+  };
+
   useEffect(() => {
     loadProfile();
+    loadNotes();
+    loadApplications();
   }, [candidateId]);
 
   const handleRunAIMatch = async () => {
@@ -68,7 +115,7 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
   };
 
   const handleDeleteCandidate = async () => {
-    if (!window.confirm(`هل أنت تأكد من رغبتك في حذف المرشح (${candidate?.fullName})؟`)) return;
+    if (!window.confirm(`هل أنت متأكد من رغبتك في حذف المرشح (${candidate?.fullName})؟`)) return;
     try {
       await atsCandidateService.deleteCandidate(candidateId);
       onUpdate();
@@ -92,6 +139,50 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
     }
   };
 
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteContent.trim()) return;
+    try {
+      setAddingNote(true);
+      await atsCandidateService.addNote(candidateId, newNoteContent.trim());
+      setNewNoteContent('');
+      await loadNotes();
+      await loadProfile();
+    } catch (err) {
+      console.error('Failed to add note:', err);
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!window.confirm('هل تريد حذف هذه الملاحظة؟')) return;
+    try {
+      await atsCandidateService.deleteNote(candidateId, noteId);
+      await loadNotes();
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      setSavingEdit(true);
+      await atsCandidateService.updateCandidate(candidateId, {
+        ...editForm,
+        yearsOfExperience: Number(editForm.yearsOfExperience),
+        salaryExpectation: editForm.salaryExpectation ? Number(editForm.salaryExpectation) : undefined
+      });
+      setIsEditing(false);
+      await loadProfile();
+      onUpdate();
+    } catch (err) {
+      console.error('Failed to save profile updates:', err);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   if (loading || !candidate) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl">
@@ -103,7 +194,6 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
     );
   }
 
-  // Parse skills and experiences if stringified JSON
   const skillsList = candidate.candidateSkills?.length > 0
     ? candidate.candidateSkills.map((s: any) => s.skillName)
     : (candidate.skills ? (candidate.skills.startsWith('[') ? JSON.parse(candidate.skills) : candidate.skills.split(',')) : []);
@@ -142,6 +232,13 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              {isEditing ? 'إلغاء التعديل' : 'تعديل الملف'}
+            </button>
             <button
               onClick={handleRunAIMatch}
               disabled={matchingLoading}
@@ -193,7 +290,7 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
         </div>
 
         {/* Tabs Navigation */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('profile')}
             className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
@@ -217,6 +314,39 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('applications')}
+            className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'applications'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Layers className="w-4 h-4" /> طلبات الوظائف ({applications.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('notes')}
+            className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'notes'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <StickyNote className="w-4 h-4" /> الملاحظات الداخلية ({notes.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('documents')}
+            className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'documents'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <FileText className="w-4 h-4" /> السيرة الذاتية (CV)
+          </button>
+
+          <button
             onClick={() => setActiveTab('history')}
             className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'history'
@@ -224,80 +354,146 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            <Clock className="w-4 h-4" /> المسار الزمني والتحركات (Timeline)
+            <Clock className="w-4 h-4" /> المسار الزمني (Timeline)
           </button>
         </div>
 
         {/* Tab Content Body */}
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           {activeTab === 'profile' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Left Column: Personal Info */}
-              <div className="space-y-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="w-4 h-4 text-purple-500" /> البيانات الشخصية
+            <div>
+              {isEditing ? (
+                <div className="bg-purple-50/50 dark:bg-purple-950/20 p-5 rounded-2xl border border-purple-200 dark:border-purple-800 space-y-4">
+                  <h3 className="text-xs font-bold text-purple-900 dark:text-purple-300 flex items-center gap-2">
+                    <Edit3 className="w-4 h-4" /> تعديل بيانات المرشح
                   </h3>
-                  <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-                    <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-gray-400" /> <span>{candidate.email}</span></div>
-                    <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-gray-400" /> <span>{candidate.phone || 'غير مسجل'}</span></div>
-                    <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-gray-400" /> <span>{candidate.location || 'الرياض'}</span></div>
-                    <div className="flex items-center gap-2"><Globe className="w-3.5 h-3.5 text-gray-400" /> <span>الجنسية: {candidate.nationality || 'سعودي'}</span></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">الاسم الكامل</label>
+                      <input
+                        type="text"
+                        value={editForm.fullName}
+                        onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                        className="w-full mt-1 p-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">المسمى الحالي</label>
+                      <input
+                        type="text"
+                        value={editForm.currentTitle}
+                        onChange={(e) => setEditForm({ ...editForm, currentTitle: e.target.value })}
+                        className="w-full mt-1 p-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">الراتب المتوقع (SAR)</label>
+                      <input
+                        type="number"
+                        value={editForm.salaryExpectation}
+                        onChange={(e) => setEditForm({ ...editForm, salaryExpectation: e.target.value })}
+                        className="w-full mt-1 p-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">الجاهزية للعمل (Availability)</label>
+                      <input
+                        type="text"
+                        value={editForm.availability}
+                        onChange={(e) => setEditForm({ ...editForm, availability: e.target.value })}
+                        placeholder="مثال: فوري / إشعار شهر"
+                        className="w-full mt-1 p-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-2 text-xs font-bold bg-gray-200 dark:bg-gray-700 rounded-xl"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      onClick={handleSaveEdit}
+                      disabled={savingEdit}
+                      className="px-5 py-2 text-xs font-bold bg-purple-600 text-white rounded-xl shadow-md flex items-center gap-1.5"
+                    >
+                      <Check className="w-3.5 h-3.5" /> {savingEdit ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                    </button>
                   </div>
                 </div>
-
-                {/* Skills Box */}
-                <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Award className="w-4 h-4 text-purple-500" /> المهارات التقنية
-                  </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {skillsList.map((skill: string, idx: number) => (
-                      <span key={idx} className="px-2.5 py-1 bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[11px] font-bold rounded-lg">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Professional Experience & Education */}
-              <div className="md:col-span-2 space-y-6">
-                
-                {/* Previous Companies */}
-                <div className="p-5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-purple-500" /> الخبرات والشركات السابقة
-                  </h3>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   
-                  {candidate.candidateExperiences?.length > 0 ? (
-                    <div className="space-y-3">
-                      {candidate.candidateExperiences.map((exp: any) => (
-                        <div key={exp.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-                          <div className="font-bold text-xs text-gray-900 dark:text-white">{exp.position} - {exp.company}</div>
-                          <div className="text-[11px] text-gray-500 mt-1">{exp.description || 'خبرة سابقة في تطوير البرمجيات وإدارة المهام'}</div>
-                        </div>
-                      ))}
+                  {/* Left Column: Personal & Compensation Info */}
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+                      <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <User className="w-4 h-4 text-purple-500" /> البيانات الشخصية والتعويضات
+                      </h3>
+                      <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
+                        <div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-gray-400" /> <span>{candidate.email}</span></div>
+                        <div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-gray-400" /> <span>{candidate.phone || 'غير مسجل'}</span></div>
+                        <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-gray-400" /> <span>{candidate.location || 'الرياض'}</span></div>
+                        <div className="flex items-center gap-2"><Globe className="w-3.5 h-3.5 text-gray-400" /> <span>الجنسية: {candidate.nationality || 'سعودي'}</span></div>
+                        <div className="flex items-center gap-2"><DollarSign className="w-3.5 h-3.5 text-emerald-500" /> <span>الراتب المتوقع: <strong>{candidate.salaryExpectation ? `${candidate.salaryExpectation} SAR` : 'غير محدد'}</strong></span></div>
+                        <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-indigo-500" /> <span>الجاهزية: <strong>{candidate.availability || 'غير محدد'}</strong></span></div>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-xs text-gray-500">
-                      {Array.isArray(previousCompanies) && previousCompanies.length > 0 ? previousCompanies.join(' • ') : 'الخبرات السابقة مسجلة ومحفوظة في السيرة الذاتية.'}
-                    </div>
-                  )}
-                </div>
 
-                {/* Education */}
-                <div className="p-5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-purple-500" /> المؤهل العلمي
-                  </h3>
-                  <div className="text-xs text-gray-700 dark:text-gray-300">
-                    {candidate.education || 'بكالوريوس علوم الحاسب والمعلومات - جامعة الملك سعود'}
+                    {/* Skills Box */}
+                    <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+                      <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Award className="w-4 h-4 text-purple-500" /> المهارات التقنية
+                      </h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {skillsList.map((skill: string, idx: number) => (
+                          <span key={idx} className="px-2.5 py-1 bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[11px] font-bold rounded-lg">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Professional Experience & Education */}
+                  <div className="md:col-span-2 space-y-6">
+                    
+                    {/* Previous Companies */}
+                    <div className="p-5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+                      <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Briefcase className="w-4 h-4 text-purple-500" /> الخبرات والشركات السابقة
+                      </h3>
+                      
+                      {candidate.candidateExperiences?.length > 0 ? (
+                        <div className="space-y-3">
+                          {candidate.candidateExperiences.map((exp: any) => (
+                            <div key={exp.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+                              <div className="font-bold text-xs text-gray-900 dark:text-white">{exp.position} - {exp.company}</div>
+                              <div className="text-[11px] text-gray-500 mt-1">{exp.description || 'خبرة سابقة في تطوير البرمجيات وإدارة المهام'}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500">
+                          {Array.isArray(previousCompanies) && previousCompanies.length > 0 ? previousCompanies.join(' • ') : 'الخبرات السابقة مسجلة ومحفوظة في السيرة الذاتية.'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Education */}
+                    <div className="p-5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+                      <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-purple-500" /> المؤهل العلمي
+                      </h3>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        {candidate.education || 'بكالوريوس علوم الحاسب والمعلومات - جامعة الملك سعود'}
+                      </div>
+                    </div>
+
                   </div>
                 </div>
-
-              </div>
+              )}
             </div>
           )}
 
@@ -350,6 +546,107 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
             </div>
           )}
 
+          {activeTab === 'applications' && (
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-purple-500" /> الوظائف التي تقدم إليها المرشح (Multi-Job Applications)
+              </h3>
+              {applications.length === 0 ? (
+                <div className="p-6 text-center text-xs text-gray-500 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
+                  لا توجد طلبات تقديم إضافية لهذا المرشح.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {applications.map((app: any) => (
+                    <div key={app.id} className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-gray-900 dark:text-white">{app.recruitmentjob?.title || app.jobRequest?.jobTitle || 'وظيفة معلنة'}</span>
+                        <span className="px-2.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full">{app.status}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{app.matchAnalysis || 'طلب تقديم رسمي عبر نظام ATS'}</p>
+                      <div className="text-[10px] text-gray-400">تاريخ التقديم: {new Date(app.createdAt).toLocaleDateString('ar-SA')}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'notes' && (
+            <div className="space-y-4">
+              <form onSubmit={handleAddNote} className="space-y-2">
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <StickyNote className="w-4 h-4 text-purple-500" /> إضافة ملاحظة سرية للمرشح:
+                </label>
+                <div className="flex gap-2">
+                  <textarea
+                    rows={2}
+                    value={newNoteContent}
+                    onChange={(e) => setNewNoteContent(e.target.value)}
+                    placeholder="اكتب ملاحظة لفريق التوظيف (مثل: انطباع المقابلة، التوصيات...)"
+                    className="w-full p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 text-xs focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={addingNote || !newNoteContent.trim()}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" /> {addingNote ? 'جاري الإضافة...' : 'إضافة'}
+                  </button>
+                </div>
+              </form>
+
+              <div className="space-y-3 pt-3">
+                {notes.length === 0 ? (
+                  <div className="text-center p-6 text-xs text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+                    لا توجد ملاحظات مسجلة بعد لهذا المرشح.
+                  </div>
+                ) : (
+                  notes.map((n: any) => (
+                    <div key={n.id} className="p-3.5 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-xs">
+                          <strong className="text-purple-600 dark:text-purple-400">{n.authorName || 'مسؤول التوظيف'}</strong>
+                          <span className="text-[11px] text-gray-400">{new Date(n.createdAt).toLocaleString('ar-SA')}</span>
+                        </div>
+                        <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{n.content}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteNote(n.id)}
+                        className="text-red-400 hover:text-red-600 p-1"
+                        title="حذف الملاحظة"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <FileText className="w-4 h-4 text-purple-500" /> استعراض السيرة الذاتية (Secure CV Viewer)
+              </h3>
+              <div className="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-white">{candidate.fullName} - Resume.pdf</h4>
+                  <p className="text-[11px] text-gray-500 mt-0.5">الملف مؤمن ومشفر ويتم استعراضه عبر جلسة التوثيق الخاصة بشركتك.</p>
+                </div>
+                <a
+                  href={atsCandidateService.getCandidateCVUrl(candidateId)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> فتح واستعراض السيرة الذاتية
+                </a>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'history' && (
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -393,3 +690,4 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
 };
 
 export default CandidateProfileModal;
+

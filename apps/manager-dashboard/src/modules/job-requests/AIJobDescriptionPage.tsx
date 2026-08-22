@@ -49,10 +49,19 @@ interface JDResult {
   salaryInsight: string;
   employmentType: string;
   workMode: string;
-  seniorityLevel: string;
+  seniorityLevel?: string;
   educationLevel?: string;
+
   confidence_score: number;
+  marketAnalysis?: {
+    marketTip?: string;
+    recommendedSkillsToAdd?: string[];
+    salarySuggestion?: string;
+    marketCompetitiveness?: string;
+  };
+  searchKeywords?: string[];
 }
+
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -195,11 +204,12 @@ const JDResultView: React.FC<{
     const formattedFullJD = [
       `📌 الوصف الوظيفي الكامل: ${activeResult.jobTitle}`,
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-      `🏢 نوع التوظيف: ${EMPLOYMENT_LABELS[activeResult.employmentType] || activeResult.employmentType || 'دوام كامل'}`,
-      `📍 نظام العمل: ${WORK_MODE_LABELS[activeResult.workMode] || activeResult.workMode || 'هجين'}`,
-      `⭐ مستوى الخبرة: ${SENIORITY_LABELS[activeResult.seniorityLevel] || activeResult.seniorityLevel || 'متوسط'}`,
+      `🏢 نوع التوظيف: ${activeResult.employmentType ? (EMPLOYMENT_LABELS[activeResult.employmentType] || activeResult.employmentType) : 'دوام كامل'}`,
+      `📍 نظام العمل: ${activeResult.workMode ? (WORK_MODE_LABELS[activeResult.workMode] || activeResult.workMode) : 'هجين'}`,
+      `⭐ مستوى الخبرة: ${activeResult.seniorityLevel ? (SENIORITY_LABELS[activeResult.seniorityLevel] || activeResult.seniorityLevel) : 'متوسط'}`,
       activeResult.educationLevel ? `🎓 المؤهل العلمي: ${activeResult.educationLevel}` : null,
       activeResult.salaryInsight ? `💰 نطاق الراتب: ${activeResult.salaryInsight}` : null,
+
       `\n📝 ملخص الوظيفة:`,
       `${activeResult.summary}`,
       `\n🎯 المسؤوليات الوظيفية:`,
@@ -430,7 +440,7 @@ const JDResultView: React.FC<{
               </span>
               <span className="flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5" />
-                {SENIORITY_LABELS[activeResult.seniorityLevel] || activeResult.seniorityLevel}
+                {activeResult.seniorityLevel ? (SENIORITY_LABELS[activeResult.seniorityLevel] || activeResult.seniorityLevel) : 'متوسط'}
               </span>
               {activeResult.educationLevel && (
                 <span className="flex items-center gap-1.5 bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-semibold">
@@ -446,7 +456,7 @@ const JDResultView: React.FC<{
               onClick={handleCopyEntireJD}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs transition shadow-md ${
                 copiedAll
-                  ? 'bg-emerald-500 text-white'
+                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
                   : 'bg-white/20 hover:bg-white/30 text-white border border-white/40'
               }`}
             >
@@ -509,7 +519,39 @@ const JDResultView: React.FC<{
             </div>
           </div>
         )}
+
+        {/* Market Optimization & AI Suggestions */}
+        {activeResult.marketAnalysis && (
+          <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-2.5">
+            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
+              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span>تحليل السوق واقتراحات الذكاء الاصطناعي (Market Intelligence)</span>
+            </div>
+            {activeResult.marketAnalysis.marketTip && (
+              <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+                💡 {activeResult.marketAnalysis.marketTip}
+              </p>
+            )}
+            {activeResult.marketAnalysis.recommendedSkillsToAdd && activeResult.marketAnalysis.recommendedSkillsToAdd.length > 0 && (
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-xs font-semibold text-amber-800 dark:text-amber-300 shrink-0">مهارات تنافسية مقترحة:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {activeResult.marketAnalysis.recommendedSkillsToAdd.map((s: string, idx: number) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-0.5 bg-amber-200/70 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 text-xs rounded-md font-medium"
+                    >
+                      + {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
       </SectionCard>
+
 
       {/* Responsibilities */}
       <SectionCard
