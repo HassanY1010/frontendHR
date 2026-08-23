@@ -77,12 +77,19 @@ export const ATSCandidateDashboard: React.FC = () => {
   }, [statusFilter]);
 
   const handleDeleteCandidate = async (id: string, name: string) => {
-    if (!window.confirm(`هل أنت تأكد من رغبتك في حذف المرشح (${name})؟`)) return;
+    if (!window.confirm(`هل أنت متأكد من رغبتك في حذف المرشح (${name})؟`)) return;
     try {
       await atsCandidateService.deleteCandidate(id);
       await loadCandidates();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete candidate:', err);
+      if (err?.response?.status === 403) {
+        alert('عذراً: ليس لديك الصلاحية الكافية لحذف هذا المرشح.');
+      } else if (err?.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert('تعذر حذف المرشح. يرجى المحاولة مرة أخرى.');
+      }
     }
   };
 
