@@ -296,6 +296,10 @@ const JDResultView: React.FC<{
       const targetTitle = activeResult.jobTitle && activeResult.jobTitle !== 'المسمى الوظيفي' ? activeResult.jobTitle : (formData.jobTitle || 'وظيفة جديدة');
       const targetDepartment = formData.department || 'تكنولوجيا المعلومات';
 
+      const today = new Date();
+      const defaultReqDate = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const defaultDeadline = new Date(today.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
       const payload = {
         jobTitle: targetTitle,
         department: targetDepartment,
@@ -313,6 +317,9 @@ const JDResultView: React.FC<{
         salaryMax: formData.salaryMax || '',
         budgetCode: `BUD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
         costCenter: 'CC-101',
+        hiringType: 'IMMEDIATE',
+        requiredDate: defaultReqDate,
+        hiringDeadline: defaultDeadline,
         priority: 'MEDIUM',
         hiringReason: 'NEW_POSITION',
         submitDirectly: true
