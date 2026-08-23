@@ -143,9 +143,28 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
 
     setLoading(true);
     try {
+      const departmentNameMap: Record<string, string> = {
+        'dep-tech': 'تكنولوجيا المعلومات والبرمجيات',
+        'dep-hr': 'الموارد البشرية',
+        'dep-finance': 'الإدارة المالية',
+        'dep-marketing': 'التسويق والمبيعات',
+        'dep-operations': 'العمليات والتشغيل'
+      };
+
+      const selectedDepName = departmentNameMap[formData.departmentId] || 'تكنولوجيا المعلومات والبرمجيات';
+      
+      // Auto default dates for IMMEDIATE hiring if not explicitly provided
+      const now = new Date();
+      const defaultReqDate = formData.requiredDate || new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const defaultDeadDate = formData.hiringDeadline || new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
       await jobRequestService.createJobRequest({
         ...formData,
+        departmentName: selectedDepName,
+        department: selectedDepName,
         departmentId: formData.departmentId || 'dep-tech',
+        requiredDate: formData.hiringType === 'IMMEDIATE' ? (formData.requiredDate || defaultReqDate) : formData.requiredDate,
+        hiringDeadline: formData.hiringType === 'IMMEDIATE' ? (formData.hiringDeadline || defaultDeadDate) : formData.hiringDeadline,
         skills,
         submitDirectly
       });
