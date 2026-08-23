@@ -23,6 +23,7 @@ const AIJobDescriptionPage = React.lazy(() => import('../modules/job-requests/AI
 const WorkflowPage = React.lazy(() => import('../modules/workflow/WorkflowPage'))
 const ManpowerPlanPage = React.lazy(() => import('../modules/recruitment/pages/ManpowerPlanPage'))
 const HiringTypesReportPage = React.lazy(() => import('../modules/dashboard/pages/HiringTypesReportPage'))
+const CandidateBookingPage = React.lazy(() => import('../modules/recruitment/interviews/pages/CandidateBookingPage'))
 
 const LoadingFallback = () => (
     <div className="min-h-screen flex items-center justify-center">
@@ -48,7 +49,8 @@ const AppRoutes: React.FC = () => {
     return (
         <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              
+                {/* Public Candidate Self-Service Booking Page */}
+                <Route path="/book-interview/:token" element={<CandidateBookingPage />} />
 
                 {/* Protected Manager Routes */}
                 <Route path="/" element={
