@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MoreVertical, Edit, FileText, Archive, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { MoreVertical, Edit, FileText, Archive, Trash2, Users } from 'lucide-react'
 import type { Job } from '@hr/types'
 
 interface JobActionsMenuProps {
@@ -19,6 +20,7 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
     onDelete,
     onOpenChange
 }) => {
+    const navigate = useNavigate()
     const [isOpen, setIsOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
@@ -56,6 +58,17 @@ const JobActionsMenu: React.FC<JobActionsMenuProps> = ({
                     dir="rtl"
                     className="absolute right-0 top-8 bg-white dark:bg-slate-900 shadow-2xl dark:shadow-black/60 border border-gray-100 dark:border-slate-700 rounded-lg p-2 z-[60] min-w-[160px]"
                 >
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/recruitment/candidates?jobId=${job.id}`)
+                            setIsOpen(false)
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded transition-colors font-medium"
+                    >
+                        <Users className="h-4 w-4 shrink-0 text-purple-600" />
+                        عرض المتقدمين
+                    </button>
                     <button
                         onClick={(e) => {
                             e.stopPropagation()

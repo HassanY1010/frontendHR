@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Briefcase,
@@ -175,6 +176,7 @@ const Modal: React.FC<{
 }
 
 const JobsPage: React.FC = () => {
+    const navigate = useNavigate()
     const { jobs, isLoading, fetchJobs, createJob, updateJob, deleteJob } = useJobsStore()
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
@@ -696,7 +698,7 @@ const JobsPage: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1 sm:gap-2 self-end sm:self-auto">
-                                                <Button variant="ghost" size="sm" onClick={() => window.open(`/jobs/${job.id}`, '_blank')}><Eye className="h-3 w-3 sm:h-4 sm:w-4" /></Button>
+                                                <Button variant="ghost" size="sm" onClick={() => navigate(`/recruitment/candidates?jobId=${job.id}`)}><Eye className="h-3 w-3 sm:h-4 sm:w-4" /></Button>
                                                 <Button variant="ghost" size="sm" onClick={() => handleEditJob(job)}><Edit className="h-3 w-3 sm:h-4 sm:w-4" /></Button>
                                                 <Button variant="ghost" size="sm" onClick={() => handleDeleteJob(job.id)}><Trash2 className="h-3 w-3 sm:h-4 sm:w-4" /></Button>
                                             </div>
@@ -755,7 +757,7 @@ const JobsPage: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
-                                                        <Button variant="primary" size="sm" className="flex-1" onClick={() => window.location.href = `/recruitment/candidates?jobId=${job.id}`}>
+                                                        <Button variant="primary" size="sm" className="flex-1" onClick={() => navigate(`/recruitment/candidates?jobId=${job.id}`)}>
                                                             <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                                                             <span className="text-xs sm:text-sm">عرض المتقدمين</span>
                                                         </Button>
@@ -983,7 +985,7 @@ const JobsPage: React.FC = () => {
                                 </div>
                             </div>
 
-                             {/* AI Feedback Alerts */}
+                            {/* AI Feedback Alerts */}
                             {aiError && (
                                 <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-300 text-xs font-bold flex items-center justify-between">
                                     <span>⚠️ {aiError}</span>
