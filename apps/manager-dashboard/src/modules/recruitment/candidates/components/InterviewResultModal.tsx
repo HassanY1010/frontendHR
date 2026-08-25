@@ -41,14 +41,18 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
         ? (() => { try { return JSON.parse(interview.aiAnalysis); } catch { return {}; } })()
         : (interview?.aiAnalysis || (candidate?.aiAnalysisDetails ? (typeof candidate.aiAnalysisDetails === 'string' ? (() => { try { return JSON.parse(candidate.aiAnalysisDetails); } catch { return {}; } })() : candidate.aiAnalysisDetails) : {}));
 
+    const hasRealEvaluation = aiAnalysis?.isEvaluated === true || (interview?.aiScore !== null && interview?.aiScore !== undefined && !['PENDING_REVIEW', 'review'].includes(aiAnalysis?.decision));
+
     const rawScore = interview?.aiScore !== undefined && interview?.aiScore !== null 
         ? interview.aiScore 
         : (candidate?.aiScore !== undefined && candidate?.aiScore !== null ? candidate.aiScore : null);
     
     // إذا كانت الدرجة من 10 نحسب النسبة المئوية، إذا كانت بالفعل من 100 نتركها كما هي
-    const score = rawScore !== null ? (rawScore <= 10 ? Math.round(rawScore * 10) : rawScore) : null;
+    const score = (hasRealEvaluation && rawScore !== null) ? (rawScore <= 10 ? Math.round(rawScore * 10) : rawScore) : null;
     const isHire = aiAnalysis?.decision === 'مقبول' || aiAnalysis?.recommendation === 'مقبول' || aiAnalysis?.recommendation === 'hire' || (score !== null && score >= 70);
-    const recommendationText = aiAnalysis?.decision || aiAnalysis?.recommendation || (isHire ? 'قبول وتوظيف مقترح' : 'غير ملائم');
+    const recommendationText = hasRealEvaluation 
+        ? (aiAnalysis?.decision || aiAnalysis?.recommendation || (isHire ? 'قبول وتوظيف مقترح' : 'غير ملائم'))
+        : 'بانتظار المراجعة والتقييم';
     const transcriptText = interview?.transcript || interview?.notes || '';
 
     return (
@@ -62,31 +66,36 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
             />
 
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="relative bg-white dark:bg-gray-900 w-full max-w-5xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative bg-white dark:bg-gray-900 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 z-10 max-h-[90vh] flex flex-col"
             >
                 {/* Header */}
-                <div className="p-6 border-b dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-900">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                            <Brain className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <div className="p-6 border-b dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+                            <Brain className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">تحليل المقابلة الذكي</h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">للمرشح: {candidate?.fullName || candidate?.name || 'غير حدد'}</p>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                                نتائج المقابلة المسجلة: {candidate?.fullName || 'المرشح'}
+                            </h2>
+                            <p className="text-xs text-gray-500">
+                                تحليل المقابلة والتسجيل المرئي المرفوع
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
                     >
-                        <X className="w-6 h-6 text-gray-400" />
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                <div className="p-6 overflow-y-auto space-y-8 custom-scrollbar">
                     {/* Top Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
@@ -95,12 +104,12 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <Star className="w-5 h-5 text-indigo-500 fill-indigo-500" />
                             </div>
                             <div className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">
-                                {score}%
+                                {score !== null ? `${score}%` : 'قيد التقييم'}
                             </div>
                             <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
                                 <div
-                                    className="bg-indigo-600 h-full rounded-full"
-                                    style={{ width: `${score}%` }}
+                                    className="bg-indigo-600 h-full rounded-full transition-all duration-500"
+                                    style={{ width: score !== null ? `${score}%` : '0%' }}
                                 />
                             </div>
                         </div>
@@ -110,21 +119,25 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">توصية النظام</span>
                                 <ShieldCheck className="w-5 h-5 text-emerald-500" />
                             </div>
-                            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
+                            <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">
                                 {recommendationText}
                             </div>
-                            <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">بناءً على المعايير المحددة للوظيفة</p>
+                            <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">
+                                {hasRealEvaluation ? 'بناءً على المعايير المحددة للوظيفة' : 'بانتظار التفريغ والمراجعة اليدوية'}
+                            </p>
                         </div>
 
                         <div className="bg-blue-50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/50">
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">مدة المقابلة</span>
+                                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">حالة المقابلة</span>
                                 <Clock className="w-5 h-5 text-blue-500" />
                             </div>
-                            <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">
-                                {interview?.duration ? `${Math.floor(interview.duration / 60)}:${(interview.duration % 60).toString().padStart(2, '0')}` : '--:--'}
+                            <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                                {interview?.videoUrl ? 'تم تسجيل الفيديو' : (interview?.status === 'completed' ? 'مكتملة' : 'في الانتظار')}
                             </div>
-                            <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">دقيقة ثانية</p>
+                            <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">
+                                {interview?.duration ? `المدة: ${Math.floor(interview.duration / 60)}:${(interview.duration % 60).toString().padStart(2, '0')} دقيقة` : 'تسجيل مرئي متاح للمشاهدة'}
+                            </p>
                         </div>
                     </div>
 
@@ -154,28 +167,36 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                     <TrendingUp className="w-4 h-4 text-purple-500" /> نقاط القوة والضعف
                                 </h4>
-                                <div className="space-y-4">
-                                    <div>
-                                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mb-2">نقاط القوة:</span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {aiAnalysis.strengths?.map((s: string, i: number) => (
-                                                <span key={i} className="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">
-                                                    {s}
-                                                </span>
-                                            )) || <span className="text-xs text-gray-400">لا يوجد بيانات</span>}
+                                {hasRealEvaluation && ((aiAnalysis.strengths && aiAnalysis.strengths.length > 0) || (aiAnalysis.weaknesses && aiAnalysis.weaknesses.length > 0)) ? (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mb-2">نقاط القوة (مدعومة بأدلة من الإجابات):</span>
+                                            <div className="flex flex-wrap gap-2">
+                                                {aiAnalysis.strengths?.map((s: string, i: number) => (
+                                                    <span key={i} className="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">
+                                                        {s}
+                                                    </span>
+                                                )) || <span className="text-xs text-gray-400">لا يوجد بيانات</span>}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 block mb-2">تحتاج تطوير وملاحظات:</span>
+                                            <div className="flex flex-wrap gap-2">
+                                                {aiAnalysis.weaknesses?.map((w: string, i: number) => (
+                                                    <span key={i} className="text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full border border-amber-100 dark:border-amber-800">
+                                                        {w}
+                                                    </span>
+                                                )) || <span className="text-xs text-gray-400">لا يوجد بيانات</span>}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 block mb-2">تحتاج تطوير:</span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {aiAnalysis.weaknesses?.map((w: string, i: number) => (
-                                                <span key={i} className="text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full border border-amber-100 dark:border-amber-800">
-                                                    {w}
-                                                </span>
-                                            )) || <span className="text-xs text-gray-400">لا يوجد بيانات</span>}
-                                        </div>
+                                ) : (
+                                    <div className="p-4 bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 text-center">
+                                        <p className="text-xs font-medium text-gray-500">
+                                            لم يتم تسجيل إجابات نصية أو تفريغ معتمد للمرشح حتى الآن لاستخراج نقاط القوة والضعف آلياً.
+                                        </p>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </div>
 
@@ -185,20 +206,20 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <FileText className="w-5 h-5 text-indigo-500" /> ملخص التقييم
                             </h3>
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm leading-relaxed">
-                                <p className="text-gray-700 dark:text-gray-300 text-sm italic">
-                                    "{interview.aiSummary || aiAnalysis?.summary || 'تم تسجيل المقابلة وجاهزة للمراجعة.'}"
+                                <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                                    {interview.aiSummary || aiAnalysis?.summary || 'تم استلام تسجيل المقابلة وهو بانتظار المراجعة والتقييم.'}
                                 </p>
                             </div>
 
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 pt-2">
-                                <MessageSquare className="w-5 h-5 text-indigo-500" /> الأسئلة وإجابات المرشح (Transcript)
+                                <MessageSquare className="w-5 h-5 text-indigo-500" /> نصوص الأسئلة والإجابات
                             </h3>
                             <div className="bg-gray-50 dark:bg-gray-800/30 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 max-h-[300px] overflow-y-auto custom-scrollbar">
                                 {transcriptText ? (
                                     <div className="space-y-4 text-sm">
                                         {transcriptText.split('\n\n').map((paragraph: string, i: number) => (
-                                            <div key={i} className="p-3 bg-white dark:bg-gray-800/80 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-2xs">
-                                                <p className="text-gray-800 dark:text-gray-200 font-semibold leading-relaxed whitespace-pre-line">
+                                            <div key={i} className="p-3.5 bg-white dark:bg-gray-800/80 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-2xs">
+                                                <p className="text-gray-800 dark:text-gray-200 font-medium leading-relaxed whitespace-pre-line">
                                                     {paragraph}
                                                 </p>
                                             </div>

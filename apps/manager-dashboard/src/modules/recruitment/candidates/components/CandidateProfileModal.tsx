@@ -628,14 +628,18 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
               ) : (
                 interviewsList.map((inv: any) => {
                   const interviewAnalysis = inv.aiAnalysis ? (typeof inv.aiAnalysis === 'string' ? JSON.parse(inv.aiAnalysis) : inv.aiAnalysis) : null;
+                  const hasValidEval = interviewAnalysis?.isEvaluated === true || (typeof inv.aiScore === 'number' && inv.aiScore !== null && !['PENDING_REVIEW', 'review'].includes(interviewAnalysis?.decision));
+
                   return (
                     <div key={inv.id} className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-1 bg-purple-600 text-white text-[10px] font-bold rounded-lg">{inv.type || 'مقابلة فيديو AI'}</span>
-                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">الحالة: {inv.status || (inv.completed ? 'مكتملة' : 'قيد الإجراء')}</span>
+                          <span className="px-2.5 py-1 bg-purple-600 text-white text-[10px] font-bold rounded-lg">{inv.type || 'مقابلة فيديو'}</span>
+                          <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                            الحالة: {inv.videoUrl ? 'تم تسجيل المقابلة' : (inv.status || (inv.completed ? 'مكتملة' : 'قيد الإجراء'))}
+                          </span>
                         </div>
-                        {typeof inv.aiScore === 'number' && inv.aiScore !== null && (
+                        {hasValidEval && typeof inv.aiScore === 'number' && (
                           <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-black rounded-lg border border-emerald-300">
                             درجة المقابلة: {inv.aiScore}/100
                           </span>
@@ -644,24 +648,27 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
 
                       {inv.notes && (
                         <div className="text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
-                          <strong>ملاحظات وإجابات المرشح:</strong> {inv.notes}
+                          <strong>الأسئلة والنصوص المسجلة:</strong>
+                          <div className="mt-1 whitespace-pre-line font-normal text-gray-600 dark:text-gray-400">
+                            {inv.notes}
+                          </div>
                         </div>
                       )}
 
                       {inv.aiSummary && (
                         <div className="text-xs text-purple-900 dark:text-purple-200 bg-purple-50 dark:bg-purple-950/40 p-3 rounded-xl border border-purple-200 dark:border-purple-800">
-                          <strong>تقييم الذكاء الاصطناعي للمقابلة:</strong> {inv.aiSummary}
+                          <strong>ملخص المقابلة:</strong> {inv.aiSummary}
                         </div>
                       )}
 
-                      {interviewAnalysis && (
+                      {hasValidEval && interviewAnalysis && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                          {interviewAnalysis.strengths && (
+                          {interviewAnalysis.strengths && interviewAnalysis.strengths.length > 0 && (
                             <div className="p-2.5 bg-emerald-50/50 rounded-lg text-emerald-800">
                               <strong>نقاط قوة المقابلة:</strong> {Array.isArray(interviewAnalysis.strengths) ? interviewAnalysis.strengths.join(' • ') : interviewAnalysis.strengths}
                             </div>
                           )}
-                          {interviewAnalysis.weaknesses && (
+                          {interviewAnalysis.weaknesses && interviewAnalysis.weaknesses.length > 0 && (
                             <div className="p-2.5 bg-amber-50/50 rounded-lg text-amber-800">
                               <strong>ملاحظات المقابلة:</strong> {Array.isArray(interviewAnalysis.weaknesses) ? interviewAnalysis.weaknesses.join(' • ') : interviewAnalysis.weaknesses}
                             </div>
