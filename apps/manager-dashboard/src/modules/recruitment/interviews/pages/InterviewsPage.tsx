@@ -319,7 +319,9 @@ const InterviewsPage: React.FC = () => {
                         <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-2xl text-green-600 shadow-inner"><CheckCircle className="h-7 w-7" /></div>
                         <div>
                             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">مكتملة</p>
-                            <h3 className="text-3xl font-black dark:text-white mt-1">{(interviews || []).filter(i => i.status === 'completed').length}</h3>
+                            <h3 className="text-3xl font-black dark:text-white mt-1">
+                                {(interviews || []).filter(i => i.completed === true || i.status === 'completed' || i.status === 'HIRED' || i.status === 'REJECTED' || !!i.videoUrl).length}
+                            </h3>
                         </div>
                     </div>
                 </Card>
@@ -328,7 +330,9 @@ const InterviewsPage: React.FC = () => {
                         <div className="p-4 bg-purple-100 dark:bg-purple-900/30 rounded-2xl text-purple-600 shadow-inner"><Clock className="h-7 w-7" /></div>
                         <div>
                             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">بانتظار الموعد</p>
-                            <h3 className="text-3xl font-black dark:text-white mt-1">{(interviews || []).filter(i => i.status !== 'completed' && i.status !== 'cancelled').length}</h3>
+                            <h3 className="text-3xl font-black dark:text-white mt-1">
+                                {(interviews || []).filter(i => !i.completed && i.status !== 'completed' && i.status !== 'HIRED' && i.status !== 'REJECTED' && !i.videoUrl && i.status !== 'cancelled').length}
+                            </h3>
                         </div>
                     </div>
                 </Card>
@@ -381,8 +385,14 @@ const InterviewsPage: React.FC = () => {
                                         const interviewerName = interview.interviewerName || 'لم يحدد';
                                         const scheduledDate = interview.scheduledAt ? new Date(interview.scheduledAt).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' }) : '—';
                                         const scheduledTime = interview.scheduledAt ? new Date(interview.scheduledAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '—';
-                                        const statusColor = interview.status === 'completed' ? 'success' : interview.status === 'cancelled' ? 'danger' : 'primary';
-                                        const statusLabel = interview.status === 'completed' ? 'تمت بنجاح' : interview.status === 'cancelled' ? 'تم الإلغاء' : 'في الانتظار';
+                                        const isCompleted = interview.completed === true || interview.status === 'completed' || interview.status === 'HIRED' || interview.status === 'REJECTED' || !!interview.videoUrl;
+                                        const statusColor = isCompleted ? 'success' : interview.status === 'cancelled' ? 'danger' : 'primary';
+                                        const statusLabel = isCompleted ? 'مكتملة' : interview.status === 'cancelled' ? 'تم الإلغاء' : 'في الانتظار';
+
+                                        const parsedAi = typeof interview.aiAnalysis === 'string'
+                                            ? (() => { try { return JSON.parse(interview.aiAnalysis); } catch { return {}; } })()
+                                            : (interview.aiAnalysis || {});
+                                        const aiSummaryText = interview.aiSummary || parsedAi?.summary || parsedAi?.reasoning || (interview.videoUrl ? 'تم تسجيل المقابلة وجاهزة للمراجعة الذكية' : 'المقابلة بانتظار إجرائها من قبل المرشح');
 
                                         return (
                                             <motion.tr
@@ -419,22 +429,19 @@ const InterviewsPage: React.FC = () => {
                                                 <td className="p-5 max-w-[200px]">
                                                     <div className="flex items-start gap-2 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-xl border border-purple-100 dark:border-purple-800 group/ai cursor-help relative">
                                                         <p className="text-[11px] text-purple-700 dark:text-purple-300 font-bold line-clamp-2 leading-relaxed">
-                                                            {interview.aiAnalysis?.summary || interview.aiAnalysis?.reasoning || 'يتم فحص بيانات المرشح تلقائياً...'}
+                                                            {aiSummaryText}
                                                         </p>
                                                         <Sparkles className="w-3 h-3 text-purple-600 mt-0.5 shrink-0" />
                                                     </div>
                                                 </td>
                                                 <td className="p-5">
                                                     <div className="flex items-center justify-center gap-3">
-                                                        {interview.status === 'completed' && interview.videoUrl && (
-                                                            <Button variant="ai" size="sm" className="shadow-sm font-bold animate-pulse text-xs px-3" leftIcon={<Brain className="h-3 w-3" />} onClick={() => handleReviewInterview(interview)}>
-                                                                مراجعة النتائج
+                                                        {interview.videoUrl ? (
+                                                            <Button variant="ai" size="sm" className="shadow-sm font-bold text-xs px-3" leftIcon={<Brain className="h-3.5 w-3.5" />} onClick={() => handleReviewInterview(interview)}>
+                                                                مراجعة النتائج والـ AI
                                                             </Button>
-                                                        )}
-                                                        {interview.videoUrl && interview.status !== 'completed' && (
-                                                            <Button variant="outline" size="sm" className="rounded-xl border-2" onClick={() => setSelectedVideoUrl(interview.videoUrl || null)}>
-                                                                <Video className="h-4 w-4" />
-                                                            </Button>
+                                                        ) : (
+                                                            <span className="text-[11px] text-gray-400 font-medium">بانتظار التسجيل</span>
                                                         )}
                                                         <InterviewActionsMenu
                                                             interview={interview}

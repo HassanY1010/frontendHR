@@ -38,11 +38,18 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
     };
 
     const aiAnalysis = typeof interview?.aiAnalysis === 'string'
-        ? JSON.parse(interview.aiAnalysis)
-        : (interview?.aiAnalysis || (candidate?.aiAnalysisDetails ? (typeof candidate.aiAnalysisDetails === 'string' ? JSON.parse(candidate.aiAnalysisDetails) : candidate.aiAnalysisDetails) : {}));
+        ? (() => { try { return JSON.parse(interview.aiAnalysis); } catch { return {}; } })()
+        : (interview?.aiAnalysis || (candidate?.aiAnalysisDetails ? (typeof candidate.aiAnalysisDetails === 'string' ? (() => { try { return JSON.parse(candidate.aiAnalysisDetails); } catch { return {}; } })() : candidate.aiAnalysisDetails) : {}));
 
-    const score = interview?.aiScore || candidate?.aiScore || 0;
-    const isHire = score >= 75 || aiAnalysis.recommendation === 'hire';
+    const rawScore = interview?.aiScore !== undefined && interview?.aiScore !== null 
+        ? interview.aiScore 
+        : (candidate?.aiScore !== undefined && candidate?.aiScore !== null ? candidate.aiScore : null);
+    
+    // إذا كانت الدرجة من 10 نحسب النسبة المئوية، إذا كانت بالفعل من 100 نتركها كما هي
+    const score = rawScore !== null ? (rawScore <= 10 ? Math.round(rawScore * 10) : rawScore) : null;
+    const isHire = aiAnalysis?.decision === 'مقبول' || aiAnalysis?.recommendation === 'مقبول' || aiAnalysis?.recommendation === 'hire' || (score !== null && score >= 70);
+    const recommendationText = aiAnalysis?.decision || aiAnalysis?.recommendation || (isHire ? 'قبول وتوظيف مقترح' : 'غير ملائم');
+    const transcriptText = interview?.transcript || interview?.notes || '';
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -104,7 +111,7 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 <ShieldCheck className="w-5 h-5 text-emerald-500" />
                             </div>
                             <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
-                                {isHire ? 'توظيف مقترح' : aiAnalysis.recommendation === 'borderline' ? 'مقابلة فنية إضافية' : 'غير ملائم'}
+                                {recommendationText}
                             </div>
                             <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-1">بناءً على المعايير المحددة للوظيفة</p>
                         </div>
@@ -149,7 +156,7 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                                 </h4>
                                 <div className="space-y-4">
                                     <div>
-                                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mb-2">نقاط القوة ([x]):</span>
+                                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mb-2">نقاط القوة:</span>
                                         <div className="flex flex-wrap gap-2">
                                             {aiAnalysis.strengths?.map((s: string, i: number) => (
                                                 <span key={i} className="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">
@@ -179,20 +186,22 @@ const InterviewResultModal: React.FC<InterviewResultModalProps> = ({
                             </h3>
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm leading-relaxed">
                                 <p className="text-gray-700 dark:text-gray-300 text-sm italic">
-                                    "{interview.aiSummary || aiAnalysis?.summary || 'لم يتم توليد ملخص تلقائي أو المقابلة لا تزال قيد الانتظار.'}"
+                                    "{interview.aiSummary || aiAnalysis?.summary || 'تم تسجيل المقابلة وجاهزة للمراجعة.'}"
                                 </p>
                             </div>
 
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 pt-2">
-                                <MessageSquare className="w-5 h-5 text-indigo-500" /> النص المسجل (Transcript)
+                                <MessageSquare className="w-5 h-5 text-indigo-500" /> الأسئلة وإجابات المرشح (Transcript)
                             </h3>
                             <div className="bg-gray-50 dark:bg-gray-800/30 p-6 rounded-3xl border border-gray-100 dark:border-gray-800 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                {interview.transcript ? (
+                                {transcriptText ? (
                                     <div className="space-y-4 text-sm">
-                                        {interview.transcript.split('\n').map((line: string, i: number) => (
-                                            <p key={i} className="text-gray-600 dark:text-gray-400">
-                                                {line}
-                                            </p>
+                                        {transcriptText.split('\n\n').map((paragraph: string, i: number) => (
+                                            <div key={i} className="p-3 bg-white dark:bg-gray-800/80 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-2xs">
+                                                <p className="text-gray-800 dark:text-gray-200 font-semibold leading-relaxed whitespace-pre-line">
+                                                    {paragraph}
+                                                </p>
+                                            </div>
                                         ))}
                                     </div>
                                 ) : (
