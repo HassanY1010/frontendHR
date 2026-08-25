@@ -314,29 +314,51 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
         </div>
 
         {/* Pipeline Status Action Bar */}
-        <div className="p-4 bg-purple-50 dark:bg-purple-950/30 border-b border-purple-100 dark:border-purple-900 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-2">
+        <div className="p-4 bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 dark:from-purple-950/40 dark:via-gray-900 dark:to-purple-950/40 border-b border-purple-100 dark:border-purple-900/60 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-2.5">
             <span className="text-xs font-bold text-gray-700 dark:text-gray-300">المرحلة الحالية:</span>
-            <span className="px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-lg shadow-sm">
-              {candidate.status}
+            <span className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-black rounded-xl shadow-sm flex items-center gap-1.5">
+              <CheckCircle className="w-3.5 h-3.5" />
+              {(() => {
+                const map: Record<string, string> = {
+                  APPLIED: 'تم التقديم',
+                  SCREENING: 'الفرز والتدقيق',
+                  SHORTLISTED: 'القائمة المختصرة',
+                  INTERVIEW_SCHEDULED: 'مقابلة مجدولة',
+                  INTERVIEW_COMPLETED: 'اكتملت المقابلة',
+                  OFFER_EXTENDED: 'تم تقديم عرض العمل',
+                  HIRED: 'تم القبول والتوظيف 🎉',
+                  REJECTED: 'تم الرفض ❌'
+                };
+                return map[candidate.status] || candidate.status;
+              })()}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold text-gray-700 dark:text-gray-300">تحديث المرحلة:</span>
             <div className="flex flex-wrap gap-1.5">
-              {['APPLIED', 'SCREENING', 'SHORTLISTED', 'INTERVIEW_SCHEDULED', 'INTERVIEW_COMPLETED', 'OFFER_EXTENDED', 'HIRED', 'REJECTED'].map((st) => (
+              {[
+                { id: 'APPLIED', label: 'تم التقديم', color: 'hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300', activeColor: 'bg-blue-600 text-white' },
+                { id: 'SCREENING', label: 'الفرز والتدقيق', color: 'hover:bg-slate-100 hover:text-slate-800', activeColor: 'bg-slate-700 text-white' },
+                { id: 'SHORTLISTED', label: 'القائمة المختصرة', color: 'hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300', activeColor: 'bg-indigo-600 text-white' },
+                { id: 'INTERVIEW_SCHEDULED', label: 'جدولة المقابلة', color: 'hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300', activeColor: 'bg-cyan-600 text-white' },
+                { id: 'INTERVIEW_COMPLETED', label: 'اكتملت المقابلة', color: 'hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300', activeColor: 'bg-teal-600 text-white' },
+                { id: 'OFFER_EXTENDED', label: 'تقديم عرض عمل', color: 'hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300', activeColor: 'bg-amber-600 text-white' },
+                { id: 'HIRED', label: 'قبول وتوظيف ✅', color: 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-600 hover:text-white', activeColor: 'bg-emerald-600 text-white ring-2 ring-emerald-400' },
+                { id: 'REJECTED', label: 'رفض المرشح ❌', color: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-600 hover:text-white', activeColor: 'bg-red-600 text-white ring-2 ring-red-400' }
+              ].map((btn) => (
                 <button
-                  key={st}
-                  onClick={() => handleStatusChange(st)}
-                  disabled={updatingStatus || candidate.status === st}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
-                    candidate.status === st
-                      ? 'bg-purple-700 text-white shadow-sm'
-                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-purple-400'
+                  key={btn.id}
+                  onClick={() => handleStatusChange(btn.id)}
+                  disabled={updatingStatus || candidate.status === btn.id}
+                  className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border transition-all shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                    candidate.status === btn.id
+                      ? `${btn.activeColor} shadow-md`
+                      : `bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 ${btn.color}`
                   }`}
                 >
-                  {st}
+                  <span>{btn.label}</span>
                 </button>
               ))}
             </div>
