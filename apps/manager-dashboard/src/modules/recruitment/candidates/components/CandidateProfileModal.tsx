@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   User, Briefcase, GraduationCap, MapPin, Mail, Phone, Award,
   Sparkles, Brain, CheckCircle, Clock, Trash2, Edit3, X,
-  ExternalLink, FileText, Layers, StickyNote, Plus, Video, Target
+  ExternalLink, FileText, Layers, StickyNote, Plus, Video, Target,
+  Loader2, AlertCircle
 } from 'lucide-react';
 import { atsCandidateService } from '../../../../../../../packages/services/src/ats-candidate.service';
 import { recruitmentService } from '../../../../../../../packages/services/src/recruitment.service';
@@ -178,6 +179,54 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
     }
   };
 
+  // Authenticated CV viewing with Blob handling & cleanup
+  const [cvLoading, setCvLoading] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
+
+  const handleOpenCV = async () => {
+    try {
+      setCvLoading(true);
+      setCvError(null);
+
+      const response = await atsCandidateService.downloadCandidateCV(candidateId);
+      
+      const contentType = response?.headers?.['content-type'] || 'application/pdf';
+      const fileBlob = new Blob([response.data], { type: contentType });
+      const blobUrl = URL.createObjectURL(fileBlob);
+
+      const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      if (!newWindow) {
+        // Fallback for pop-up blockers: trigger download link
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `CV-${candidate.fullName || candidateId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      // Cleanup blob url after 60 seconds
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 60000);
+
+    } catch (err: any) {
+      console.error('Error opening CV:', err);
+      const status = err?.response?.status;
+      if (status === 401) {
+        setCvError('جلسة الدخول انتهت، يرجى تسجيل الدخول مرة أخرى.');
+      } else if (status === 403) {
+        setCvError('ليس لديك صلاحية مشاهدة السيرة الذاتية لهذا المرشح.');
+      } else if (status === 404) {
+        setCvError('السيرة الذاتية غير متوفرة لهذا المرشح.');
+      } else {
+        setCvError(err?.response?.data?.message || 'تعذر جلب ملف السيرة الذاتية. يرجى المحاولة لاحقاً.');
+      }
+    } finally {
+      setCvLoading(false);
+    }
+  };
+
   if (loading || !candidate) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" dir="rtl">
@@ -227,7 +276,7 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
                 )}
               </div>
               <p className="text-indigo-200 text-xs mt-0.5">
-                {candidate.currentTitle || candidate.recruitmentjob?.title || 'غير محدد'} • {candidate.yearsOfExperience || candidate.experience ? `${candidate.yearsOfExperience || candidate.experience} سنوات خبرة` : 'الخبرة غير محددة'}
+                {candidate.currentTitle || 'المسمى غير محدد في السيرة الذاتية'} {candidate.recruitmentjob?.title ? `• متقدم لوظيفة: ${candidate.recruitmentjob.title}` : ''} • {candidate.yearsOfExperience || candidate.experience ? `${candidate.yearsOfExperience || candidate.experience} سنوات خبرة` : 'الخبرة غير محددة'}
               </p>
             </div>
           </div>
@@ -408,7 +457,21 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
                         <GraduationCap className="w-4 h-4 text-purple-500" /> المؤهل العلمي
                       </h3>
                       <div className="text-xs text-gray-700 dark:text-gray-300">
-                        {candidate.education || 'لم يذكر المؤهل العلمي في السيرة الذاتية.'}
+                        {(() => {
+                          if (!candidate.education) return 'لم يذكر المؤهل العلمي في السيرة الذاتية.';
+                          if (typeof candidate.education === 'object') {
+                            return `${candidate.education.degree || ''} ${candidate.education.field ? `في ${candidate.education.field}` : ''} ${candidate.education.institution ? `- ${candidate.education.institution}` : ''}`.trim() || 'لم يذكر المؤهل العلمي في السيرة الذاتية.';
+                          }
+                          if (typeof candidate.education === 'string' && candidate.education.startsWith('{')) {
+                            try {
+                              const parsed = JSON.parse(candidate.education);
+                              return `${parsed.degree || ''} ${parsed.field ? `في ${parsed.field}` : ''} ${parsed.institution ? `- ${parsed.institution}` : ''}`.trim() || candidate.education;
+                            } catch {
+                              return candidate.education;
+                            }
+                          }
+                          return candidate.education;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -660,16 +723,37 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
               <div className="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <h4 className="text-xs font-bold text-gray-900 dark:text-white">{candidate.fullName} - Resume</h4>
-                  <p className="text-[11px] text-gray-500 mt-0.5">الملف مؤمن ومشفر ويتم استعراضه عبر جلسة التوثيق الخاصة بشركتك.</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">الملف مؤمن ومحمي ويتم استعراضه عبر جلسة التوثيق الخاصة بشركتك.</p>
                 </div>
                 {candidate.resumePath || candidate.resumeUrl ? (
-                  <a href={atsCandidateService.getCandidateCVUrl(candidateId)} target="_blank" rel="noreferrer" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md">
-                    <ExternalLink className="w-3.5 h-3.5" /> فتح واستعراض السيرة الذاتية
-                  </a>
+                  <button
+                    onClick={handleOpenCV}
+                    disabled={cvLoading}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md transition-all disabled:opacity-50"
+                  >
+                    {cvLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>جاري جلب الملف الآمن...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>فتح واستعراض السيرة الذاتية</span>
+                      </>
+                    )}
+                  </button>
                 ) : (
                   <span className="text-xs text-gray-400 italic">لا يوجد ملف سيرة ذاتية مرفق لهذا المرشح</span>
                 )}
               </div>
+
+              {cvError && (
+                <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl flex items-center gap-2.5 text-xs text-red-700 dark:text-red-300">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{cvError}</span>
+                </div>
+              )}
             </div>
           )}
 

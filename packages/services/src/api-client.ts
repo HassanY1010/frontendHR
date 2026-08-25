@@ -137,6 +137,10 @@ export class ApiClient {
     return response.data
   }
 
+  async getRaw(url: string, config?: AxiosRequestConfig) {
+    return await this.client.get(url, config)
+  }
+
   async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
     if (MOCK_MODE || localStorage.getItem('demo_mode') === 'true') {
       return this.mockResponse<T>(url, 'POST', data)

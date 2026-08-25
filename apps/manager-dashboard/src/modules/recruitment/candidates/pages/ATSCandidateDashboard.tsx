@@ -395,7 +395,7 @@ export const ATSCandidateDashboard: React.FC = () => {
                         {cand.fullName}
                       </h3>
                       <p className="text-[11px] text-gray-500 mt-0.5">
-                        {cand.currentTitle || cand.recruitmentjob?.title || 'غير محدد'}
+                        {cand.currentTitle || 'المسمى غير محدد في السيرة الذاتية'}
                       </p>
                     </div>
                   </div>

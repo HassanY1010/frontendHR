@@ -76,7 +76,14 @@ export const atsCandidateService = {
         return await apiClient.put(`/candidates/${id}`, payload);
     },
 
-    // 9. Get Candidate CV Stream URL
+    // 9. Download Candidate CV as authenticated Blob
+    downloadCandidateCV: async (id: string) => {
+        return await apiClient.getRaw(`/candidates/${id}/cv`, {
+            responseType: 'blob'
+        });
+    },
+
+    // 10. Get Candidate CV Stream URL (Fallback)
     getCandidateCVUrl: (id: string) => {
         const env = (import.meta as any).env || {};
         const url = env.VITE_API_BASE_URL || env.VITE_API_URL || '';
