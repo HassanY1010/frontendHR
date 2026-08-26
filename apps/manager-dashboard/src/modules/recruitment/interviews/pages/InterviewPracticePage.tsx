@@ -235,6 +235,8 @@ export const InterviewPracticePage: React.FC = () => {
     }, [step, mediaStreamRef.current]);
 
     // 3. Speech Recognition Setup (Client-Side Transcription)
+    const [speechError, setSpeechError] = useState<string | null>(null);
+
     useEffect(() => {
         const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (SpeechRec) {
@@ -257,10 +259,17 @@ export const InterviewPracticePage: React.FC = () => {
             };
 
             rec.onerror = (e: any) => {
-                console.warn('Speech recognition notice:', e.error);
+                console.warn('Speech recognition status:', e.error);
+                if (e.error === 'not-allowed') {
+                    setSpeechError('إذن الميكروفون للتعرف الصوتي غير متاح.');
+                } else if (e.error === 'network') {
+                    setSpeechError('التعرف على الصوت يحتاج اتصالاً بالإنترنت.');
+                }
             };
 
             recognitionRef.current = rec;
+        } else {
+            setSpeechError('المتصفح لا يدعم التعرف الصوتي المباشر (يمكنك متابعة التجربة).');
         }
     }, []);
 
@@ -308,7 +317,7 @@ export const InterviewPracticePage: React.FC = () => {
                 {
                     questionId: currentQ.id,
                     question: currentQ.question,
-                    transcript: currentTranscript.trim() || 'إجابة تدريبية مسجلة.'
+                    transcript: currentTranscript.trim() || 'إجابة تدريبية صوتية مسجلة.'
                 }
             ]);
         }
@@ -331,7 +340,7 @@ export const InterviewPracticePage: React.FC = () => {
             allAnswers.push({
                 questionId: currentQ.id,
                 question: currentQ.question,
-                transcript: currentTranscript.trim() || 'إجابة تدريبية مسجلة.'
+                transcript: currentTranscript.trim() || 'إجابة تدريبية صوتية مسجلة.'
             });
         }
 
@@ -345,6 +354,14 @@ export const InterviewPracticePage: React.FC = () => {
 
         setStep('analyzing');
         const elapsedDuration = 180 - timeLeft;
+        const elapsedMinutes = Math.max(0.5, elapsedDuration / 60);
+
+        // Calculate actual words from speech transcript
+        const totalWords = allAnswers.reduce((acc, a) => {
+            const words = a.transcript ? a.transcript.trim().split(/\s+/).filter(Boolean).length : 0;
+            return acc + words;
+        }, 0);
+        const calculatedWpm = Math.round(totalWords / elapsedMinutes) || 110;
 
         const avgVol = audioTelemetry.volumeSamples > 0
             ? Math.round(audioTelemetry.volumeSum / audioTelemetry.volumeSamples)
@@ -357,7 +374,7 @@ export const InterviewPracticePage: React.FC = () => {
                 answers: allAnswers,
                 audioMetrics: {
                     avgVolume: avgVol,
-                    speakingSpeedWpm: audioTelemetry.speakingSpeedWpm,
+                    speakingSpeedWpm: calculatedWpm,
                     pauseCount: audioTelemetry.pauseCount
                 },
                 videoMetrics: videoTelemetry
@@ -715,12 +732,12 @@ export const InterviewPracticePage: React.FC = () => {
                             <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-1">
                                 <div className="flex items-center justify-between text-xs text-slate-400">
                                     <span className="flex items-center gap-1.5">
-                                        <Eye className="w-4 h-4 text-blue-400" /> التواصل البصري
+                                        <Eye className="w-4 h-4 text-blue-400" /> التواصل مع الكاميرا (تقديري)
                                     </span>
                                     <span className="font-bold text-slate-200">{reportResult.visualScore}/100</span>
                                 </div>
                                 <div className="text-xs font-semibold text-emerald-400">
-                                    {reportResult.confidenceIndicators?.eyeContactLevel === 'GOOD' ? 'تركيز وتواصل ممتاز' : 'جيد'}
+                                    {reportResult.confidenceIndicators?.eyeContactLevel === 'GOOD' ? 'تفاعل ومواجهة جيدة للكاميرا' : 'جيد'}
                                 </div>
                             </div>
 
