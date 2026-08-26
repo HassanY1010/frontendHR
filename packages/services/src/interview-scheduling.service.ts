@@ -65,4 +65,85 @@ export const interviewSchedulingService = {
     }
 };
 
+export const interviewPracticeService = {
+    // 1. Create practice session from booking token or candidateId
+    createSession: async (payload: { schedulingToken?: string; candidateId?: string }) => {
+        return apiClient.post<{
+            status: string;
+            message?: string;
+            data: {
+                sessionId: string;
+                practiceToken?: string;
+                expiresAt: string;
+                maxDurationSeconds: number;
+                minDurationSeconds: number;
+            };
+        }>('/interviews/practice/session', payload);
+    },
+
+    // 2. Get Practice Session info
+    getSessionDetails: async (token: string) => {
+        return apiClient.get<{
+            status: string;
+            data: {
+                sessionId: string;
+                candidateName: string;
+                jobTitle: string;
+                status: string;
+                maxDurationSeconds: number;
+                minDurationSeconds: number;
+                expiresAt: string;
+            };
+        }>(`/interviews/practice/session/${token}`);
+    },
+
+    // 3. Get general practice questions
+    getPracticeQuestions: async () => {
+        return apiClient.get<{
+            status: string;
+            data: Array<{
+                id: string;
+                category: string;
+                question: string;
+                tip: string;
+            }>;
+        }>('/interviews/practice/questions');
+    },
+
+    // 4. Analyze practice session
+    analyzeSession: async (payload: {
+        token: string;
+        durationSeconds: number;
+        answers: Array<{ questionId: string; question: string; transcript: string }>;
+        audioMetrics?: { avgVolume: number; speakingSpeedWpm: number; pauseCount: number };
+        videoMetrics?: { faceVisibilityPct: number; lightingQuality: string; eyeContactPct: number };
+    }) => {
+        return apiClient.post<{
+            status: string;
+            message: string;
+            data: {
+                sessionId: string;
+                duration: number;
+                overallScore: number;
+                communicationScore: number;
+                answerScore: number;
+                voiceScore: number;
+                visualScore: number;
+                confidenceIndicators: {
+                    speakingPacing: string;
+                    audioClarity: string;
+                    eyeContactLevel: string;
+                    lightingStatus: string;
+                };
+                feedback: {
+                    strengths: string[];
+                    improvements: string[];
+                    coachTip: string;
+                };
+                completedAt: string;
+            };
+        }>('/interviews/practice/analyze', payload);
+    }
+};
+
 export default interviewSchedulingService;

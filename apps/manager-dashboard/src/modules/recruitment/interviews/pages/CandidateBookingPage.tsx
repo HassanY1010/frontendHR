@@ -138,6 +138,38 @@ export const CandidateBookingPage: React.FC = () => {
                         )}
                     </div>
 
+                    {/* AI Practice Session Invitation Banner */}
+                    <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/30 rounded-2xl p-5 text-right mb-6 space-y-3">
+                        <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
+                            <Sparkles className="w-4 h-4" />
+                            <span>تدرب الآن قبل المقابلة الحقيقية!</span>
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                            اختبر الكاميرا والميكروفون وجرب مقابلة تدريبية سريعة (1-3 دقائق) واحصل على تقييم فوري من مدرب الذكاء الاصطناعي لكسر حاجز التوتر.
+                        </p>
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const { interviewPracticeService } = await import('@hr/services');
+                                    const res = await interviewPracticeService.createSession({ schedulingToken: token });
+                                    const practiceToken = res.data.practiceToken;
+                                    if (practiceToken) {
+                                        window.location.href = `/practice-interview/${practiceToken}`;
+                                    } else {
+                                        window.location.href = `/practice-interview/${token}`;
+                                    }
+                                } catch (e) {
+                                    // Fallback to scheduling token
+                                    window.location.href = `/practice-interview/${token}`;
+                                }
+                            }}
+                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                            ابدأ المقابلة التجريبية (AI Coach)
+                        </button>
+                    </div>
+
                     <div className="text-xs text-slate-400">
                         نتمنى لك كل التوفيق في مقابلتك القادمة!
                     </div>
