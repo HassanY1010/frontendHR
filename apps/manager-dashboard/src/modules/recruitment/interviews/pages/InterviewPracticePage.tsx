@@ -614,6 +614,11 @@ export const InterviewPracticePage: React.FC = () => {
                                     💡 <strong>نصيحة المدرب:</strong> {questions[currentQuestionIndex]?.tip}
                                 </p>
                             )}
+                            {speechError && (
+                                <p className="text-[11px] text-amber-400 bg-amber-950/30 px-3 py-1 rounded-lg border border-amber-800/40 mt-1">
+                                    ⚠️ {speechError}
+                                </p>
+                            )}
                         </div>
 
                         {/* Video Feed & Audio Monitor */}
