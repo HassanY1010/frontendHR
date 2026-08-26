@@ -540,8 +540,48 @@ const InterviewsPage: React.FC = () => {
             </div>
 
             {/* Modals Implementation */}
-            <Modal isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} title="إعداد تفاصيل المقابلة" size="lg">
-                <form className="space-y-6" onSubmit={handleSchedule}>
+            <Modal isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} title="إعداد تفاصيل المقابلة والتدريب الذكي" size="lg">
+                {/* Self-service booking and practice link quick-action card */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-950/40 to-indigo-950/40 rounded-2xl border border-blue-800/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-blue-400" />
+                            <h4 className="text-sm font-black text-white">الخدمة الذاتية وتدريب الذكاء الاصطناعي للمرشح</h4>
+                        </div>
+                        <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-extrabold rounded-full border border-blue-500/30">
+                            موصى به ⚡
+                        </span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                        بدلاً من تحديد موعد يدوي، يمكنك إرسال رابط الحجز والتدريب مباشرة للمرشح ليختار وقته ويتدرب بالصوت والصورة مع المدرب الذكي.
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        <a
+                            href="https://hr-manager-dashboard.onrender.com/practice-interview/88cfa1a87582146e389ae978f23bfe846949af4313d23257171276c06fe14486"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30"
+                        >
+                            <span>🎯 تجربة غرفة التدريب الذكية (Practice Room)</span>
+                        </a>
+                        <a
+                            href="https://hr-manager-dashboard.onrender.com/book-interview/febfb88b331fd88a91c8be246746d1d048c924d9143bba53301920e52d0414b2"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5 border border-slate-700"
+                        >
+                            <span>📅 تجربة صفحة الحجز الذاتي (Self Booking)</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div className="relative flex py-2 items-center">
+                    <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
+                    <span className="flex-shrink mx-4 text-xs font-bold text-gray-400">أو حدد موعد المقابلة يدوياً</span>
+                    <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
+                </div>
+
+                <form className="space-y-6 mt-4" onSubmit={handleSchedule}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
                             <label className="block text-sm font-black text-gray-700 dark:text-gray-300">المرشح المستهدف</label>
