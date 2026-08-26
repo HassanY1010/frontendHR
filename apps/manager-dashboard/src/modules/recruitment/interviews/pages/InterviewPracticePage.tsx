@@ -59,7 +59,7 @@ export const InterviewPracticePage: React.FC = () => {
         speakingSpeedWpm: 115,
         pauseCount: 2
     });
-    const [videoTelemetry] = useState({
+    const [videoTelemetry, setVideoTelemetry] = useState({
         faceVisibilityPct: 90,
         lightingQuality: 'GOOD',
         eyeContactPct: 80
@@ -125,6 +125,16 @@ export const InterviewPracticePage: React.FC = () => {
 
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
+            // Canvas for real-time video frame luminance & exposure analysis
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = 64;
+            offscreenCanvas.height = 48;
+            const canvasCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+
+            let lastSpeechTime = Date.now();
+            let silenceStartTime: number | null = null;
+            let pauseCount = 0;
+
             const updateAudioLevel = () => {
                 if (analyserRef.current) {
                     analyserRef.current.getByteFrequencyData(dataArray);
@@ -136,11 +146,45 @@ export const InterviewPracticePage: React.FC = () => {
                     const normalized = Math.min(100, Math.round((avg / 128) * 100));
                     setAudioLevel(normalized);
 
-                    // Track audio telemetry
+                    const now = Date.now();
+                    if (normalized > 15) {
+                        lastSpeechTime = now;
+                        silenceStartTime = null;
+                    } else {
+                        if (!silenceStartTime && now - lastSpeechTime > 1500) {
+                            silenceStartTime = now;
+                            pauseCount++;
+                        }
+                    }
+
+                    // Calculate real lighting quality from video frames if playing
+                    let currentLighting = 'GOOD';
+                    if (videoRef.current && canvasCtx && videoRef.current.readyState >= 2) {
+                        try {
+                            canvasCtx.drawImage(videoRef.current, 0, 0, 64, 48);
+                            const imgData = canvasCtx.getImageData(0, 0, 64, 48).data;
+                            let totalBrightness = 0;
+                            for (let p = 0; p < imgData.length; p += 4) {
+                                totalBrightness += (0.299 * imgData[p] + 0.587 * imgData[p + 1] + 0.114 * imgData[p + 2]);
+                            }
+                            const avgBrightness = totalBrightness / (imgData.length / 4);
+                            if (avgBrightness < 45) currentLighting = 'POOR';
+                            else if (avgBrightness < 75) currentLighting = 'FAIR';
+                            else currentLighting = 'GOOD';
+                        } catch (e) {}
+                    }
+
+                    // Track audio & video telemetry dynamically
                     setAudioTelemetry(prev => ({
                         ...prev,
                         volumeSum: prev.volumeSum + normalized,
-                        volumeSamples: prev.volumeSamples + 1
+                        volumeSamples: prev.volumeSamples + 1,
+                        pauseCount: Math.min(10, pauseCount)
+                    }));
+
+                    setVideoTelemetry(prev => ({
+                        ...prev,
+                        lightingQuality: currentLighting
                     }));
                 }
                 animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
