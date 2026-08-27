@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import InterviewResultModal from '../../candidates/components/InterviewResultModal';
+import AIEvaluationDashboard from '../components/AIEvaluationDashboard';
 
 // المكونات المساعدة
 const Card: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className = '', onClick }) => (
@@ -92,6 +93,8 @@ const InterviewsPage: React.FC = () => {
     const [showReviewModal, setShowReviewModal] = React.useState(false);
     const [selectedInterview, setSelectedInterview] = React.useState<any>(null);
     const [selectedVideoUrl, setSelectedVideoUrl] = React.useState<string | null>(null);
+    const [showEvalModal, setShowEvalModal] = React.useState(false);
+    const [evalInterview, setEvalInterview] = React.useState<any>(null);
 
     // دالة مساعدة لتحويل رابط الفيديو النسبي إلى رابط مطلق
     const resolveUrl = useCallback((url: string): string => {
@@ -435,13 +438,24 @@ const InterviewsPage: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td className="p-5">
-                                                    <div className="flex items-center justify-center gap-3">
-                                                        {interview.videoUrl ? (
-                                                            <Button variant="ai" size="sm" className="shadow-sm font-bold text-xs px-3" leftIcon={<Brain className="h-3.5 w-3.5" />} onClick={() => handleReviewInterview(interview)}>
-                                                                مراجعة النتائج والـ AI
+                                                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                                                        {/* AI Evaluation Button — available for all interviews */}
+                                                        <Button
+                                                            variant="ai"
+                                                            size="sm"
+                                                            className="shadow-sm font-bold text-xs px-3"
+                                                            leftIcon={<Brain className="h-3.5 w-3.5" />}
+                                                            onClick={() => {
+                                                                setEvalInterview(interview);
+                                                                setShowEvalModal(true);
+                                                            }}
+                                                        >
+                                                            تقييم AI
+                                                        </Button>
+                                                        {interview.videoUrl && (
+                                                            <Button variant="secondary" size="sm" className="shadow-sm font-bold text-xs px-3" leftIcon={<Brain className="h-3.5 w-3.5" />} onClick={() => handleReviewInterview(interview)}>
+                                                                نتائج المقابلة
                                                             </Button>
-                                                        ) : (
-                                                            <span className="text-[11px] text-gray-400 font-medium">بانتظار التسجيل</span>
                                                         )}
                                                         <InterviewActionsMenu
                                                             interview={interview}
@@ -711,6 +725,50 @@ const InterviewsPage: React.FC = () => {
                     }
                 }}
             />
+
+            {/* AI Evaluation Modal */}
+            <AnimatePresence>
+                {showEvalModal && evalInterview && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" dir="rtl">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={() => setShowEvalModal(false)}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.92, opacity: 0, y: 20 }}
+                            className="relative bg-white dark:bg-gray-950 w-full max-w-3xl rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 z-10 max-h-[92vh] flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 rounded-t-3xl">
+                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <Brain className="w-4 h-4 text-purple-500" />
+                                    <span>تقييم المقابلة بالذكاء الاصطناعي</span>
+                                </div>
+                                <button
+                                    onClick={() => setShowEvalModal(false)}
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Modal Content */}
+                            <div className="overflow-y-auto flex-1 p-6 custom-scrollbar">
+                                <AIEvaluationDashboard
+                                    interview={evalInterview}
+                                    onClose={() => setShowEvalModal(false)}
+                                />
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
