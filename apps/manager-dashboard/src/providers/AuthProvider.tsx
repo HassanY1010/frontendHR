@@ -69,17 +69,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         }
                     } else {
                         // Wrong role for this dashboard
-                        navigate('/login', { replace: true })
+                        const isPublicRoute = window.location.pathname.startsWith('/book-interview') || 
+                                              window.location.pathname.startsWith('/practice-interview');
+                        if (!isPublicRoute) {
+                            navigate('/login', { replace: true })
+                        }
                     }
                 } else {
-                    // Not authenticated, current LoginPage will handle redirecting to landing page
-                    if (window.location.pathname !== '/login') {
+                    // Not authenticated, check if current path is a public candidate route
+                    const isPublicRoute = window.location.pathname.startsWith('/book-interview') || 
+                                          window.location.pathname.startsWith('/practice-interview');
+                    if (window.location.pathname !== '/login' && !isPublicRoute) {
                         navigate('/login', { replace: true })
                     }
                 }
             } catch (error) {
                 console.error('Auth initialization error:', error)
-                navigate('/login', { replace: true })
+                const isPublicRoute = window.location.pathname.startsWith('/book-interview') || 
+                                      window.location.pathname.startsWith('/practice-interview');
+                if (!isPublicRoute) {
+                    navigate('/login', { replace: true })
+                }
             } finally {
                 setIsLoading(false)
             }
