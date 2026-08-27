@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { interviewSchedulingService } from '@hr/services';
 import { Calendar, Clock, Video, User, CheckCircle2, AlertCircle, Sparkles, Globe } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -24,6 +24,7 @@ interface Slot {
 
 export const CandidateBookingPage: React.FC = () => {
     const { token } = useParams<{ token: string }>();
+    const navigate = useNavigate();
     const [session, setSession] = useState<SessionData | null>(null);
     const [slots, setSlots] = useState<Slot[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -152,15 +153,15 @@ export const CandidateBookingPage: React.FC = () => {
                                 try {
                                     const { interviewPracticeService } = await import('@hr/services');
                                     const res = await interviewPracticeService.createSession({ schedulingToken: token });
-                                    const practiceToken = res.data.practiceToken;
+                                    const practiceToken = res.data?.practiceToken;
                                     if (practiceToken) {
-                                        window.location.href = `/practice-interview/${practiceToken}`;
+                                        navigate(`/practice-interview/${practiceToken}`);
                                     } else {
-                                        window.location.href = `/practice-interview/${token}`;
+                                        navigate(`/practice-interview/${token}`);
                                     }
                                 } catch (e) {
                                     // Fallback to scheduling token
-                                    window.location.href = `/practice-interview/${token}`;
+                                    navigate(`/practice-interview/${token}`);
                                 }
                             }}
                             className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2"

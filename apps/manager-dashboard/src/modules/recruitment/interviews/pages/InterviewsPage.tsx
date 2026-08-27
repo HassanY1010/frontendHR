@@ -1,5 +1,5 @@
-// apps/manager-dashboard/src/modules/recruitment/interviews/pages/InterviewsPage.tsx
 import React, { useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Clock,
@@ -563,11 +563,9 @@ const InterviewsPage: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <a
-                            href="https://hr-manager-dashboard.onrender.com/practice-interview/94e9dab403e82f9925f365112104ce8905a666e19611629fc4f65fb27eca2d82"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-emerald-600/20 group"
+                        <Link
+                            to="/practice-interview/94e9dab403e82f9925f365112104ce8905a666e19611629fc4f65fb27eca2d82"
+                            className="p-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-emerald-600/20 group cursor-pointer"
                         >
                             <div className="flex items-center gap-2.5">
                                 <span className="text-xl">🎯</span>
@@ -577,13 +575,11 @@ const InterviewsPage: React.FC = () => {
                                 </div>
                             </div>
                             <span className="text-xs font-black bg-white/20 px-2.5 py-1 rounded-lg group-hover:translate-x-[-2px] transition-transform">فتح ↗</span>
-                        </a>
+                        </Link>
 
-                        <a
-                            href="https://hr-manager-dashboard.onrender.com/book-interview/febfb88b331fd88a91c8be246746d1d048c924d9143bba53301920e52d0414b2"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-blue-600/20 group"
+                        <Link
+                            to="/book-interview/febfb88b331fd88a91c8be246746d1d048c924d9143bba53301920e52d0414b2"
+                            className="p-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-blue-600/20 group cursor-pointer"
                         >
                             <div className="flex items-center gap-2.5">
                                 <span className="text-xl">📅</span>
@@ -593,7 +589,7 @@ const InterviewsPage: React.FC = () => {
                                 </div>
                             </div>
                             <span className="text-xs font-black bg-white/20 px-2.5 py-1 rounded-lg group-hover:translate-x-[-2px] transition-transform">فتح ↗</span>
-                        </a>
+                        </Link>
                     </div>
                 </div>
 
