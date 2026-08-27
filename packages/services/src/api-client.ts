@@ -114,9 +114,15 @@ export class ApiClient {
         if (error.response?.status === 401) {
           const isAuthRequest =
             error.config?.url?.includes('/auth/login') ||
-            error.config?.url?.includes('/auth/signup-company')
+            error.config?.url?.includes('/auth/signup-company') ||
+            error.config?.url?.includes('/interviews/practice') ||
+            error.config?.url?.includes('/interviews/scheduling/candidate-session')
 
-          if (!isAuthRequest) {
+          const isPublicCandidatePage = 
+            typeof window !== 'undefined' && 
+            (window.location.pathname.startsWith('/book-interview') || window.location.pathname.startsWith('/practice-interview'))
+
+          if (!isAuthRequest && !isPublicCandidatePage) {
             localStorage.removeItem('access_token')
             localStorage.removeItem('user')
             window.location.href = import.meta.env.VITE_LANDING_PAGE_URL || 'https://landing-page-cyan-eta-81.vercel.app'
