@@ -542,35 +542,57 @@ const InterviewsPage: React.FC = () => {
             {/* Modals Implementation */}
             <Modal isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} title="إعداد تفاصيل المقابلة والتدريب الذكي" size="lg">
                 {/* Self-service booking and practice link quick-action card */}
-                <div className="mb-6 p-4 bg-gradient-to-r from-blue-950/40 to-indigo-950/40 rounded-2xl border border-blue-800/40 space-y-3">
+                <div className="mb-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-indigo-950/60 rounded-2xl border-2 border-blue-200 dark:border-blue-700/60 shadow-sm space-y-3.5">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-blue-400" />
-                            <h4 className="text-sm font-black text-white">الخدمة الذاتية وتدريب الذكاء الاصطناعي للمرشح</h4>
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-600/30">
+                                <Sparkles className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="text-base font-black text-slate-900 dark:text-white">
+                                    الخدمة الذاتية وتدريب الذكاء الاصطناعي للمرشح
+                                </h4>
+                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
+                                    إرسال روابط تفاعلية للمرشح ليختار وقته ويتدرب بالصوت والصورة مع المدرب الذكي
+                                </p>
+                            </div>
                         </div>
-                        <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] font-extrabold rounded-full border border-blue-500/30">
-                            موصى به ⚡
+                        <span className="px-3 py-1 bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-extrabold rounded-full border border-amber-500/30 flex items-center gap-1 shadow-sm">
+                            <span>موصى به</span> ⚡
                         </span>
                     </div>
-                    <p className="text-xs text-slate-300">
-                        بدلاً من تحديد موعد يدوي، يمكنك إرسال رابط الحجز والتدريب مباشرة للمرشح ليختار وقته ويتدرب بالصوت والصورة مع المدرب الذكي.
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-1">
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                         <a
                             href="https://hr-manager-dashboard.onrender.com/practice-interview/88cfa1a87582146e389ae978f23bfe846949af4313d23257171276c06fe14486"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30"
+                            className="p-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-emerald-600/20 group"
                         >
-                            <span>🎯 تجربة غرفة التدريب الذكية (Practice Room)</span>
+                            <div className="flex items-center gap-2.5">
+                                <span className="text-xl">🎯</span>
+                                <div className="text-right">
+                                    <div className="text-xs font-black">غرفة التدريب الذكية</div>
+                                    <div className="text-[10px] text-emerald-100 font-medium">فحص الصوت والصورة والتقييم</div>
+                                </div>
+                            </div>
+                            <span className="text-xs font-black bg-white/20 px-2.5 py-1 rounded-lg group-hover:translate-x-[-2px] transition-transform">فتح ↗</span>
                         </a>
+
                         <a
                             href="https://hr-manager-dashboard.onrender.com/book-interview/febfb88b331fd88a91c8be246746d1d048c924d9143bba53301920e52d0414b2"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 text-xs font-bold rounded-xl transition flex items-center gap-1.5 border border-slate-700"
+                            className="p-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-blue-600/20 group"
                         >
-                            <span>📅 تجربة صفحة الحجز الذاتي (Self Booking)</span>
+                            <div className="flex items-center gap-2.5">
+                                <span className="text-xl">📅</span>
+                                <div className="text-right">
+                                    <div className="text-xs font-black">صفحة الحجز الذاتي</div>
+                                    <div className="text-[10px] text-blue-100 font-medium">اختيار الموعد المناسب للمرشح</div>
+                                </div>
+                            </div>
+                            <span className="text-xs font-black bg-white/20 px-2.5 py-1 rounded-lg group-hover:translate-x-[-2px] transition-transform">فتح ↗</span>
                         </a>
                     </div>
                 </div>
