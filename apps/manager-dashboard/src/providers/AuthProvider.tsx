@@ -63,40 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         } catch {
                             // use cached user
                         }
-                        // If we are at login, go to dashboard
-                        if (window.location.pathname === '/login') {
-                            navigate('/', { replace: true })
-                        }
-                    } else {
-                        // Wrong role for this dashboard
-                        const isPublicRoute = window.location.pathname.startsWith('/book-interview') || 
-                                              window.location.pathname.startsWith('/practice-interview');
-                        if (!isPublicRoute) {
-                            navigate('/login', { replace: true })
-                        }
-                    }
-                } else {
-                    // Not authenticated, check if current path is a public candidate route
-                    const isPublicRoute = window.location.pathname.startsWith('/book-interview') || 
-                                          window.location.pathname.startsWith('/practice-interview');
-                    if (window.location.pathname !== '/login' && !isPublicRoute) {
-                        navigate('/login', { replace: true })
                     }
                 }
             } catch (error) {
                 console.error('Auth initialization error:', error)
-                const isPublicRoute = window.location.pathname.startsWith('/book-interview') || 
-                                      window.location.pathname.startsWith('/practice-interview');
-                if (!isPublicRoute) {
-                    navigate('/login', { replace: true })
-                }
             } finally {
                 setIsLoading(false)
             }
         }
 
         initAuth()
-    }, [navigate])
+    }, [])
 
     const login = async (email: string, password: string) => {
         setIsLoading(true)
