@@ -14,7 +14,8 @@ import {
     MessageSquare,
     ChevronRight,
     ChevronLeft,
-    Brain
+    Brain,
+    Shield
 } from 'lucide-react'
 import { InterviewActionsMenu } from '../components/InterviewActionsMenu'
 import { useCandidatesStore } from '../../candidates/store'
@@ -24,6 +25,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSa
 import { ar } from 'date-fns/locale';
 import InterviewResultModal from '../../candidates/components/InterviewResultModal';
 import AIEvaluationDashboard from '../components/AIEvaluationDashboard';
+import AIShieldDashboard from '../components/AIShieldDashboard';
 
 // المكونات المساعدة
 const Card: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className = '', onClick }) => (
@@ -95,6 +97,8 @@ const InterviewsPage: React.FC = () => {
     const [selectedVideoUrl, setSelectedVideoUrl] = React.useState<string | null>(null);
     const [showEvalModal, setShowEvalModal] = React.useState(false);
     const [evalInterview, setEvalInterview] = React.useState<any>(null);
+    const [showShieldModal, setShowShieldModal] = React.useState(false);
+    const [shieldInterview, setShieldInterview] = React.useState<any>(null);
 
     // دالة مساعدة لتحويل رابط الفيديو النسبي إلى رابط مطلق
     const resolveUrl = useCallback((url: string): string => {
@@ -439,7 +443,7 @@ const InterviewsPage: React.FC = () => {
                                                 </td>
                                                 <td className="p-5">
                                                     <div className="flex items-center justify-center gap-2 flex-wrap">
-                                                        {/* AI Evaluation Button — available for all interviews */}
+                                                        {/* AI Evaluation Button */}
                                                         <Button
                                                             variant="ai"
                                                             size="sm"
@@ -451,6 +455,19 @@ const InterviewsPage: React.FC = () => {
                                                             }}
                                                         >
                                                             تقييم AI
+                                                        </Button>
+                                                        {/* AI Shield Anti-Cheating Button */}
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="shadow-sm font-bold text-xs px-3 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+                                                            leftIcon={<Shield className="h-3.5 w-3.5 text-indigo-600" />}
+                                                            onClick={() => {
+                                                                setShieldInterview(interview);
+                                                                setShowShieldModal(true);
+                                                            }}
+                                                        >
+                                                            AI Shield
                                                         </Button>
                                                         {interview.videoUrl && (
                                                             <Button variant="secondary" size="sm" className="shadow-sm font-bold text-xs px-3" leftIcon={<Brain className="h-3.5 w-3.5" />} onClick={() => handleReviewInterview(interview)}>
@@ -763,6 +780,53 @@ const InterviewsPage: React.FC = () => {
                                 <AIEvaluationDashboard
                                     interview={evalInterview}
                                     onClose={() => setShowEvalModal(false)}
+                                />
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* AI Shield Security Dashboard Modal */}
+            <AnimatePresence>
+                {showShieldModal && shieldInterview && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+                            onClick={() => setShowShieldModal(false)}
+                        />
+
+                        <motion.div
+                            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.92, opacity: 0, y: 20 }}
+                            className="relative bg-white dark:bg-gray-950 w-full max-w-4xl rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 z-10 max-h-[92vh] flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 rounded-t-3xl">
+                                <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-200">
+                                    <Shield className="w-4 h-4 text-indigo-600" />
+                                    <span>نظام AI Shield للحماية من الغش والتزوير في المقابلات</span>
+                                </div>
+                                <button
+                                    onClick={() => setShowShieldModal(false)}
+                                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Modal Content */}
+                            <div className="overflow-y-auto flex-1 p-6 custom-scrollbar">
+                                <AIShieldDashboard
+                                    interviewId={shieldInterview.id}
+                                    candidateName={shieldInterview.candidate?.fullName || shieldInterview.candidateName || 'المرشح'}
+                                    jobTitle={shieldInterview.candidate?.recruitmentjob?.title || 'الوظيفة'}
+                                    onClose={() => setShowShieldModal(false)}
                                 />
                             </div>
                         </motion.div>
