@@ -22,6 +22,7 @@ import {
 import { recruitmentService } from '@hr/services';
 import { toast } from 'sonner';
 import { Candidate } from '@hr/types';
+import AIShieldLiveMonitor from '../components/AIShieldLiveMonitor';
 
 const InterviewPage = () => {
     const { token } = useParams<{ token: string }>();
@@ -518,34 +519,44 @@ const InterviewPage = () => {
                             className="w-full max-w-7xl grid lg:grid-cols-5 gap-8 items-stretch"
                         >
                             {/* Camera Feed - 3/5 width */}
-                            <div className="lg:col-span-3 bg-slate-900 rounded-[3rem] overflow-hidden relative shadow-2xl border-4 border-white aspect-video lg:aspect-auto">
-                                <video
-                                    ref={videoRef}
-                                    autoPlay
-                                    playsInline
-                                    muted
-                                    className="w-full h-full object-cover transform scale-x-[-1]"
+                            <div className="lg:col-span-3 flex flex-col gap-3">
+                                {/* AI Shield Live Proctoring Overlay Component */}
+                                <AIShieldLiveMonitor
+                                    interviewId={interview?.id || candidate?.id || 'demo-interview-id'}
+                                    candidateId={candidate?.id}
+                                    mediaStream={mediaStream}
+                                    isRecording={isRecording}
                                 />
 
-                                {/* Overlay AI Effect */}
-                                <div className="absolute inset-0 pointer-events-none border-[16px] border-white/10 rounded-[2.5rem]" />
-                                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                                <div className="bg-slate-900 rounded-[3rem] overflow-hidden relative shadow-2xl border-4 border-white aspect-video lg:aspect-auto flex-1">
+                                    <video
+                                        ref={videoRef}
+                                        autoPlay
+                                        playsInline
+                                        muted
+                                        className="w-full h-full object-cover transform scale-x-[-1]"
+                                    />
 
-                                <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
-                                            <span className="text-white font-black text-xs uppercase tracking-widest shadow-sm">بث حي ومؤمن</span>
+                                    {/* Overlay AI Effect */}
+                                    <div className="absolute inset-0 pointer-events-none border-[16px] border-white/10 rounded-[2.5rem]" />
+                                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                                    <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+                                                <span className="text-white font-black text-xs uppercase tracking-widest shadow-sm">بث حي ومؤمن بالـ AI Shield</span>
+                                            </div>
+                                            <h4 className="text-white text-xl font-bold truncate max-w-[200px]">{candidate?.fullName}</h4>
                                         </div>
-                                        <h4 className="text-white text-xl font-bold truncate max-w-[200px]">{candidate?.fullName}</h4>
+
+                                        {isRecording && (
+                                            <div className="flex items-center gap-3 bg-red-600/90 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-red-400/30">
+                                                <div className="w-3 h-3 bg-white rounded-full animate-ping" />
+                                                <span className="text-white font-black text-sm uppercase tracking-tighter">REC • {timeLeft}s</span>
+                                            </div>
+                                        )}
                                     </div>
-
-                                    {isRecording && (
-                                        <div className="flex items-center gap-3 bg-red-600/90 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-red-400/30">
-                                            <div className="w-3 h-3 bg-white rounded-full animate-ping" />
-                                            <span className="text-white font-black text-sm uppercase tracking-tighter">REC • {timeLeft}s</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 

@@ -66,7 +66,17 @@ export interface AIShieldReport {
 
 export const aiShieldService = {
     /**
-     * Start a new AI Shield proctoring session with candidate consent
+     * Fetch rotating challenge nonce for session binding
+     */
+    async getChallengeNonce(sessionId: string): Promise<{ challengeNonce: string; expiresInSeconds: number }> {
+        const res = await apiClient.post<{ status: string; data: { challengeNonce: string; expiresInSeconds: number } }>(
+            `/ai-shield/nonce/${sessionId}`
+        );
+        return res.data;
+    },
+
+    /**
+     * Start a new AI Shield proctoring session with candidate consent and baseline
      */
     async startSession(payload: {
         interviewId: string;
@@ -79,8 +89,13 @@ export const aiShieldService = {
             livenessScore?: number;
             landmarkQuality?: number;
         };
-    }): Promise<{ session: any; identityVerification: any }> {
-        const res = await apiClient.post<{ status: string; data: { session: any; identityVerification: any } }>(
+        livenessProof?: {
+            blinkDetected?: boolean;
+            headYawVariance?: number;
+            challengeCompleted?: boolean;
+        };
+    }): Promise<{ session: any; challengeNonce: string; identityVerification: any }> {
+        const res = await apiClient.post<{ status: string; data: { session: any; challengeNonce: string; identityVerification: any } }>(
             '/ai-shield/start',
             payload
         );
@@ -88,7 +103,31 @@ export const aiShieldService = {
     },
 
     /**
-     * Ingest structured visual/telemetry signals during interview
+     * Ingest structured CV & Audio telemetry batches with nonce security
+     */
+    async ingestTelemetryBatch(payload: {
+        sessionId: string;
+        challengeNonce?: string;
+        sequenceNumber?: number;
+        frameBatches?: Array<{ timestamp: number; metrics: any }>;
+        audioBatches?: Array<{ timestamp: number; metrics: any }>;
+    }): Promise<{ eventsDetected: number; nextChallengeNonce: string }> {
+        const res = await apiClient.post<{ status: string; data: { eventsDetected: number; nextChallengeNonce: string } }>(
+            '/ai-shield/telemetry-batch',
+            payload
+        );
+        return res.data;
+    },
+
+    /**
+     * Record degraded mode when client-side CV is unsupported
+     */
+    async logDegradedMode(sessionId: string, reason: string, details?: string): Promise<void> {
+        await apiClient.post(`/ai-shield/degraded/${sessionId}`, { reason, details });
+    },
+
+    /**
+     * Ingest single frame metrics
      */
     async analyzeFrame(payload: {
         sessionId: string;
@@ -110,7 +149,7 @@ export const aiShieldService = {
     },
 
     /**
-     * Ingest acoustic anomaly telemetry
+     * Ingest single audio slice metrics
      */
     async analyzeAudio(payload: {
         sessionId: string;

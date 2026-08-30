@@ -177,6 +177,9 @@ importers:
       clsx:
         specifier: ^2.0.0
         version: 2.0.0
+      face-api.js:
+        specifier: ^0.22.2
+        version: 0.22.2
       framer-motion:
         specifier: ^10.16.0
         version: 10.16.0(react-dom@18.2.0)(react@18.2.0)
