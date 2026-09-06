@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react'
-import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Clock,
@@ -20,6 +19,7 @@ import {
 import { InterviewActionsMenu } from '../components/InterviewActionsMenu'
 import { useCandidatesStore } from '../../candidates/store'
 import { useInterviewsStore } from '../store';
+import { recruitmentService } from '@hr/services';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -90,6 +90,11 @@ const InterviewsPage: React.FC = () => {
 
     // States
     const [showScheduleModal, setShowScheduleModal] = React.useState(false);
+    const [scheduleTab, setScheduleTab] = React.useState<'direct' | 'link'>('direct');
+    const [linkCandidateId, setLinkCandidateId] = React.useState('');
+    const [linkDuration, setLinkDuration] = React.useState<number>(45);
+    const [generatedLink, setGeneratedLink] = React.useState<string | null>(null);
+
     const [showNoteModal, setShowNoteModal] = React.useState(false);
     const [showRescheduleModal, setShowRescheduleModal] = React.useState(false);
     const [showReviewModal, setShowReviewModal] = React.useState(false);
@@ -135,6 +140,29 @@ const InterviewsPage: React.FC = () => {
             fetchInterviews();
         } catch (error) {
             toast.error('حدث خطأ أثناء جدولة المقابلة');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleGenerateBookingLink = async () => {
+        if (!linkCandidateId) {
+            toast.error('يرجى اختيار المرشح أولاً');
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const res = await recruitmentService.createSchedulingSession({
+                candidateId: linkCandidateId,
+                interviewerId: 'system',
+                duration: linkDuration,
+                interviewType: 'VIDEO'
+            });
+            const bookingUrl = (res as any)?.data?.bookingUrl || (res as any)?.bookingUrl || `${window.location.origin}/book-interview/${(res as any)?.data?.sessionId || (res as any)?.sessionId}`;
+            setGeneratedLink(bookingUrl);
+            toast.success('تم توليد رابط الحجز بنجاح وإرسال بريد للمرشح!');
+        } catch (err: any) {
+            toast.error(err?.response?.data?.message || 'فشل توليد رابط الحجز');
         } finally {
             setIsSubmitting(false);
         }
@@ -571,108 +599,162 @@ const InterviewsPage: React.FC = () => {
             </div>
 
             {/* Modals Implementation */}
-            <Modal isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} title="إعداد تفاصيل المقابلة والتدريب الذكي" size="lg">
-                {/* Self-service booking and practice link quick-action card */}
-                <div className="mb-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-indigo-950/60 rounded-2xl border-2 border-blue-200 dark:border-blue-700/60 shadow-sm space-y-3.5">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-2 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-600/30">
-                                <Sparkles className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h4 className="text-base font-black text-slate-900 dark:text-white">
-                                    الخدمة الذاتية وتدريب الذكاء الاصطناعي للمرشح
-                                </h4>
-                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
-                                    إرسال روابط تفاعلية للمرشح ليختار وقته ويتدرب بالصوت والصورة مع المدرب الذكي
-                                </p>
-                            </div>
-                        </div>
-                        <span className="px-3 py-1 bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-extrabold rounded-full border border-amber-500/30 flex items-center gap-1 shadow-sm">
-                            <span>موصى به</span> ⚡
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <Link
-                            to="/practice-interview/94e9dab403e82f9925f365112104ce8905a666e19611629fc4f65fb27eca2d82"
-                            className="p-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-emerald-600/20 group cursor-pointer"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <span className="text-xl">🎯</span>
-                                <div className="text-right">
-                                    <div className="text-xs font-black">غرفة التدريب الذكية</div>
-                                    <div className="text-[10px] text-emerald-100 font-medium">فحص الصوت والصورة والتقييم</div>
-                                </div>
-                            </div>
-                            <span className="text-xs font-black bg-white/20 px-2.5 py-1 rounded-lg group-hover:translate-x-[-2px] transition-transform">فتح ↗</span>
-                        </Link>
-
-                        <Link
-                            to="/book-interview/febfb88b331fd88a91c8be246746d1d048c924d9143bba53301920e52d0414b2"
-                            className="p-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-between shadow-md shadow-blue-600/20 group cursor-pointer"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <span className="text-xl">📅</span>
-                                <div className="text-right">
-                                    <div className="text-xs font-black">صفحة الحجز الذاتي</div>
-                                    <div className="text-[10px] text-blue-100 font-medium">اختيار الموعد المناسب للمرشح</div>
-                                </div>
-                            </div>
-                            <span className="text-xs font-black bg-white/20 px-2.5 py-1 rounded-lg group-hover:translate-x-[-2px] transition-transform">فتح ↗</span>
-                        </Link>
-                    </div>
+            <Modal isOpen={showScheduleModal} onClose={() => { setShowScheduleModal(false); setGeneratedLink(null); }} title="جدولة مقابلة جديدة" size="lg">
+                {/* 2 Clear Professional Tabs */}
+                <div className="flex bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-2xl mb-6">
+                    <button
+                        type="button"
+                        onClick={() => { setScheduleTab('direct'); setGeneratedLink(null); }}
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                            scheduleTab === 'direct' 
+                                ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-md ring-1 ring-black/5' 
+                                : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-200'
+                        }`}
+                    >
+                        <Calendar className="w-4 h-4" />
+                        <span>1. جدولة مباشرة (تحديد موعد فوري)</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setScheduleTab('link'); setGeneratedLink(null); }}
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                            scheduleTab === 'link' 
+                                ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-md ring-1 ring-black/5' 
+                                : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-200'
+                        }`}
+                    >
+                        <Sparkles className="w-4 h-4" />
+                        <span>2. إرسال رابط حجز ذاتي للمرشح</span>
+                    </button>
                 </div>
 
-                <div className="relative flex py-2 items-center">
-                    <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
-                    <span className="flex-shrink mx-4 text-xs font-bold text-gray-400">أو حدد موعد المقابلة يدوياً</span>
-                    <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
-                </div>
-
-                <form className="space-y-6 mt-4" onSubmit={handleSchedule}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-black text-gray-700 dark:text-gray-300">المرشح المستهدف</label>
-                            <select name="candidateId" className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-xl outline-none focus:border-blue-500 transition-all font-bold" required>
-                                <option value="">اختر من القائمة...</option>
-                                {candidates.map(c => (
-                                    <option key={c.id} value={c.id}>{c.fullName} — {(c as any).job?.title || 'عام'}</option>
-                                ))}
-                            </select>
+                {scheduleTab === 'direct' ? (
+                    /* Tab 1: Direct Schedule */
+                    <form className="space-y-6" onSubmit={handleSchedule}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">المرشح المستهدف *</label>
+                                <select name="candidateId" className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-xs font-semibold" required>
+                                    <option value="">اختر من قائمة المرشحين...</option>
+                                    {candidates.map(c => (
+                                        <option key={c.id} value={c.id}>{c.fullName} — {(c as any).job?.title || 'عام'}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">المسؤول عن التقييم (المُحاوِر) *</label>
+                                <input name="interviewerName" type="text" placeholder="مثال: م. أحمد الشمري" className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-xs font-semibold" required />
+                            </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-black text-gray-700 dark:text-gray-300">المسؤول عن التقييم</label>
-                            <input name="interviewerName" type="text" placeholder="الاسم الكامل" className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-xl outline-none focus:border-blue-500 transition-all font-bold" required />
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5">
-                            <label className="block text-sm font-black text-gray-700 dark:text-gray-300">الموعد المحدد</label>
-                            <input name="scheduledAt" type="datetime-local" className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-xl outline-none focus:border-blue-500 transition-all font-bold" required />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">تاريخ ووقت المقابلة *</label>
+                                <input name="scheduledAt" type="datetime-local" className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-xs font-semibold" required />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">بيئة اللقاء *</label>
+                                <select name="type" className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-xs font-semibold" required>
+                                    <option value="online">عن بعد (Online Video Meeting)</option>
+                                    <option value="in_person">في المقر (Office Visit)</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-black text-gray-700 dark:text-gray-300">بيئة اللقاء</label>
-                            <select name="type" className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-xl outline-none focus:border-blue-500 transition-all font-bold" required>
-                                <option value="online">عن بعد (Online Meeting)</option>
-                                <option value="in_person">في المقر (Office Visit)</option>
-                            </select>
+                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">الأجندة وملاحظات التحضير</label>
+                            <textarea name="notes" placeholder="أهداف المقابلة، النقاط الفنية المراد مناقشتها..." className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-xs font-medium h-24 resize-none" />
                         </div>
-                    </div>
 
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-black text-gray-700 dark:text-gray-300">الأجندة والملاحظات</label>
-                        <textarea name="notes" placeholder="ما هي الأهداف الرئيسية من هذه المقابلة؟" className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-transparent rounded-xl outline-none focus:border-blue-500 transition-all font-medium h-32 resize-none" />
-                    </div>
+                        <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                            <Button variant="ghost" size="sm" onClick={() => setShowScheduleModal(false)}>إلغاء</Button>
+                            <Button variant="primary" size="sm" type="submit" className="px-6 font-bold" disabled={isSubmitting}>
+                                {isSubmitting ? 'جاري الحفظ...' : 'تأكيد وحفظ المقابلة'}
+                            </Button>
+                        </div>
+                    </form>
+                ) : (
+                    /* Tab 2: Generate & Send Real Self-Service Booking Link */
+                    <div className="space-y-5">
+                        <div className="p-4 bg-purple-50 dark:bg-purple-950/30 rounded-2xl border border-purple-200 dark:border-purple-800/50">
+                            <h4 className="text-sm font-bold text-purple-900 dark:text-purple-200 flex items-center gap-2 mb-1">
+                                <Sparkles className="w-4 h-4 text-purple-600" /> توليد رابط حجز ذكي مخصص للمرشح
+                            </h4>
+                            <p className="text-xs text-purple-700 dark:text-purple-300 leading-relaxed">
+                                سيتم إنشاء رابط مشفر وآمن مخصص لهذا المرشح، يتيح له فتح تقويم المواعيد المتاحة واختيار الوقت الأنسب له بنفسه مع إرسال الدعوة إلى بريده الإلكتروني.
+                            </p>
+                        </div>
 
-                    <div className="flex justify-end gap-3 pt-4">
-                        <Button variant="ghost" className="px-8" onClick={() => setShowScheduleModal(false)}>إلغاء</Button>
-                        <Button variant="primary" type="submit" className="px-10" disabled={isSubmitting}>
-                            {isSubmitting ? 'جاري الحفظ...' : 'تأكيد وحفظ'}
-                        </Button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">اختر المرشح *</label>
+                                <select 
+                                    value={linkCandidateId} 
+                                    onChange={(e) => setLinkCandidateId(e.target.value)} 
+                                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 text-xs font-semibold"
+                                >
+                                    <option value="">اختر المرشح...</option>
+                                    {candidates.map(c => (
+                                        <option key={c.id} value={c.id}>{c.fullName} — {(c as any).job?.title || 'عام'}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">مدة المقابلة</label>
+                                <select 
+                                    value={linkDuration} 
+                                    onChange={(e) => setLinkDuration(Number(e.target.value))} 
+                                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 text-xs font-semibold"
+                                >
+                                    <option value={30}>30 دقيقة</option>
+                                    <option value={45}>45 دقيقة</option>
+                                    <option value={60}>60 دقيقة (ساعة كاملة)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {generatedLink ? (
+                            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl space-y-3">
+                                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                                    <span>تم إنشاء رابط الحجز المخصص وإرسال بريد إلكتروني للمرشح بنجاح!</span>
+                                </div>
+                                <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-2.5 rounded-xl border border-emerald-300 dark:border-emerald-700">
+                                    <input 
+                                        type="text" 
+                                        readOnly 
+                                        value={generatedLink} 
+                                        className="flex-1 bg-transparent text-xs font-mono text-gray-800 dark:text-gray-200 outline-none" 
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(generatedLink);
+                                            toast.success('تم نسخ الرابط بنجاح!');
+                                        }}
+                                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition cursor-pointer"
+                                    >
+                                        نسخ الرابط
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                                <Button variant="ghost" size="sm" onClick={() => setShowScheduleModal(false)}>إلغاء</Button>
+                                <Button 
+                                    variant="ai" 
+                                    size="sm" 
+                                    className="px-6 font-bold" 
+                                    disabled={!linkCandidateId || isSubmitting}
+                                    onClick={handleGenerateBookingLink}
+                                >
+                                    {isSubmitting ? 'جارٍ إنشاء الرابط...' : '✨ توليد وإرسال رابط الحجز'}
+                                </Button>
+                            </div>
+                        )}
                     </div>
-                </form>
+                )}
             </Modal>
 
             <Modal isOpen={showNoteModal} onClose={() => setShowNoteModal(false)} title="تثبيت ملاحظة إضافية">

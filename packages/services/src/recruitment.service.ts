@@ -261,6 +261,20 @@ class RecruitmentService {
     return response?.data?.interview || response?.interview || response
   }
 
+  async createSchedulingSession(data: {
+    candidateId: string
+    interviewerId: string
+    interviewType?: string
+    duration?: number
+    location?: string
+    meetingUrl?: string
+    expiryHours?: number
+  }): Promise<{ sessionId: string; bookingUrl: string; expiresAt: string }> {
+    logger.info('Create scheduling session link', { candidateId: data.candidateId })
+    const response = await apiClient.post<any>('/interviews/scheduling-session', data)
+    return response?.data || response
+  }
+
   async submitInterview(data: { candidateId: string, videoUrl?: string, notes?: string, token?: string }): Promise<Interview> {
     logger.info('Submit interview', { candidateId: data.candidateId, token: data.token })
     const response = await apiClient.post<any>('/recruitment/interviews/submit', data)
