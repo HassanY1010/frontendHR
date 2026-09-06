@@ -219,11 +219,18 @@ export const InterviewPracticePage: React.FC = () => {
     };
 
     useEffect(() => {
-        if (step === 'readiness') {
-            startMediaStream();
+        if (step === 'readiness' || step === 'practicing') {
+            if (!mediaStreamRef.current) {
+                startMediaStream();
+            } else if (videoRef.current) {
+                videoRef.current.srcObject = mediaStreamRef.current;
+                videoRef.current.play().catch(() => {});
+            }
         }
         return () => {
-            stopMediaStream();
+            if (step !== 'readiness' && step !== 'practicing') {
+                stopMediaStream();
+            }
         };
     }, [step]);
 
@@ -231,8 +238,9 @@ export const InterviewPracticePage: React.FC = () => {
     useEffect(() => {
         if (videoRef.current && mediaStreamRef.current) {
             videoRef.current.srcObject = mediaStreamRef.current;
+            videoRef.current.play().catch(() => {});
         }
-    }, [step, mediaStreamRef.current]);
+    });
 
     // 3. Speech Recognition Setup (Client-Side Transcription)
     const [speechError, setSpeechError] = useState<string | null>(null);
