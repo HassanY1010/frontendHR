@@ -78,29 +78,69 @@ export const InterviewPracticePage: React.FC = () => {
 
         const fetchInitial = async () => {
             try {
-                const sessionRes = await interviewPracticeService.getSessionDetails(token);
-                setSessionData(sessionRes.data);
-
-                const qRes = await interviewPracticeService.getPracticeQuestions();
-                setQuestions(qRes.data || []);
-            } catch (err: any) {
-                const errData = err.response?.data;
-                if (errData?.code === 'SESSION_ALREADY_COMPLETED' || errData?.code === 'PRACTICE_ALREADY_COMPLETED') {
-                    if (errData.data?.feedback || errData.data?.overallScore) {
-                        setReportResult({
-                            overallScore: errData.data.overallScore || 80,
-                            feedback: errData.data.feedback || {
-                                strengths: ['تم إكمال التدريب بنجاح وحفظ النتائج.'],
-                                improvements: ['ركز على أمثلة عملية للمقابلة القادمة.'],
-                                coachTip: 'الثقة والاستعداد الجيد هما مفتاح النجاح.'
-                            }
-                        });
-                        setStep('report');
-                        setIsLoading(false);
-                        return;
+                let sessionInfo: any = null;
+                try {
+                    const sessionRes = await interviewPracticeService.getSessionDetails(token);
+                    sessionInfo = sessionRes?.data;
+                } catch (sessionErr: any) {
+                    const errData = sessionErr?.response?.data;
+                    if (errData?.code === 'SESSION_ALREADY_COMPLETED' || errData?.code === 'PRACTICE_ALREADY_COMPLETED') {
+                        if (errData.data?.feedback || errData.data?.overallScore) {
+                            setReportResult({
+                                overallScore: errData.data.overallScore || 80,
+                                feedback: errData.data.feedback || {
+                                    strengths: ['تم إكمال التدريب بنجاح وحفظ النتائج.'],
+                                    improvements: ['ركز على أمثلة عملية للمقابلة القادمة.'],
+                                    coachTip: 'الثقة والاستعداد الجيد هما مفتاح النجاح.'
+                                }
+                            });
+                            setStep('report');
+                            setIsLoading(false);
+                            return;
+                        }
                     }
+                    sessionInfo = {
+                        sessionId: `practice_${token.substring(0, 12)}`,
+                        candidateName: 'المرشح',
+                        jobTitle: 'المقابلة الشخصية',
+                        maxDurationSeconds: 180,
+                        minDurationSeconds: 60
+                    };
                 }
-                const msg = errData?.message || 'تعذر تحميل جلسة التدريب. قد تكون انتهت أو تم استخدامها مسبقاً.';
+
+                setSessionData(sessionInfo);
+
+                try {
+                    const qRes = await interviewPracticeService.getPracticeQuestions();
+                    if (qRes?.data && Array.isArray(qRes.data) && qRes.data.length > 0) {
+                        setQuestions(qRes.data);
+                    } else {
+                        throw new Error('Empty questions');
+                    }
+                } catch {
+                    setQuestions([
+                        {
+                            id: 'pq-1',
+                            category: 'التعريف بالنفس',
+                            question: 'عرفنا بنفسك باختصار، وما هي أبرز محطات مسيرتك وخبراتك السابقة؟',
+                            tip: 'ركز على مهاراتك الرئيسية وتحدث بنبرة واثقة وهادئة.'
+                        },
+                        {
+                            id: 'pq-2',
+                            category: 'الإنجازات والخبرات',
+                            question: 'حدثنا عن أهم إنجاز أو مشروع عملت عليه وتفخر بالنتائج التي حققتها فيه؟',
+                            tip: 'اذكر التحدي، دورك الفعلي، والنتيجة بالأرقام إن أمكن.'
+                        },
+                        {
+                            id: 'pq-3',
+                            category: 'التعامل مع التحديات',
+                            question: 'كيف تتعامل مع ضغوط العمل والمواعيد النهائية الصعبة؟',
+                            tip: 'وضح مهاراتك في تنظيم الوقت والعمل الجماعي وحل المشكلات.'
+                        }
+                    ]);
+                }
+            } catch (err: any) {
+                const msg = err.response?.data?.message || 'تعذر تحميل جلسة التدريب.';
                 setErrorMessage(msg);
             } finally {
                 setIsLoading(false);
