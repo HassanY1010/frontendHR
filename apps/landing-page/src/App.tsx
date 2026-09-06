@@ -1,10 +1,12 @@
-import React, { Suspense } from 'react'
+import React, { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import LandingPage from './pages/LandingPage'
 import JobsPage from './pages/JobsPage'
 import JobDetailsPage from './pages/JobDetailsPage'
 import InterviewPage from './pages/InterviewPage'
+import CandidateBookingPage from './pages/CandidateBookingPage'
+import InterviewPracticePage from './pages/InterviewPracticePage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Terms from './pages/Terms'
 import Cookies from './pages/Cookies'
@@ -19,6 +21,8 @@ function App() {
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/jobs" element={<JobsPage />} />
                     <Route path="/jobs/:id" element={<JobDetailsPage />} />
+                    <Route path="/book-interview/:token" element={<CandidateBookingPage />} />
+                    <Route path="/practice-interview/:token" element={<InterviewPracticePage />} />
                     <Route path="/interview/:token" element={<InterviewPage />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/terms" element={<Terms />} />
