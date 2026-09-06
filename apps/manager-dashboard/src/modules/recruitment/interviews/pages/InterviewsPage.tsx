@@ -95,6 +95,7 @@ const InterviewsPage: React.FC = () => {
     const [scheduleTab, setScheduleTab] = React.useState<'direct' | 'link'>('direct');
     const [linkCandidateId, setLinkCandidateId] = React.useState('');
     const [linkDuration, setLinkDuration] = React.useState<number>(45);
+    const [linkMeetingUrl, setLinkMeetingUrl] = React.useState('');
     const [generatedLink, setGeneratedLink] = React.useState<string | null>(null);
 
     const [showNoteModal, setShowNoteModal] = React.useState(false);
@@ -136,7 +137,8 @@ const InterviewsPage: React.FC = () => {
                 type: formData.get('type') as any,
                 notes: formData.get('notes') as string,
                 interviewerName: formData.get('interviewerName') as string,
-            });
+                meetingUrl: (formData.get('meetingUrl') as string) || undefined,
+            } as any);
             toast.success('تم جدولة المقابلة بنجاح');
             setShowScheduleModal(false);
             fetchInterviews();
@@ -158,7 +160,8 @@ const InterviewsPage: React.FC = () => {
                 candidateId: linkCandidateId,
                 interviewerId: user?.id || 'system',
                 duration: linkDuration,
-                interviewType: 'VIDEO'
+                interviewType: 'VIDEO',
+                meetingUrl: linkMeetingUrl.trim() || undefined
             });
             const bookingUrl = (res as any)?.data?.bookingUrl || (res as any)?.bookingUrl || `${window.location.origin}/book-interview/${(res as any)?.data?.sessionId || (res as any)?.sessionId}`;
             setGeneratedLink(bookingUrl);
@@ -664,6 +667,11 @@ const InterviewsPage: React.FC = () => {
                         </div>
 
                         <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">رابط غرفة الاجتماع (Google Meet / Zoom / Teams) - اختياري</label>
+                            <input name="meetingUrl" type="url" placeholder="https://meet.google.com/xxx-yyyy-zzz (اتركه فارغاً للتوليد التلقائي لغرفة فورية)" className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-xs font-semibold" />
+                        </div>
+
+                        <div className="space-y-1.5">
                             <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">الأجندة وملاحظات التحضير</label>
                             <textarea name="notes" placeholder="أهداف المقابلة، النقاط الفنية المراد مناقشتها..." className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-blue-500 text-xs font-medium h-24 resize-none" />
                         </div>
@@ -714,6 +722,17 @@ const InterviewsPage: React.FC = () => {
                                     <option value={60}>60 دقيقة (ساعة كاملة)</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">رابط غرفة المقابلة (Google Meet / Zoom / Teams) - اختياري</label>
+                            <input 
+                                type="url" 
+                                value={linkMeetingUrl}
+                                onChange={(e) => setLinkMeetingUrl(e.target.value)}
+                                placeholder="https://meet.google.com/xxx-yyyy-zzz (اتركه فارغاً للتوليد التلقائي لغرفة فورية)" 
+                                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:border-purple-500 text-xs font-semibold" 
+                            />
                         </div>
 
                         {generatedLink ? (
