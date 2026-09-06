@@ -2,8 +2,33 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { interviewSchedulingService } from '@hr/services';
 import { Calendar, Clock, Video, User, CheckCircle2, AlertCircle, Sparkles, Globe } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { ar } from 'date-fns/locale';
+
+const formatArabicDate = (isoStr: string) => {
+    try {
+        const d = new Date(isoStr);
+        return new Intl.DateTimeFormat('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+    } catch {
+        return isoStr;
+    }
+};
+
+const formatArabicDateTime = (isoStr: string) => {
+    try {
+        const d = new Date(isoStr);
+        return new Intl.DateTimeFormat('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).format(d);
+    } catch {
+        return isoStr;
+    }
+};
+
+const formatArabicTime = (isoStr: string) => {
+    try {
+        const d = new Date(isoStr);
+        return new Intl.DateTimeFormat('ar-SA', { hour: 'numeric', minute: '2-digit', hour12: true }).format(d);
+    } catch {
+        return isoStr;
+    }
+};
 
 interface SessionData {
     candidateName: string;
@@ -126,7 +151,7 @@ export const CandidateBookingPage: React.FC = () => {
                         <div className="flex justify-between items-center">
                             <span className="text-slate-500">التاريخ والوقت:</span>
                             <span className="font-semibold text-blue-600">
-                                {format(parseISO(bookingSuccess.startTime), 'EEEE, d MMMM yyyy - hh:mm a', { locale: ar })}
+                                {formatArabicDateTime(bookingSuccess.startTime)}
                             </span>
                         </div>
                         {bookingSuccess.meetingUrl && (
@@ -252,7 +277,7 @@ export const CandidateBookingPage: React.FC = () => {
                                             : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 text-slate-700 dark:text-slate-300'
                                     }`}
                                 >
-                                    <span>{format(parseISO(dateStr), 'EEEE, d MMMM', { locale: ar })}</span>
+                                    <span>{formatArabicDate(dateStr)}</span>
                                     {selectedDate === dateStr && <CheckCircle2 className="w-4 h-4" />}
                                 </button>
                             ))}
@@ -303,7 +328,7 @@ export const CandidateBookingPage: React.FC = () => {
                                                     : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-700/60 hover:border-blue-300 text-slate-700 dark:text-slate-200'
                                             }`}
                                         >
-                                            {format(parseISO(slot.startTime), 'hh:mm a')}
+                                            {formatArabicTime(slot.startTime)}
                                         </button>
                                     );
                                 })}
