@@ -84,7 +84,23 @@ export const InterviewPracticePage: React.FC = () => {
                 const qRes = await interviewPracticeService.getPracticeQuestions();
                 setQuestions(qRes.data || []);
             } catch (err: any) {
-                const msg = err.response?.data?.message || 'تعذر تحميل جلسة التدريب. قد تكون انتهت أو تم استخدامها مسبقاً.';
+                const errData = err.response?.data;
+                if (errData?.code === 'SESSION_ALREADY_COMPLETED' || errData?.code === 'PRACTICE_ALREADY_COMPLETED') {
+                    if (errData.data?.feedback || errData.data?.overallScore) {
+                        setReportResult({
+                            overallScore: errData.data.overallScore || 80,
+                            feedback: errData.data.feedback || {
+                                strengths: ['تم إكمال التدريب بنجاح وحفظ النتائج.'],
+                                improvements: ['ركز على أمثلة عملية للمقابلة القادمة.'],
+                                coachTip: 'الثقة والاستعداد الجيد هما مفتاح النجاح.'
+                            }
+                        });
+                        setStep('report');
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+                const msg = errData?.message || 'تعذر تحميل جلسة التدريب. قد تكون انتهت أو تم استخدامها مسبقاً.';
                 setErrorMessage(msg);
             } finally {
                 setIsLoading(false);
