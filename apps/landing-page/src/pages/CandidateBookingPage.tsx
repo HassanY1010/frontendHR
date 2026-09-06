@@ -166,12 +166,12 @@ export const CandidateBookingPage: React.FC = () => {
                     </div>
 
                     {/* AI Practice Session Invitation Banner */}
-                    <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/30 rounded-2xl p-5 text-right mb-6 space-y-3">
-                        <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
-                            <Sparkles className="w-4 h-4" />
+                    <div className="bg-indigo-50 dark:bg-indigo-950/40 border-2 border-indigo-200 dark:border-indigo-800/80 rounded-2xl p-5 text-right mb-6 space-y-3 shadow-sm">
+                        <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200 font-extrabold text-sm">
+                            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                             <span>تدرب الآن قبل المقابلة الحقيقية!</span>
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-relaxed">
                             اختبر الكاميرا والميكروفون وجرب مقابلة تدريبية سريعة (1-3 دقائق) واحصل على تقييم فوري من مدرب الذكاء الاصطناعي لكسر حاجز التوتر.
                         </p>
                         <button
@@ -189,7 +189,7 @@ export const CandidateBookingPage: React.FC = () => {
                                     navigate(`/practice-interview/${token}`);
                                 }
                             }}
-                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20 transition flex items-center justify-center gap-2"
+                            className="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold text-sm shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
                         >
                             <Sparkles className="w-4 h-4" />
                             ابدأ المقابلة التجريبية (AI Coach)
