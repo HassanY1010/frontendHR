@@ -56,8 +56,21 @@ export const jobRequestService = {
     skills?: string[]
     educationLevel?: string
     hiringReason?: string
+    instructions?: string
+    currentSummary?: string
   }) {
     const res = await apiClient.post<{ status: string; summary: string }>('/ai-jd/generate-summary', data)
-    return res.summary || (res as any).data?.summary
+    return res.summary || (res as any).data?.summary || (res as any)?.summary
+  },
+
+  async suggestSkills(data: {
+    jobTitle: string
+    department?: string
+    experience?: string
+    jobSummary?: string
+    instructions?: string
+  }) {
+    const res = await apiClient.post<{ status: string; domain: string; skills: string[] }>('/ai-jd/suggest-skills', data)
+    return res.skills || (res as any).data?.skills || (res as any)?.skills || []
   }
 }
