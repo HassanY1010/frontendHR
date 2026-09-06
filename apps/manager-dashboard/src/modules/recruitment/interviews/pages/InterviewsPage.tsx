@@ -19,6 +19,7 @@ import {
 import { InterviewActionsMenu } from '../components/InterviewActionsMenu'
 import { useCandidatesStore } from '../../candidates/store'
 import { useInterviewsStore } from '../store';
+import { useAuth } from '../../../../providers/AuthProvider';
 import { recruitmentService } from '@hr/services';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
@@ -87,6 +88,7 @@ const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: string, chi
 const InterviewsPage: React.FC = () => {
     const { interviews, smartNotes, fetchInterviews, fetchSmartNotes, createInterview, deleteInterview, updateInterview, isLoading } = useInterviewsStore();
     const { candidates, fetchCandidates } = useCandidatesStore();
+    const { user } = useAuth();
 
     // States
     const [showScheduleModal, setShowScheduleModal] = React.useState(false);
@@ -154,7 +156,7 @@ const InterviewsPage: React.FC = () => {
         try {
             const res = await recruitmentService.createSchedulingSession({
                 candidateId: linkCandidateId,
-                interviewerId: 'system',
+                interviewerId: user?.id || 'system',
                 duration: linkDuration,
                 interviewType: 'VIDEO'
             });
