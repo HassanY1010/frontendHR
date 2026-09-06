@@ -364,28 +364,33 @@ export const InterviewPracticePage: React.FC = () => {
         const elapsedDuration = 180 - timeLeft;
         const elapsedMinutes = Math.max(0.5, elapsedDuration / 60);
 
-        // Calculate actual words from speech transcript
+        // Calculate actual words from speech transcript (0 if candidate stayed silent)
         const totalWords = allAnswers.reduce((acc, a) => {
-            const words = a.transcript ? a.transcript.trim().split(/\s+/).filter(Boolean).length : 0;
+            const words = a.transcript && a.transcript !== 'إجابة تدريبية صوتية مسجلة.'
+                ? a.transcript.trim().split(/\s+/).filter(Boolean).length 
+                : 0;
             return acc + words;
         }, 0);
-        const calculatedWpm = Math.round(totalWords / elapsedMinutes) || 110;
+        const calculatedWpm = totalWords > 0 ? Math.round(totalWords / elapsedMinutes) : 0;
 
         const avgVol = audioTelemetry.volumeSamples > 0
             ? Math.round(audioTelemetry.volumeSum / audioTelemetry.volumeSamples)
-            : 50;
+            : 0;
 
         try {
             const res = await interviewPracticeService.analyzeSession({
                 token: token!,
-                durationSeconds: Math.max(20, elapsedDuration),
+                durationSeconds: Math.max(10, elapsedDuration),
                 answers: allAnswers,
                 audioMetrics: {
                     avgVolume: avgVol,
                     speakingSpeedWpm: calculatedWpm,
                     pauseCount: audioTelemetry.pauseCount
                 },
-                videoMetrics: videoTelemetry
+                videoMetrics: {
+                    ...videoTelemetry,
+                    hasCamera: hasCamera === true
+                }
             });
 
             setReportResult(res.data);
