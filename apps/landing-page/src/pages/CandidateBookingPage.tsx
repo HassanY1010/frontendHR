@@ -68,12 +68,13 @@ export const CandidateBookingPage: React.FC = () => {
             setErrorMessage(null);
             try {
                 // 1. Fetch public session details
-                const sessionRes = await interviewSchedulingService.getSessionDetails(token);
-                setSession(sessionRes.data);
+                const sessionRes: any = await interviewSchedulingService.getSessionDetails(token);
+                const sessionPayload = sessionRes?.data || sessionRes;
+                setSession(sessionPayload);
 
                 // 2. Fetch available slots
-                const slotsRes = await interviewSchedulingService.getAvailableSlots(token, timezone);
-                const fetchedSlots = slotsRes.data.slots || [];
+                const slotsRes: any = await interviewSchedulingService.getAvailableSlots(token, timezone);
+                const fetchedSlots = slotsRes?.data?.slots || slotsRes?.slots || [];
                 setSlots(fetchedSlots);
 
                 if (fetchedSlots.length > 0) {
