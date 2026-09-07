@@ -14,7 +14,7 @@
   html,
   body {
     @apply bg-slate-50 text-slate-900;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'IBM Plex Sans Arabic', 'IBM Plex Sans', -apple-system, sans-serif;
     direction: rtl;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;

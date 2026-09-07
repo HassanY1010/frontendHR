@@ -59,7 +59,7 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ['Inter', 'Cairo', 'sans-serif'],
+        sans: ['"IBM Plex Sans Arabic"', '"IBM Plex Sans"', 'Inter', 'Cairo', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
