@@ -34,6 +34,8 @@ module.exports = {
             },
             fontFamily: {
                 cairo: ['Cairo', 'sans-serif'],
+                ibm: ['"IBM Plex Sans Arabic"', 'sans-serif'],
+                sans: ['"IBM Plex Sans Arabic"', 'Cairo', 'sans-serif'],
             },
             animation: {
                 'float': 'float 6s ease-in-out infinite',
