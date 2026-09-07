@@ -1,3 +1,51 @@
+@font-face {
+    font-family: 'DIN Next LT Arabic';
+    src: url('/fonts/DinNextLTArabic-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'DIN Next LT Arabic';
+    src: url('/fonts/DinNextLTArabic-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'DIN Next LT Arabic';
+    src: url('/fonts/DinNextLTArabic-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'DIN Next LT Arabic';
+    src: url('/fonts/DinNextLTArabic-Heavy.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'DIN Next LT Arabic';
+    src: url('/fonts/DinNextLTArabic-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'DIN Next LT Arabic';
+    src: url('/fonts/DinNextLTArabic-Black.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* apps/owner-dashboard/src/index.css */
 @tailwind base;
 @tailwind components;
@@ -58,6 +106,7 @@
     body {
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
+        font-family: 'DIN Next LT Arabic', 'IBM Plex Sans', sans-serif;
         font-feature-settings: "rlig" 1, "calt" 1;
     }
 }

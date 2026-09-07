@@ -33,9 +33,10 @@ module.exports = {
                 },
             },
             fontFamily: {
+                din: ['"DIN Next LT Arabic"', '"IBM Plex Sans"', 'sans-serif'],
                 cairo: ['Cairo', 'sans-serif'],
-                ibm: ['"IBM Plex Sans Arabic"', '"IBM Plex Sans"', 'sans-serif'],
-                sans: ['"IBM Plex Sans Arabic"', '"IBM Plex Sans"', 'sans-serif'],
+                ibm: ['"IBM Plex Sans"', '"DIN Next LT Arabic"', 'sans-serif'],
+                sans: ['"DIN Next LT Arabic"', '"IBM Plex Sans"', 'sans-serif'],
             },
             animation: {
                 'float': 'float 6s ease-in-out infinite',
