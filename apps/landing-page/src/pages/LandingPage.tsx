@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Briefcase, FileText, Video } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
+import LogoCloud from '../components/LogoCloud';
+import HowItWorks from '../components/HowItWorks';
+import Features from '../components/Features';
 import AISection from '../components/AISection';
 import RecruitmentSection from '../components/RecruitmentSection';
 import AnalyticsSection from '../components/AnalyticsSection';
+import StatsSection from '../components/StatsSection';
 import PricingSection from '../components/PricingSection';
+import TestimonialsSection from '../components/TestimonialsSection';
+import FAQSection from '../components/FAQSection';
+import FinalCTA from '../components/FinalCTA';
 import ContactSection from '../components/ContactSection';
 import Footer from '../components/Footer';
 import AuthTabs from '../components/AuthTabs';
@@ -15,40 +20,75 @@ import AuthTabs from '../components/AuthTabs';
 const LandingPage = () => {
     const [activeAuth, setActiveAuth] = useState<'login' | 'signup' | null>(null);
 
+    const handleOpenAuth = (mode: 'login' | 'signup') => {
+        setActiveAuth(mode);
+        document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900">
             {/* Header with Nav */}
-            <Header onAuthClick={(mode: 'login' | 'signup') => setActiveAuth(mode)} />
+            <Header onAuthClick={handleOpenAuth} />
 
             <main>
-                {/* Hero Section */}
-                <Hero onGetStarted={() => setActiveAuth('signup')} />
+                {/* 1. Hero Section */}
+                <Hero onGetStarted={() => handleOpenAuth('signup')} />
 
-                {/* AI Features */}
+                {/* 2. Social Proof Logo Cloud */}
+                <LogoCloud />
+
+                {/* 3. How It Works (4 Steps) */}
+                <div id="how-it-works">
+                    <HowItWorks />
+                </div>
+
+                {/* 4. Core Features Matrix */}
+                <Features />
+
+                {/* 5. Key Numbers & Proof Stats */}
+                <StatsSection />
+
+                {/* 6. Deep AI Intelligence */}
                 <AISection />
 
-                {/* Recruitment Pipeline */}
+                {/* 7. Recruitment Pipeline */}
                 <RecruitmentSection />
 
-                {/* Analytics & BI */}
+                {/* 8. Analytics & BI */}
                 <AnalyticsSection />
 
-                {/* Pricing Table */}
+                {/* 9. Testimonials & Client Reviews */}
+                <TestimonialsSection />
+
+                {/* 10. Interactive SaaS Pricing Table */}
                 <PricingSection />
 
-                {/* Contact Interface */}
+                {/* 11. Frequently Asked Questions (FAQ) */}
+                <FAQSection />
+
+                {/* 12. Final High-Impact CTA Banner */}
+                <FinalCTA onGetStarted={() => handleOpenAuth('signup')} />
+
+                {/* 13. Direct Contact Interface */}
                 <ContactSection />
 
-                {/* Premium Auth Experience (Scroll section or Overlay) */}
-                <section id="auth-section" className="py-24 bg-white">
+                {/* 14. Premium Auth Registration / Login */}
+                <section id="auth-section" className="py-24 bg-white border-t border-slate-100">
                     <div className="container mx-auto px-6">
                         <div className="max-w-4xl mx-auto">
                             <div className="text-center mb-12">
-                                <h2 className="text-4xl font-black mb-4">انضم إلى قائمة <span className="text-indigo-600">النخبة</span></h2>
-                                <p className="text-slate-500 font-bold">ابدأ تجربتكم المجانية اليوم واكتشف قوة الذكاء الاصطناعي</p>
+                                <span className="inline-block px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-600 font-bold text-xs mb-3 border border-indigo-100">
+                                    حساب تجريبي فوري
+                                </span>
+                                <h2 className="text-3xl md:text-4xl font-black mb-4 text-slate-900">
+                                    انضم إلى قائمة <span className="text-indigo-600">الشركات الذكية</span>
+                                </h2>
+                                <p className="text-slate-500 font-medium text-sm">
+                                    ابدأ تجربتك المجانية اليوم واكتشف قوة الذكاء الاصطناعي في إدارة الكفاءات
+                                </p>
                             </div>
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
+                                initial={{ opacity: 0, scale: 0.96 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
                                 className="glass-card bg-white border-slate-100 p-8 md:p-12 rounded-[3rem] shadow-2xl shadow-indigo-500/10"

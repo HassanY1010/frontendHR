@@ -19,11 +19,12 @@ const Header = ({ onAuthClick }: HeaderProps) => {
     }, []);
 
     const navLinks = [
+        { name: 'كيف يعمل؟', href: '/#how-it-works' },
         { name: 'المزايا', href: '/#features' },
         { name: 'الذكاء الاصطناعي', href: '/#ai' },
         { name: 'التوظيف الآلي', href: '/#recruitment' },
-        { name: 'التحليلات', href: '/#analytics' },
         { name: 'الأسعار', href: '/#pricing' },
+        { name: 'الأسئلة الشائعة', href: '/#faq' },
         { name: 'الوظائف', href: '/jobs', isRoute: true },
     ];
 
