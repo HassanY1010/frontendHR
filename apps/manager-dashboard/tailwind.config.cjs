@@ -62,6 +62,18 @@ module.exports = {
         din: ['"DIN Next LT Arabic"', '"IBM Plex Sans"', 'sans-serif'],
         sans: ['"DIN Next LT Arabic"', '"IBM Plex Sans"', 'Inter', 'Cairo', 'sans-serif'],
       },
+      fontSize: {
+        'xs': ['0.8125rem', { lineHeight: '1.5' }],     // 13px - Badges, dates, hints
+        'sm': ['0.9375rem', { lineHeight: '1.6' }],     // 15px - Tables, menus, list items
+        'base': ['1.03125rem', { lineHeight: '1.65' }], // 16.5px - Body text
+        'lg': ['1.15625rem', { lineHeight: '1.6' }],    // 18.5px - Inputs, card headers
+        'xl': ['1.3125rem', { lineHeight: '1.5' }],     // 21px - Section subheadings
+        '2xl': ['1.625rem', { lineHeight: '1.4' }],     // 26px - Page titles
+        '3xl': ['2rem', { lineHeight: '1.3' }],         // 32px
+        '4xl': ['2.25rem', { lineHeight: '1.25' }],      // 36px - Large titles
+        '5xl': ['3rem', { lineHeight: '1.2' }],         // 48px - Hero display
+        '6xl': ['3.375rem', { lineHeight: '1.15' }],     // 54px - Hero display large
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',

@@ -63,6 +63,8 @@
   body {
     @apply bg-slate-50 text-slate-900;
     font-family: 'DIN Next LT Arabic', 'IBM Plex Sans', -apple-system, sans-serif;
+    font-weight: 500;
+    line-height: 1.65;
     direction: rtl;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
