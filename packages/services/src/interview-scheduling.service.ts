@@ -116,7 +116,7 @@ export const interviewPracticeService = {
         durationSeconds: number;
         answers: Array<{ questionId: string; question: string; transcript: string }>;
         audioMetrics?: { avgVolume: number; speakingSpeedWpm: number; pauseCount: number };
-        videoMetrics?: { faceVisibilityPct: number; lightingQuality: string; eyeContactPct: number };
+        videoMetrics?: { hasCamera?: boolean; faceVisibilityPct: number; lightingQuality: string; eyeContactPct: number };
     }) => {
         return apiClient.post<{
             status: string;
