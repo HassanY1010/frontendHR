@@ -272,20 +272,23 @@ export const InterviewPracticePage: React.FC = () => {
                 videoRef.current.play().catch(() => {});
             }
         }
-        return () => {
-            if (step !== 'readiness' && step !== 'practicing') {
-                stopMediaStream();
-            }
-        };
-    }, [step]);
+    // Attach stream to video tag reliably across step transitions
+    const attachVideoRef = (node: HTMLVideoElement | null) => {
+        videoRef.current = node;
+        if (node && mediaStreamRef.current) {
+            node.srcObject = mediaStreamRef.current;
+            node.play().catch(() => {});
+        }
+    };
 
-    // Attach stream to video tag whenever step changes or videoRef is mounted
     useEffect(() => {
         if (videoRef.current && mediaStreamRef.current) {
-            videoRef.current.srcObject = mediaStreamRef.current;
+            if (videoRef.current.srcObject !== mediaStreamRef.current) {
+                videoRef.current.srcObject = mediaStreamRef.current;
+            }
             videoRef.current.play().catch(() => {});
         }
-    });
+    }, [step, currentQuestionIndex]);
 
     // 3. Speech Recognition Setup (Client-Side Transcription)
     const [speechError, setSpeechError] = useState<string | null>(null);
@@ -542,7 +545,7 @@ export const InterviewPracticePage: React.FC = () => {
                             {/* Video Live Preview */}
                             <div className="relative aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
                                 <video
-                                    ref={videoRef}
+                                    ref={attachVideoRef}
                                     autoPlay
                                     playsInline
                                     muted
@@ -682,7 +685,7 @@ export const InterviewPracticePage: React.FC = () => {
                         {/* Video Feed & Audio Monitor */}
                         <div className="relative aspect-video max-h-[320px] mx-auto bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
                             <video
-                                ref={videoRef}
+                                ref={attachVideoRef}
                                 autoPlay
                                 playsInline
                                 muted

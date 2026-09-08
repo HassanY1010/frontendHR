@@ -72,6 +72,12 @@ export const CandidateBookingPage: React.FC = () => {
                 const sessionPayload = sessionRes?.data || sessionRes;
                 setSession(sessionPayload);
 
+                if (sessionPayload?.isAlreadyBooked && sessionPayload?.bookedInterview) {
+                    setBookingSuccess(sessionPayload.bookedInterview);
+                    setIsLoading(false);
+                    return;
+                }
+
                 // 2. Fetch available slots
                 const slotsRes: any = await interviewSchedulingService.getAvailableSlots(token, timezone);
                 const fetchedSlots = slotsRes?.data?.slots || slotsRes?.slots || [];
