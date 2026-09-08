@@ -272,6 +272,8 @@ export const InterviewPracticePage: React.FC = () => {
                 videoRef.current.play().catch(() => {});
             }
         }
+    }, [step]);
+
     // Attach stream to video tag reliably across step transitions
     const attachVideoRef = (node: HTMLVideoElement | null) => {
         videoRef.current = node;
