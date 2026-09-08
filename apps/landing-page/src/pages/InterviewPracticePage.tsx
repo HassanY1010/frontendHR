@@ -85,32 +85,18 @@ export const InterviewPracticePage: React.FC = () => {
                     sessionInfo = sessionRes?.data;
                 } catch (sessionErr: any) {
                     const errData = sessionErr?.response?.data;
-                    if (errData?.code === 'SESSION_ALREADY_COMPLETED' || errData?.code === 'PRACTICE_ALREADY_COMPLETED') {
-                        if (errData.data?.feedback || errData.data?.overallScore) {
-                            setReportResult({
-                                overallScore: errData.data.overallScore || 80,
-                                feedback: errData.data.feedback || {
-                                    strengths: ['تم إكمال التدريب بنجاح وحفظ النتائج.'],
-                                    improvements: ['ركز على أمثلة عملية للمقابلة القادمة.'],
-                                    coachTip: 'الثقة والاستعداد الجيد هما مفتاح النجاح.'
-                                }
-                            });
-                            setStep('report');
-                            setIsLoading(false);
-                            return;
-                        }
-                    }
                     // Fallback session info for live smooth candidate experience
                     sessionInfo = {
                         sessionId: `practice_${token.substring(0, 12)}`,
-                        candidateName: 'المرشح',
-                        jobTitle: 'المقابلة الشخصية',
+                        candidateName: errData?.data?.candidateName || 'المرشح',
+                        jobTitle: errData?.data?.jobTitle || 'المقابلة الشخصية',
                         maxDurationSeconds: 180,
                         minDurationSeconds: 60
                     };
                 }
 
                 setSessionData(sessionInfo);
+                setStep('readiness');
 
                 // Fetch questions with reliable built-in fallback bank
                 try {
@@ -879,14 +865,27 @@ export const InterviewPracticePage: React.FC = () => {
                         {/* Actions */}
                         <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
                             <button
-                                onClick={() => navigate('/')}
+                                onClick={() => {
+                                    if (window.history.length > 1) {
+                                        navigate(-1);
+                                    } else {
+                                        navigate(`/book-interview/${token}`);
+                                    }
+                                }}
                                 className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition"
                             >
-                                إغلاق والعودة
+                                إغلاق والعودة لصفحة الموعد
                             </button>
 
                             <button
-                                onClick={() => window.location.reload()}
+                                onClick={() => {
+                                    setStep('readiness');
+                                    setCurrentQuestionIndex(0);
+                                    setTimeLeft(180);
+                                    setRecordedAnswers([]);
+                                    setCurrentTranscript('');
+                                    setReportResult(null);
+                                }}
                                 className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center gap-1.5"
                             >
                                 <RotateCcw className="w-3.5 h-3.5" /> إعادة التدريب
