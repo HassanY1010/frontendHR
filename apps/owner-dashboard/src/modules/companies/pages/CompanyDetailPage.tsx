@@ -4,10 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Building2, Users, ShieldAlert, ArrowRight, Mail, Phone,
-    MapPin, Globe, Calendar, CreditCard, UserCheck, UserX, RefreshCw, AlertTriangle, CheckCircle2, MoreVertical, Key, Copy, User as UserIcon
+    MapPin, Globe, Calendar, CreditCard, UserCheck, UserX, RefreshCw, AlertTriangle, CheckCircle2, MoreVertical, Key, Copy, User as UserIcon,
+    Sparkles, Check, Zap, Shield
 } from 'lucide-react'
 import { useCompaniesStore } from '../store'
-import { userService } from '@hr/services'
+import { userService, adminService } from '@hr/services'
 import { Card, CardContent, Button, Badge, LoadingCard, Modal } from '@hr/ui'
 import { toast } from 'sonner'
 import type { Company } from '../types'
@@ -24,6 +25,10 @@ const CompanyDetailPage: React.FC = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false)
     const [showConfirmLogout, setShowConfirmLogout] = useState(false)
     const [showConfirmStatus, setShowConfirmStatus] = useState(false)
+    const [showPlanModal, setShowPlanModal] = useState(false)
+    const [selectedPlan, setSelectedPlan] = useState('PRO')
+    const [selectedSeats, setSelectedSeats] = useState(150)
+    const [isUpdatingPlan, setIsUpdatingPlan] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [showUserMenu, setShowUserMenu] = useState<string | null>(null)
 
@@ -102,6 +107,29 @@ const CompanyDetailPage: React.FC = () => {
             setShowConfirmStatus(false)
         } catch (error) {
             toast.error('فشل في تحديث حالة الشركة')
+        }
+    }
+
+    const handleUpdatePlan = async (newPlan: string, seats: number) => {
+        if (!company) return
+        setIsUpdatingPlan(true)
+        try {
+            await adminService.updateCompanyPlan(company.id, newPlan, seats)
+            setCompany(prev => prev ? {
+                ...prev,
+                subscription: {
+                    ...prev.subscription,
+                    plan: newPlan,
+                    seats: seats
+                }
+            } : null)
+            await refreshCompanies()
+            toast.success(`تم ترقية وتفعيل باقة (${newPlan}) للشركة بنجاح مع ميزة AI Shield!`)
+            setShowPlanModal(false)
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'فشل في تحديث باقة الشركة')
+        } finally {
+            setIsUpdatingPlan(false)
         }
     }
 
@@ -197,7 +225,15 @@ const CompanyDetailPage: React.FC = () => {
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-neutral-100">
-                                <h4 className="text-sm font-bold text-neutral-500 uppercase tracking-wider mb-4">تفاصيل الاشتراك</h4>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-sm font-bold text-neutral-500 uppercase tracking-wider">تفاصيل الاشتراك</h4>
+                                    <button
+                                        onClick={() => setShowPlanModal(true)}
+                                        className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg transition"
+                                    >
+                                        تعديل الباقة والميزات
+                                    </button>
+                                </div>
                                 <div className="bg-neutral-50 rounded-2xl p-4 space-y-3 border border-neutral-100">
                                     <div className="flex justify-between items-center">
                                         <span className="text-neutral-500 text-sm">الباقة الحالية</span>
@@ -212,6 +248,16 @@ const CompanyDetailPage: React.FC = () => {
                                     <div className="flex justify-between items-center">
                                         <span className="text-neutral-500 text-sm">المستخدمين الحاليين</span>
                                         <span className="font-bold text-neutral-900">{company.userCount} مستخدم</span>
+                                    </div>
+                                    <div className="pt-2 border-t border-neutral-200 flex items-center justify-between">
+                                        <span className="text-xs text-neutral-500 font-bold">ميزة AI Shield للمقابلات</span>
+                                        <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
+                                            ['PRO', 'ENTERPRISE', 'ADVANCED'].includes(company.subscription.plan.toUpperCase())
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : 'bg-amber-100 text-amber-700'
+                                        }`}>
+                                            {['PRO', 'ENTERPRISE', 'ADVANCED'].includes(company.subscription.plan.toUpperCase()) ? 'مفعلة بالكامل' : 'تتطلب باقة PRO'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -491,6 +537,112 @@ const CompanyDetailPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Plan Upgrade & Features Modal */}
+            <Modal
+                isOpen={showPlanModal}
+                onClose={() => setShowPlanModal(false)}
+                title="تعديل باقة الشركة وميزات الذكاء الاصطناعي"
+            >
+                <div className="space-y-5 text-right" dir="rtl">
+                    <p className="text-xs text-neutral-500 leading-relaxed">
+                        اختر الباقة المناسبة لتفعيل أو ترقية الميزات الحصرية مثل <span className="font-bold text-indigo-600">AI Shield للمقابلات</span> و <span className="font-bold text-purple-600">تقييم المرشحين بالذكاء الاصطناعي</span>.
+                    </p>
+
+                    <div className="grid grid-cols-1 gap-3">
+                        {[
+                            {
+                                id: 'PRO',
+                                title: 'الباقة الاحترافية (Pro Growth)',
+                                subtitle: 'تشمل AI Shield + مقابلات الفيديو الذكية + تحليل لغة الجسد',
+                                seats: 150,
+                                badge: 'موصى به ⭐',
+                                border: 'border-indigo-500 bg-indigo-50/40 text-indigo-950',
+                                icon: Sparkles
+                            },
+                            {
+                                id: 'ENTERPRISE',
+                                title: 'باقة المؤسسات (Enterprise)',
+                                subtitle: 'غير محدود + تخصيص كامل وخوادم خاصة + أمان متقدم',
+                                seats: 500,
+                                badge: 'شامل كامل',
+                                border: 'border-purple-500 bg-purple-50/40 text-purple-950',
+                                icon: Shield
+                            },
+                            {
+                                id: 'FREE_TRIAL',
+                                title: 'الباقة التجريبية (Free Trial)',
+                                subtitle: 'فرز السير الذاتية وإدارة الموظفين الأساسية',
+                                seats: 50,
+                                badge: 'أساسي',
+                                border: 'border-neutral-200 bg-neutral-50 text-neutral-800',
+                                icon: Zap
+                            }
+                        ].map((plan) => {
+                            const isCurrent = (company.subscription.plan || '').toUpperCase() === plan.id;
+                            const isSelected = selectedPlan === plan.id;
+                            const IconComponent = plan.icon;
+
+                            return (
+                                <div
+                                    key={plan.id}
+                                    onClick={() => {
+                                        setSelectedPlan(plan.id);
+                                        setSelectedSeats(plan.seats);
+                                    }}
+                                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start justify-between gap-3 ${
+                                        isSelected ? `${plan.border} shadow-md` : 'border-neutral-200 hover:border-neutral-300'
+                                    }`}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className={`p-2 rounded-xl mt-0.5 ${isSelected ? 'bg-indigo-600 text-white' : 'bg-neutral-100 text-neutral-600'}`}>
+                                            <IconComponent className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h5 className="font-bold text-sm text-neutral-900">{plan.title}</h5>
+                                                <span className="text-[10px] font-black px-2 py-0.5 bg-neutral-200/70 text-neutral-700 rounded-full">
+                                                    {plan.badge}
+                                                </span>
+                                                {isCurrent && (
+                                                    <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                                                        الحالية
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-neutral-500 mt-1">{plan.subtitle}</p>
+                                            <p className="text-[11px] font-bold text-neutral-400 mt-1.5">الحد الأقصى: {plan.seats} موظف</p>
+                                        </div>
+                                    </div>
+                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center mt-1 shrink-0 ${
+                                        isSelected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-neutral-300'
+                                    }`}>
+                                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-100">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setShowPlanModal(false)}
+                            disabled={isUpdatingPlan}
+                        >
+                            إلغاء
+                        </Button>
+                        <Button
+                            variant="primary"
+                            className="bg-indigo-600 hover:bg-indigo-700 font-bold px-6"
+                            onClick={() => handleUpdatePlan(selectedPlan, selectedSeats)}
+                            disabled={isUpdatingPlan}
+                        >
+                            {isUpdatingPlan ? 'جاري الحفظ والترقية...' : 'تأكيد الترقية والتفعيل'}
+                        </Button>
+                    </div>
+                </div>
             </Modal>
         </div>
     )

@@ -60,8 +60,13 @@ class AdminService {
         return apiClient.get(`/admin/feature-flags/${id}/assess`)
     }
 
+    async updateCompanyPlan(companyId: string, plan: string, seats?: number): Promise<any> {
+        logger.info('Updating company plan', { companyId, plan, seats })
+        return apiClient.patch(`/admin/companies/${companyId}/plan`, { plan, seats })
+    }
+
     async analyzeLogs(logs: any[]): Promise<any> {
-        logger.info('Performing AI anomaly detection on logs')
+        logger.info('Analyzing logs with AI')
         return apiClient.post('/admin/audit-logs/analyze', { logs })
     }
 }

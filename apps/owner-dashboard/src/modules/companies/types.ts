@@ -1,6 +1,6 @@
 export interface CompanySubscription {
-    plan: 'starter' | 'professional' | 'enterprise' | 'trial';
-    status: 'active' | 'past_due' | 'trialing' | 'canceled';
+    plan: 'starter' | 'professional' | 'enterprise' | 'trial' | 'PRO' | 'ENTERPRISE' | 'FREE_TRIAL' | 'STARTER' | string;
+    status: 'active' | 'past_due' | 'trialing' | 'canceled' | string;
     seats: number;
     usedSeats: number;
     currentPeriodEnd: string;
