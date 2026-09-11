@@ -75,6 +75,14 @@ const RecruitmentPage: React.FC = () => {
 
     const modules = [
         {
+            title: 'المساعد الذكي (Recruitment Copilot)',
+            description: 'إنشاء الوظائف بمحادثة طبيعية ومطابقة المرشحين آلياً',
+            icon: Sparkles,
+            path: '/recruitment/copilot',
+            color: 'bg-indigo-600',
+            stats: 'محادثة فورية'
+        },
+        {
             title: 'إدارة الوظائف',
             description: 'نشر وتعديل ومتابعة الوظائف الشاغرة',
             icon: Briefcase,
