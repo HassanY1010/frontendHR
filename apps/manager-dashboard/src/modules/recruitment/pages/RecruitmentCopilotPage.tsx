@@ -14,10 +14,11 @@ export const RecruitmentCopilotPage: React.FC = () => {
         {
             id: 'welcome',
             role: 'assistant',
-            content: 'مرحباً بك! أنا مساعد التوظيف الذكي (Recruitment Copilot). صف لي احتياجك الوظيفي باللغة الطبيعية (مثال: "أحتاج مدير مبيعات في الرياض، سعودي، خبرة 7 سنوات، يتحدث الإنجليزية") وسأقوم فوراً بهيكلة المتطلبات، تحليل معايير السوق، واقتراح أفضل المرشحين المؤهلين.',
+            content: 'مرحباً بك! أنا مساعد التوظيف الذكي (Recruitment Copilot). صف لي أي احتياج وظيفي ترغب في استقطابه باللغة الطبيعية (المسمى، المدينة، سنوات الخبرة، المهارات الأساسية)، وسأقوم فوراً بهيكلة المتطلبات، تحليل معايير السوق، واقتراح أفضل المرشحين المؤهلين.',
             createdAt: new Date().toISOString()
         }
     ]);
+
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [sessionId, setSessionId] = useState<string | undefined>(undefined);
