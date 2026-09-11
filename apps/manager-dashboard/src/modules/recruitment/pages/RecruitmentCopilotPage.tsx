@@ -371,7 +371,7 @@ export const RecruitmentCopilotPage: React.FC = () => {
                     )}
 
                     {/* Funnel & Matched Candidates Widget */}
-                    {candidates.length > 0 && (
+                    {candidates && candidates.length > 0 ? (
                         <Card className="border-slate-200 dark:border-gray-800 shadow-lg rounded-3xl">
                             <CardContent className="p-5 space-y-4">
                                 <div className="flex items-center justify-between">
@@ -379,11 +379,11 @@ export const RecruitmentCopilotPage: React.FC = () => {
                                         <Users className="w-4 h-4 text-emerald-600" />
                                         أفضل المرشحين المتطابقين ({candidates.length})
                                     </h3>
-                                    <Badge variant="success" className="text-xs font-bold">مطابقة ذكية</Badge>
+                                    <Badge variant="success" className="text-xs font-bold">مطابقة من قاعدة البيانات</Badge>
                                 </div>
 
                                 <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                                    {candidates.slice(0, 4).map((c, idx) => (
+                                    {candidates.slice(0, 5).map((c, idx) => (
                                         <div key={idx} className="p-3.5 bg-slate-50 dark:bg-gray-800/60 rounded-2xl border border-slate-100 dark:border-gray-700 space-y-2">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div>
@@ -391,7 +391,9 @@ export const RecruitmentCopilotPage: React.FC = () => {
                                                     <p className="text-[11px] text-slate-500 font-medium">{c.currentTitle} • {c.location}</p>
                                                 </div>
                                                 <span className={`text-xs font-black px-2 py-0.5 rounded-lg ${
-                                                    c.matchScore >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                                                    c.matchScore >= 80 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200' :
+                                                    c.matchScore >= 60 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200' :
+                                                    'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
                                                 }`}>
                                                     تطابق {c.matchScore}%
                                                 </span>
@@ -402,12 +404,18 @@ export const RecruitmentCopilotPage: React.FC = () => {
                                                     ✓ {c.strengths[0]}
                                                 </p>
                                             )}
+                                            {c.risks && c.risks[0] && c.matchScore < 70 && (
+                                                <p className="text-[11px] text-amber-700 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded-lg">
+                                                    ⚠️ {c.risks[0]}
+                                                </p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             </CardContent>
                         </Card>
-                    )}
+                    ) : null}
+
                 </div>
             </div>
         </div>
