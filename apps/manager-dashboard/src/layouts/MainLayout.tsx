@@ -28,6 +28,7 @@ const MainLayout: React.FC = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'النظرة العامة' },
     { path: '/recruitment/copilot', icon: Sparkles, label: 'مساعد التوظيف (Copilot)' },
+    { path: '/recruitment/agent', icon: Zap, label: 'وكيل التوظيف الآلي (AI Agent)' },
     { path: '/job-requests', icon: FileCheck, label: 'طلبات التوظيف' },
     { path: '/workflow', icon: GitBranch, label: 'إجراءات التوظيف' },
     { path: '/recruitment/manpower-plan', icon: Calendar, label: 'خطة القوى العاملة 2027' },

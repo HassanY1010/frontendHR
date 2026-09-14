@@ -26,6 +26,7 @@ const HiringTypesReportPage = React.lazy(() => import('../modules/dashboard/page
 const CandidateBookingPage = React.lazy(() => import('../modules/recruitment/interviews/pages/CandidateBookingPage'))
 const InterviewPracticePage = React.lazy(() => import('../modules/recruitment/interviews/pages/InterviewPracticePage'))
 const RecruitmentCopilotPage = React.lazy(() => import('../modules/recruitment/pages/RecruitmentCopilotPage'))
+const RecruitmentAgentPage = React.lazy(() => import('../modules/recruitment/pages/RecruitmentAgentPage'))
 
 const LoadingFallback = () => (
     <div className="min-h-screen flex items-center justify-center">
@@ -66,6 +67,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="recruitment">
                         <Route index element={<RecruitmentPage />} />
                         <Route path="copilot" element={<RecruitmentCopilotPage />} />
+                        <Route path="agent" element={<RecruitmentAgentPage />} />
                         <Route path="jobs" element={<JobsPage />} />
                         <Route path="candidates" element={<CandidatesPage />} />
                         <Route path="interviews" element={<InterviewsPage />} />
