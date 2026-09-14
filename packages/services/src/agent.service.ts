@@ -63,7 +63,11 @@ export const agentService = {
         count: number;
     }> => {
         const response: any = await apiClient.get('/agent/tasks', { params });
-        return response.data.data;
+        const resData = response.data?.data || response.data || {};
+        return {
+            tasks: resData.tasks || [],
+            count: resData.count || 0
+        };
     },
 
     /**
@@ -74,7 +78,11 @@ export const agentService = {
         count: number;
     }> => {
         const response: any = await apiClient.get('/agent/logs', { params });
-        return response.data.data;
+        const resData = response.data?.data || response.data || {};
+        return {
+            logs: resData.logs || [],
+            count: resData.count || 0
+        };
     },
 
     /**
