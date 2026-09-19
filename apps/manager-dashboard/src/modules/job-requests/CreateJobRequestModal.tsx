@@ -960,20 +960,20 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl cursor-pointer"
+            className="order-last sm:order-first w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl cursor-pointer text-center"
           >
             إلغاء
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               type="button"
               disabled={loading}
               onClick={() => handleSubmit(false)}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-xl transition cursor-pointer"
+              className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs sm:text-sm font-medium rounded-xl transition cursor-pointer text-center"
             >
               حفظ كمسودة (Draft)
             </button>
@@ -981,7 +981,7 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
               type="button"
               disabled={loading}
               onClick={() => handleSubmit(true)}
-              className="px-5 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white text-sm font-medium rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial px-4 sm:px-5 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white text-xs sm:text-sm font-medium rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 text-center"
             >
               {loading ? 'جاري الإرسال...' : 'تقديم الطلب للمراجعة (Submit)'}
             </button>
