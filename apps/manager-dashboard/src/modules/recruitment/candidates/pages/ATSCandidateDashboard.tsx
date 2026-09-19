@@ -412,7 +412,7 @@ export const ATSCandidateDashboard: React.FC = () => {
                 </div>
 
                 {/* Details Pills */}
-                <div className="flex items-center gap-3 text-xs text-gray-500">
+                <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
                   <div className="flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5 text-gray-400" /> 
                     <span>{cand.yearsOfExperience || cand.experience ? `${cand.yearsOfExperience || cand.experience} سنوات خبرة` : 'الخبرة غير محددة'}</span>
@@ -421,6 +421,16 @@ export const ATSCandidateDashboard: React.FC = () => {
                     <MapPin className="w-3.5 h-3.5 text-gray-400" /> 
                     <span>{cand.location || 'غير متوفر'}</span>
                   </div>
+                </div>
+
+                {/* Source & Last Updated */}
+                <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1 border-t border-gray-50 dark:border-gray-700/50">
+                  <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded font-semibold text-[10px]">
+                    {cand.sourceLabel || (cand.source === 'PUBLIC_PORTAL' ? 'بوابة التوظيف' : 'إدخال مباشر HR')}
+                  </span>
+                  <span title={cand.updatedAt ? new Date(cand.updatedAt).toLocaleString('ar-SA') : ''}>
+                    آخر تحديث: {cand.updatedAt ? new Date(cand.updatedAt).toLocaleDateString('ar-SA') : 'الآن'}
+                  </span>
                 </div>
 
                 {/* Skills Badges */}
@@ -442,6 +452,53 @@ export const ATSCandidateDashboard: React.FC = () => {
                     <span className="text-[10px] text-gray-400 italic">لا توجد مهارات مسجلة</span>
                   )}
                 </div>
+
+                {/* Next Action Recommendation (Dynamic based on State Machine) */}
+                {(() => {
+                  const getNextAction = (status: string) => {
+                    switch (status) {
+                      case 'NEW':
+                      case 'APPLIED':
+                        return { label: 'بدء الفحص (Screening)', target: 'SCREENING', bg: 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300' };
+                      case 'SCREENING':
+                      case 'AI_REVIEW':
+                        return { label: 'إضافة للقائمة القصيرة (Shortlist)', target: 'SHORTLISTED', bg: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300' };
+                      case 'SHORTLISTED':
+                        return { label: 'جدولة المقابلة', target: 'INTERVIEW_SCHEDULED', bg: 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300' };
+                      case 'INTERVIEW_SCHEDULED':
+                      case 'INTERVIEWING':
+                        return { label: 'تسجيل إكمال المقابلة', target: 'INTERVIEW_COMPLETED', bg: 'bg-teal-50 text-teal-700 hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-300' };
+                      case 'INTERVIEW_COMPLETED':
+                        return { label: 'إرسال عرض عمل (Offer)', target: 'OFFER_SENT', bg: 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300' };
+                      case 'OFFER_SENT':
+                      case 'OFFERED':
+                      case 'ACCEPTED':
+                        return { label: 'إتمام التعيين النهائي (Hire 🎉)', target: 'HIRED', bg: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300' };
+                      case 'HIRED':
+                        return { label: 'تم التعيين والاعتماد النهائي ✅', target: null, bg: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' };
+                      default:
+                        return null;
+                    }
+                  };
+
+                  const nextAction = getNextAction(cand.status);
+                  if (!nextAction) return null;
+
+                  return (
+                    <div className="pt-2 border-t border-dashed border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-gray-400 font-semibold">الإجراء التالي:</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCandidateId(cand.id)}
+                          className={`px-2.5 py-1 rounded-lg font-bold text-[10px] transition-all flex items-center gap-1 ${nextAction.bg}`}
+                        >
+                          {nextAction.label}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Bottom Actions */}
                 <div className="pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">

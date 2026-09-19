@@ -18,7 +18,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 
-const KPICard = ({ icon: Icon, label, value, subValue, trend, variant = 'default' }: any) => {
+const KPICard = ({ icon: Icon, label, value, subValue, trend, variant = 'default', insufficientData = false, source = null }: any) => {
   const variants: any = {
     default: 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800',
     warning: 'bg-orange-50 dark:bg-orange-950/20 border-orange-100 dark:border-orange-900/30',
@@ -29,25 +29,39 @@ const KPICard = ({ icon: Icon, label, value, subValue, trend, variant = 'default
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className={`p-5 rounded-3xl border shadow-sm transition-all ${variants[variant]}`}
+      className={`p-5 rounded-3xl border shadow-sm transition-all flex flex-col justify-between ${variants[variant]}`}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-2xl ${variant === 'default' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-        {trend && (
-          <span className={`text-xs font-bold px-2 py-1 rounded-full ${trend.startsWith('+') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {trend}
-          </span>
-        )}
-      </div>
       <div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</p>
-        <div className="flex items-baseline gap-2">
-          <h3 className="text-2xl font-bold dark:text-white">{value}</h3>
-          {subValue && <span className="text-xs text-gray-400">{subValue}</span>}
+        <div className="flex items-start justify-between mb-4">
+          <div className={`p-3 rounded-2xl ${variant === 'default' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : ''}`}>
+            <Icon className="w-6 h-6" />
+          </div>
+          {insufficientData ? (
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+              بيانات غير كافية
+            </span>
+          ) : trend ? (
+            <span className={`text-xs font-bold px-2 py-1 rounded-full ${trend.startsWith('+') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {trend}
+            </span>
+          ) : null}
+        </div>
+        <div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</p>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-2xl font-bold dark:text-white">
+              {insufficientData ? '—' : value}
+            </h3>
+            {subValue && !insufficientData && <span className="text-xs text-gray-400">{subValue}</span>}
+          </div>
         </div>
       </div>
+      {source && (
+        <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-800/60 text-[10px] text-gray-400 flex items-center gap-1">
+          <span className="font-semibold">المصدر:</span>
+          <span className="truncate" title={source}>{source}</span>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -89,9 +103,9 @@ const DashboardPage: React.FC = () => {
   }
 
   // Fallback if stats fail to load
-  const hr = stats?.hr || { totalEmployees: 0, satisfaction: 0, stressHigh: 0, attritionRisk: 0 };
+  const hr = stats?.hr || { totalEmployees: 0, satisfaction: null, stressHigh: 0, attritionRisk: 0 };
   const recruitment = stats?.recruitment || { activeJobs: 0, applicants: 0, accepted: 0, rejected: 0, interviews: 0 };
-  const training = stats?.training || { needsTraining: 0, inProgress: 0, completionRate: 0, impact: 0 };
+  const training = stats?.training || { needsTraining: 0, inProgress: 0, completionRate: 0, impact: null };
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-12">
@@ -118,7 +132,15 @@ const DashboardPage: React.FC = () => {
         <SectionHeader title="الموارد البشرية" icon={Users} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard icon={Users} label="إجمالي الموظفين" value={hr.totalEmployees} trend={hr.trends?.totalEmployees} />
-          <KPICard icon={TrendingUp} label="مستوى الرضا العام" value={`${hr.satisfaction}%`} trend={hr.trends?.satisfaction} variant="success" />
+          <KPICard 
+            icon={TrendingUp} 
+            label="مستوى الرضا العام" 
+            value={hr.satisfaction !== null && hr.satisfaction !== undefined ? `${hr.satisfaction}%` : null} 
+            trend={hr.trends?.satisfaction} 
+            variant="success" 
+            insufficientData={(hr as any).satisfactionInsufficientData || hr.satisfaction === null || hr.satisfaction === undefined}
+            source={(hr as any).satisfactionSource}
+          />
           <KPICard icon={AlertCircle} label="مؤشرات ضغط مرتفعة" value={hr.stressHigh} subValue="موظف" trend={hr.trends?.stressHigh} variant="warning" />
           <KPICard icon={Zap} label="مخاطر تسرب محتملة" value={hr.attritionRisk} subValue="حالات" trend={hr.trends?.attritionRisk} variant="danger" />
         </div>
@@ -142,7 +164,15 @@ const DashboardPage: React.FC = () => {
           <KPICard icon={AlertCircle} label="بحاجة لتدريب" value={training.needsTraining} subValue="عنصر" variant="warning" />
           <KPICard icon={PlayCircle} label="قيد التدريب" value={training.inProgress} />
           <KPICard icon={CheckCircle2} label="معدل الإكمال" value={`${training.completionRate}%`} variant="success" />
-          <KPICard icon={TrendingUp} label="أثر التدريب" value={`+${training.impact}%`} subValue="تطور أداء" variant="success" />
+          <KPICard 
+            icon={TrendingUp} 
+            label="أثر التدريب" 
+            value={training.impact !== null && training.impact !== undefined ? `+${training.impact}%` : null} 
+            subValue="تطور أداء" 
+            variant="success" 
+            insufficientData={(training as any).impactInsufficientData || training.impact === null || training.impact === undefined}
+            source={(training as any).impactSource}
+          />
         </div>
       </section>
 

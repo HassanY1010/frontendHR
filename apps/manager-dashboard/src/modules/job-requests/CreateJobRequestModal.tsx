@@ -16,7 +16,7 @@ import {
   Lightbulb,
   SlidersHorizontal
 } from 'lucide-react';
-import { jobRequestService, hiringPlanService } from '@hr/services';
+import { jobRequestService, hiringPlanService, recruitmentService } from '@hr/services';
 
 interface CreateJobRequestModalProps {
   isOpen: boolean;
@@ -27,6 +27,10 @@ interface CreateJobRequestModalProps {
 export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
+  const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false);
+  const [departmentsError, setDepartmentsError] = useState<string | null>(null);
   
   // Skills state - clean by default (no hardcoded tech skills)
   const [skillInput, setSkillInput] = useState('');
@@ -71,23 +75,38 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
     ownerName: ''
   });
 
-  const departmentNameMap: Record<string, string> = {
-    'dep-tech': 'تكنولوجيا المعلومات والبرمجيات',
-    'dep-hr': 'الموارد البشرية',
-    'dep-finance': 'الإدارة المالية',
-    'dep-marketing': 'التسويق والمبيعات',
-    'dep-operations': 'العمليات والتشغيل'
-  };
-
   const getResolvedDepartmentName = () => {
-    return departmentNameMap[formData.departmentId] || (formData.departmentId ? formData.departmentId : 'الموارد البشرية');
+    const found = departments.find(d => d.id === formData.departmentId);
+    return found ? found.name : (formData.departmentId || 'الموارد البشرية');
   };
 
   useEffect(() => {
     if (isOpen) {
       setError(null);
+      setFieldErrors({});
       setSummarySuccessMessage(null);
       setSkillsSuccessMessage(null);
+
+      // Load dynamic departments
+      setIsDepartmentsLoading(true);
+      setDepartmentsError(null);
+      recruitmentService.getDepartments()
+        .then((res: any) => {
+          const list = res?.data?.data || res?.data || res || [];
+          if (Array.isArray(list) && list.length > 0) {
+            setDepartments(list.map((d: any) => ({ id: d.id, name: d.name })));
+          } else {
+            setDepartments([]);
+          }
+        })
+        .catch(() => {
+          setDepartmentsError('تعذر جلب الأقسام من الخادم');
+          setDepartments([]);
+        })
+        .finally(() => {
+          setIsDepartmentsLoading(false);
+        });
+
       hiringPlanService.getHiringPlans()
         .then(res => {
           const list = res?.data?.data || res?.data || res || [];
@@ -215,52 +234,61 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
     });
   };
 
-  // 4. Submit Handler with explicit validation
+  // 4. Submit Handler with explicit validation and auto-focus
   const handleSubmit = async (submitDirectly: boolean) => {
     setError(null);
+    const errors: Record<string, string> = {};
     
     if (!formData.jobTitle.trim()) {
-      setError('يرجى إدخال المسمى الوظيفي.');
-      return;
+      errors.jobTitle = 'يرجى إدخال المسمى الوظيفي.';
     }
 
     if (!formData.departmentId) {
-      setError('يرجى اختيار القسم / الإدارة.');
-      return;
+      errors.departmentId = 'يرجى اختيار القسم / الإدارة.';
     }
 
     if (formData.hiringType === 'IMMEDIATE') {
-      // Ensure requiredDate or hiringDeadline is filled
       const targetDate = formData.requiredDate || formData.hiringDeadline;
 
       if (!targetDate) {
-        setError('يرجى تحديد تاريخ المباشرة المطلوبة (Target Date) أو الموعد النهائي للتوظيف.');
-        return;
-      }
-
-      if (formData.requiredDate && formData.hiringDeadline && new Date(formData.hiringDeadline) < new Date(formData.requiredDate)) {
-        setError('الموعد النهائي للتوظيف (Deadline) لا يمكن أن يسبق تاريخ المباشرة المطلوبة.');
-        return;
+        errors.requiredDate = 'يرجى تحديد تاريخ المباشرة المطلوبة (Target Date) أو الموعد النهائي للتوظيف.';
+      } else if (formData.requiredDate && formData.hiringDeadline && new Date(formData.hiringDeadline) < new Date(formData.requiredDate)) {
+        errors.hiringDeadline = 'الموعد النهائي للتوظيف (Deadline) لا يمكن أن يسبق تاريخ المباشرة المطلوبة.';
       }
     }
 
     if (formData.hiringType === 'PLANNED' && !formData.hiringPlanId) {
-      setError('يرجى اختيار بند خطة التوظيف السنوية (Manpower Plan) لربط الطلب بها.');
-      return;
+      errors.hiringPlanId = 'يرجى اختيار بند خطة التوظيف السنوية (Manpower Plan) لربط الطلب بها.';
     }
 
     if (formData.hiringType === 'ON_HOLD' && !formData.freezeReason) {
-      setError('سبب التجميد إلزامي للطلبات المعلقة (On Hold).');
+      errors.freezeReason = 'سبب التجميد إلزامي للطلبات المعلقة (On Hold).';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('يرجى تصحيح الحقول المحددة أدناه');
+      // Auto-focus first erroneous field
+      const firstKey = Object.keys(errors)[0];
+      const el = document.getElementById(`field-${firstKey}`);
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
     setLoading(true);
+    setFieldErrors({});
     try {
       const selectedDepName = getResolvedDepartmentName();
       
       const now = new Date();
       const defaultReqDate = formData.requiredDate || formData.hiringDeadline || new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       const defaultDeadDate = formData.hiringDeadline || formData.requiredDate || new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      // Generate idempotency key for double-click/retry protection
+      const idempotencyKey = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
       await jobRequestService.createJobRequest({
         ...formData,
@@ -270,12 +298,23 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
         requiredDate: formData.hiringType === 'IMMEDIATE' ? (formData.requiredDate || defaultReqDate) : formData.requiredDate,
         hiringDeadline: formData.hiringType === 'IMMEDIATE' ? (formData.hiringDeadline || defaultDeadDate) : formData.hiringDeadline,
         skills,
-        submitDirectly
+        submitDirectly,
+        idempotencyKey
       });
 
       onSuccess();
       onClose();
     } catch (err: any) {
+      const serverFieldErrors = err?.response?.data?.fieldErrors;
+      if (serverFieldErrors && typeof serverFieldErrors === 'object') {
+        setFieldErrors(serverFieldErrors);
+        const firstKey = Object.keys(serverFieldErrors)[0];
+        const el = document.getElementById(`field-${firstKey}`);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
       setError(err?.response?.data?.error || err.message || 'فشل في تقديم أو حفظ طلب التوظيف');
     } finally {
       setLoading(false);
@@ -385,10 +424,14 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
                 <div className="flex items-center gap-2">
                   <label className="text-gray-700 dark:text-gray-300 font-medium">الموعد النهائي للتوظيف (Deadline):</label>
                   <input
+                    id="field-hiringDeadline"
                     type="date"
                     value={formData.hiringDeadline}
-                    onChange={(e) => handleHiringDeadlineChange(e.target.value)}
-                    className="px-2.5 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
+                    onChange={(e) => {
+                      handleHiringDeadlineChange(e.target.value);
+                      if (fieldErrors.hiringDeadline) setFieldErrors(prev => ({ ...prev, hiringDeadline: '' }));
+                    }}
+                    className={`px-2.5 py-1 bg-white dark:bg-gray-800 border ${fieldErrors.hiringDeadline ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-700'} rounded-lg text-xs focus:ring-1 focus:ring-red-500`}
                   />
                 </div>
               </div>
@@ -402,6 +445,7 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
                 </div>
                 <div>
                   <select
+                    id="field-hiringPlanId"
                     value={formData.hiringPlanId}
                     onChange={(e) => {
                       const selectedPlanId = e.target.value;
@@ -412,8 +456,9 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
                         jobTitle: selPlan ? selPlan.position : formData.jobTitle,
                         departmentId: selPlan ? selPlan.departmentId : formData.departmentId
                       });
+                      if (fieldErrors.hiringPlanId) setFieldErrors(prev => ({ ...prev, hiringPlanId: '' }));
                     }}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-700 rounded-xl text-xs"
+                    className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border ${fieldErrors.hiringPlanId ? 'border-red-500 ring-1 ring-red-500' : 'border-purple-300 dark:border-purple-700'} rounded-xl text-xs`}
                   >
                     <option value="">-- اختر بند الخطة السنوية المطلوب --</option>
                     {availablePlans.map(p => (
@@ -422,6 +467,11 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.hiringPlanId && (
+                    <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {fieldErrors.hiringPlanId}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -433,15 +483,24 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
                   <div>
                     <label className="block text-[11px] font-medium text-gray-700 dark:text-gray-300 mb-1">سبب التجميد (Freeze Reason) *</label>
                     <select
+                      id="field-freezeReason"
                       value={formData.freezeReason}
-                      onChange={(e) => setFormData({ ...formData, freezeReason: e.target.value })}
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs"
+                      onChange={(e) => {
+                        setFormData({ ...formData, freezeReason: e.target.value });
+                        if (fieldErrors.freezeReason) setFieldErrors(prev => ({ ...prev, freezeReason: '' }));
+                      }}
+                      className={`w-full px-2.5 py-1.5 bg-white dark:bg-gray-800 border ${fieldErrors.freezeReason ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-700'} rounded-xl text-xs`}
                     >
                       <option value="BUDGET_PENDING">Budget Pending (الميزانية قيد الانتظار)</option>
                       <option value="MANAGEMENT_APPROVAL">Management Approval (موافقة الإدارة العليا)</option>
                       <option value="BUSINESS_CHANGE">Business Change (تغيير خطة العمل)</option>
                       <option value="OTHER">Other (أسباب أخرى)</option>
                     </select>
+                    {fieldErrors.freezeReason && (
+                      <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {fieldErrors.freezeReason}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -478,28 +537,49 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">المسمى الوظيفي *</label>
                 <input
+                  id="field-jobTitle"
                   type="text"
                   placeholder="مثال: أخصائي موارد بشرية أو مدير مالي"
                   value={formData.jobTitle}
-                  onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-primary-500"
+                  onChange={(e) => {
+                    setFormData({ ...formData, jobTitle: e.target.value });
+                    if (fieldErrors.jobTitle) setFieldErrors(prev => ({ ...prev, jobTitle: '' }));
+                  }}
+                  className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border ${fieldErrors.jobTitle ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-700'} rounded-xl text-sm focus:ring-2 focus:ring-primary-500`}
                 />
+                {fieldErrors.jobTitle && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.jobTitle}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">القسم / الإدارة *</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  القسم / الإدارة *
+                  {isDepartmentsLoading && <span className="text-[10px] text-gray-400 mr-2">(جاري التحميل...)</span>}
+                  {departmentsError && <span className="text-[10px] text-red-500 mr-2">({departmentsError})</span>}
+                </label>
                 <select
+                  id="field-departmentId"
                   value={formData.departmentId}
-                  onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-primary-500"
+                  disabled={isDepartmentsLoading}
+                  onChange={(e) => {
+                    setFormData({ ...formData, departmentId: e.target.value });
+                    if (fieldErrors.departmentId) setFieldErrors(prev => ({ ...prev, departmentId: '' }));
+                  }}
+                  className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border ${fieldErrors.departmentId ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-700'} rounded-xl text-sm focus:ring-2 focus:ring-primary-500 disabled:opacity-50`}
                 >
-                  <option value="">اختر القسم...</option>
-                  <option value="dep-hr">الموارد البشرية (HR)</option>
-                  <option value="dep-finance">الإدارة المالية والمحاسبة</option>
-                  <option value="dep-tech">تكنولوجيا المعلومات والبرمجيات</option>
-                  <option value="dep-marketing">التسويق والمبيعات</option>
-                  <option value="dep-operations">العمليات والتشغيل</option>
+                  <option value="">{isDepartmentsLoading ? 'جاري تحميل الأقسام...' : (departments.length === 0 ? 'لا توجد أقسام مسجلة' : 'اختر القسم...')}</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
                 </select>
+                {fieldErrors.departmentId && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.departmentId}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -860,11 +940,20 @@ export const CreateJobRequestModal: React.FC<CreateJobRequestModalProps> = ({ is
                   تاريخ المباشرة المطلوبة (Target Date)
                 </label>
                 <input
+                  id="field-requiredDate"
                   type="date"
                   value={formData.requiredDate}
-                  onChange={(e) => handleRequiredDateChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-purple-500"
+                  onChange={(e) => {
+                    handleRequiredDateChange(e.target.value);
+                    if (fieldErrors.requiredDate) setFieldErrors(prev => ({ ...prev, requiredDate: '' }));
+                  }}
+                  className={`w-full px-3 py-2 bg-white dark:bg-gray-800 border ${fieldErrors.requiredDate ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-700'} rounded-xl text-sm focus:ring-2 focus:ring-purple-500`}
                 />
+                {fieldErrors.requiredDate && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.requiredDate}
+                  </p>
+                )}
               </div>
             </div>
           </div>

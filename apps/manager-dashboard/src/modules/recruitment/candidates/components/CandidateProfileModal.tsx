@@ -36,6 +36,52 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
   const [editForm, setEditForm] = useState<any>({});
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // Reactivation / Comment state
+  const [statusActionError, setStatusActionError] = useState<string | null>(null);
+  const [pendingReactivationStatus, setPendingReactivationStatus] = useState<string | null>(null);
+  const [reactivationReason, setReactivationReason] = useState('');
+
+  // Exact State Machine Transitions from Backend (Source of Truth)
+  const ALLOWED_CANDIDATE_TRANSITIONS: Record<string, string[]> = {
+    NEW: ['APPLIED', 'SCREENING', 'AI_REVIEW', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    APPLIED: ['SCREENING', 'AI_REVIEW', 'SHORTLISTED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    SCREENING: ['AI_REVIEW', 'SHORTLISTED', 'INTERVIEW_SCHEDULED', 'INTERVIEW_SENT', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    AI_REVIEW: ['SCREENING', 'SHORTLISTED', 'INTERVIEW_SCHEDULED', 'INTERVIEW_SENT', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    SHORTLISTED: ['INTERVIEW_SCHEDULED', 'INTERVIEW_SENT', 'INTERVIEWING', 'OFFER_SENT', 'OFFERED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    INTERVIEW_SCHEDULED: ['INTERVIEW_SENT', 'INTERVIEWING', 'INTERVIEW_COMPLETED', 'SHORTLISTED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    INTERVIEW_SENT: ['INTERVIEW_SCHEDULED', 'INTERVIEWING', 'INTERVIEW_COMPLETED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    INTERVIEWING: ['INTERVIEW_COMPLETED', 'INTERVIEW_SCHEDULED', 'SHORTLISTED', 'OFFER_SENT', 'OFFERED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    INTERVIEW_COMPLETED: ['SHORTLISTED', 'INTERVIEW_SCHEDULED', 'OFFER_SENT', 'OFFERED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    OFFER_SENT: ['OFFERED', 'PRE_ACCEPTED', 'ACCEPTED', 'HIRED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    OFFERED: ['OFFER_SENT', 'PRE_ACCEPTED', 'ACCEPTED', 'HIRED', 'REJECTED', 'WITHDRAWN', 'NO_RESPONSE'],
+    PRE_ACCEPTED: ['ACCEPTED', 'HIRED', 'REJECTED', 'WITHDRAWN'],
+    ACCEPTED: ['HIRED', 'WITHDRAWN', 'REJECTED'],
+    HIRED: [],
+    REJECTED: ['SCREENING', 'APPLIED'],
+    WITHDRAWN: ['SCREENING', 'APPLIED'],
+    NO_RESPONSE: ['SCREENING', 'APPLIED']
+  };
+
+  const STATUS_DEFINITIONS: Record<string, { label: string; color: string; activeColor: string }> = {
+    NEW: { label: 'جديد (New)', color: 'hover:bg-gray-100 hover:text-gray-800', activeColor: 'bg-gray-700 text-white' },
+    APPLIED: { label: 'تم التقديم', color: 'hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300', activeColor: 'bg-blue-600 text-white' },
+    SCREENING: { label: 'الفرز والتدقيق', color: 'hover:bg-slate-100 hover:text-slate-800', activeColor: 'bg-slate-700 text-white' },
+    AI_REVIEW: { label: 'مراجعة AI', color: 'hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300', activeColor: 'bg-purple-600 text-white' },
+    SHORTLISTED: { label: 'القائمة المختصرة', color: 'hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300', activeColor: 'bg-indigo-600 text-white' },
+    INTERVIEW_SCHEDULED: { label: 'جدولة المقابلة', color: 'hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300', activeColor: 'bg-cyan-600 text-white' },
+    INTERVIEW_SENT: { label: 'إرسال رابط المقابلة', color: 'hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300', activeColor: 'bg-sky-600 text-white' },
+    INTERVIEWING: { label: 'جاري المقابلة', color: 'hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300', activeColor: 'bg-teal-600 text-white' },
+    INTERVIEW_COMPLETED: { label: 'اكتملت المقابلة', color: 'hover:bg-teal-100 hover:text-teal-800 hover:border-teal-300', activeColor: 'bg-teal-700 text-white' },
+    OFFER_SENT: { label: 'تقديم عرض عمل', color: 'hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300', activeColor: 'bg-amber-600 text-white' },
+    OFFERED: { label: 'عرض مقدم (Offered)', color: 'hover:bg-amber-100 hover:text-amber-800', activeColor: 'bg-amber-700 text-white' },
+    PRE_ACCEPTED: { label: 'قبول مبدئي', color: 'hover:bg-lime-50 hover:text-lime-700', activeColor: 'bg-lime-600 text-white' },
+    ACCEPTED: { label: 'تم قبول العرض', color: 'hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300', activeColor: 'bg-emerald-600 text-white' },
+    HIRED: { label: 'قبول وتوظيف نهائي 🎉', color: 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-600 hover:text-white', activeColor: 'bg-emerald-600 text-white ring-2 ring-emerald-400' },
+    REJECTED: { label: 'استبعاد المرشح ❌', color: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-600 hover:text-white', activeColor: 'bg-red-600 text-white ring-2 ring-red-400' },
+    WITHDRAWN: { label: 'انسحاب المرشح', color: 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-600 hover:text-white', activeColor: 'bg-stone-600 text-white' },
+    NO_RESPONSE: { label: 'لا يوجد رد', color: 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-600 hover:text-white', activeColor: 'bg-neutral-600 text-white' }
+  };
+
   const loadProfile = async () => {
     try {
       setLoading(true);
@@ -123,17 +169,42 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string, reasonOverride?: string) => {
+    setStatusActionError(null);
+
+    // If candidate is in inactive/disqualified state and transitioning to SCREENING or APPLIED, require a comment >= 5 chars
+    const isInactiveCurrent = ['REJECTED', 'WITHDRAWN', 'NO_RESPONSE'].includes(candidate.status);
+    const isReactivating = isInactiveCurrent && ['SCREENING', 'APPLIED'].includes(newStatus);
+
+    if (isReactivating && (!reasonOverride || reasonOverride.trim().length < 5)) {
+      setPendingReactivationStatus(newStatus);
+      return;
+    }
+
     try {
       setUpdatingStatus(true);
-      await atsCandidateService.updateCandidateStatus(candidateId, newStatus, `تحديث مرحلة التوظيف إلى: ${newStatus}`);
+      const commentToSend = reasonOverride || `تحديث مرحلة التوظيف إلى: ${newStatus}`;
+      await atsCandidateService.updateCandidateStatus(candidateId, newStatus, commentToSend);
+      setPendingReactivationStatus(null);
+      setReactivationReason('');
       await loadProfile();
       onUpdate();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Status update failed:', err);
+      const errMsg = err?.response?.data?.message || err.message || 'تعذر تحديث مرحلة المرشح.';
+      setStatusActionError(errMsg);
     } finally {
       setUpdatingStatus(false);
     }
+  };
+
+  const submitReactivation = () => {
+    if (!pendingReactivationStatus) return;
+    if (!reactivationReason.trim() || reactivationReason.trim().length < 5) {
+      setStatusActionError('إعادة تنشيط المرشح تتطلب كتابة سبب توضيحي لا يقل عن 5 أحرف.');
+      return;
+    }
+    handleStatusChange(pendingReactivationStatus, reactivationReason.trim());
   };
 
   const handleAddNote = async (e: React.FormEvent) => {
@@ -314,55 +385,93 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
         </div>
 
         {/* Pipeline Status Action Bar */}
-        <div className="p-4 bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 dark:from-purple-950/40 dark:via-gray-900 dark:to-purple-950/40 border-b border-purple-100 dark:border-purple-900/60 flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">المرحلة الحالية:</span>
-            <span className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-black rounded-xl shadow-sm flex items-center gap-1.5">
-              <CheckCircle className="w-3.5 h-3.5" />
-              {(() => {
-                const map: Record<string, string> = {
-                  APPLIED: 'تم التقديم',
-                  SCREENING: 'الفرز والتدقيق',
-                  SHORTLISTED: 'القائمة المختصرة',
-                  INTERVIEW_SCHEDULED: 'مقابلة مجدولة',
-                  INTERVIEW_COMPLETED: 'اكتملت المقابلة',
-                  OFFER_EXTENDED: 'تم تقديم عرض العمل',
-                  HIRED: 'تم القبول والتوظيف 🎉',
-                  REJECTED: 'تم الرفض ❌'
-                };
-                return map[candidate.status] || candidate.status;
-              })()}
-            </span>
-          </div>
+        <div className="p-4 bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 dark:from-purple-950/40 dark:via-gray-900 dark:to-purple-950/40 border-b border-purple-100 dark:border-purple-900/60 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs font-bold text-gray-700 dark:text-gray-300">المرحلة الحالية:</span>
+              <span className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-black rounded-xl shadow-sm flex items-center gap-1.5">
+                <CheckCircle className="w-3.5 h-3.5" />
+                {STATUS_DEFINITIONS[candidate.status]?.label || candidate.status}
+              </span>
+              {candidate.status === 'HIRED' && (
+                <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold rounded-lg border border-emerald-300">
+                  مرحلة نهائية مغلقة (Terminal)
+                </span>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">تحديث المرحلة:</span>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { id: 'APPLIED', label: 'تم التقديم', color: 'hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300', activeColor: 'bg-blue-600 text-white' },
-                { id: 'SCREENING', label: 'الفرز والتدقيق', color: 'hover:bg-slate-100 hover:text-slate-800', activeColor: 'bg-slate-700 text-white' },
-                { id: 'SHORTLISTED', label: 'القائمة المختصرة', color: 'hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300', activeColor: 'bg-indigo-600 text-white' },
-                { id: 'INTERVIEW_SCHEDULED', label: 'جدولة المقابلة', color: 'hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300', activeColor: 'bg-cyan-600 text-white' },
-                { id: 'INTERVIEW_COMPLETED', label: 'اكتملت المقابلة', color: 'hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300', activeColor: 'bg-teal-600 text-white' },
-                { id: 'OFFER_EXTENDED', label: 'تقديم عرض عمل', color: 'hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300', activeColor: 'bg-amber-600 text-white' },
-                { id: 'HIRED', label: 'قبول وتوظيف ✅', color: 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-600 hover:text-white', activeColor: 'bg-emerald-600 text-white ring-2 ring-emerald-400' },
-                { id: 'REJECTED', label: 'رفض المرشح ❌', color: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-600 hover:text-white', activeColor: 'bg-red-600 text-white ring-2 ring-red-400' }
-              ].map((btn) => (
-                <button
-                  key={btn.id}
-                  onClick={() => handleStatusChange(btn.id)}
-                  disabled={updatingStatus || candidate.status === btn.id}
-                  className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border transition-all shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                    candidate.status === btn.id
-                      ? `${btn.activeColor} shadow-md`
-                      : `bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 ${btn.color}`
-                  }`}
-                >
-                  <span>{btn.label}</span>
-                </button>
-              ))}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-gray-700 dark:text-gray-300">الانتقالات المسموحة:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {candidate.status === 'HIRED' ? (
+                  <span className="text-xs text-gray-400 italic">تم تعيين المرشح بنجاح ولا يمكن إجراء تعديلات إضافية على مرحلته.</span>
+                ) : (
+                  (ALLOWED_CANDIDATE_TRANSITIONS[candidate.status] || []).map((targetStatusId) => {
+                    const statusMeta = STATUS_DEFINITIONS[targetStatusId] || {
+                      label: targetStatusId,
+                      color: 'hover:bg-purple-50 hover:text-purple-700',
+                      activeColor: 'bg-purple-600 text-white'
+                    };
+                    return (
+                      <button
+                        key={targetStatusId}
+                        onClick={() => handleStatusChange(targetStatusId)}
+                        disabled={updatingStatus}
+                        className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border transition-all shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 ${statusMeta.color}`}
+                      >
+                        <span>{statusMeta.label}</span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Inline Error Message */}
+          {statusActionError && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-center justify-between gap-2 text-xs text-red-700 dark:text-red-300">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <span>{statusActionError}</span>
+              </div>
+              <button onClick={() => setStatusActionError(null)} className="text-red-500 hover:text-red-700 font-bold text-xs">إغلاق</button>
+            </div>
+          )}
+
+          {/* Reactivation Reason Prompt for REJECTED/WITHDRAWN candidates */}
+          {pendingReactivationStatus && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <span>إعادة تنشيط المرشح إلى ({STATUS_DEFINITIONS[pendingReactivationStatus]?.label || pendingReactivationStatus}) تتطلب مبرراً واضحاً:</span>
+              </div>
+              <textarea
+                rows={2}
+                value={reactivationReason}
+                onChange={(e) => setReactivationReason(e.target.value)}
+                placeholder="اكتب سبب إعادة تفعيل المرشح (5 أحرف على الأقل)..."
+                className="w-full p-2.5 bg-white dark:bg-gray-800 rounded-xl border border-amber-300 text-xs focus:ring-2 focus:ring-amber-500"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setPendingReactivationStatus(null); setReactivationReason(''); setStatusActionError(null); }}
+                  className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={submitReactivation}
+                  disabled={updatingStatus || reactivationReason.trim().length < 5}
+                  className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl disabled:opacity-50"
+                >
+                  {updatingStatus ? 'جاري الحفظ...' : 'تأكيد إعادة التنشيط'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs Navigation */}
@@ -435,6 +544,16 @@ export const CandidateProfileModal: React.FC<CandidateProfileModalProps> = ({
                         <div className="flex items-center gap-2"><User className="w-3.5 h-3.5 text-gray-400" /> <span>الجنسية: {candidate.nationality || 'غير محددة'}</span></div>
                         <div className="flex items-center gap-2"><Award className="w-3.5 h-3.5 text-emerald-500" /> <span>الراتب المتوقع: <strong>{candidate.salaryExpectation ? `${candidate.salaryExpectation} SAR` : 'غير محدد'}</strong></span></div>
                         <div className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-indigo-500" /> <span>الجاهزية: <strong>{candidate.availability || 'غير محدد'}</strong></span></div>
+                        <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700 text-[11px]">
+                          <span className="font-bold text-gray-500">مصدر التقديم:</span>
+                          <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 rounded font-semibold">
+                            {candidate.sourceLabel || (candidate.source === 'PUBLIC_PORTAL' ? 'بوابة التوظيف العامة' : 'إدخال مباشر HR')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                          <span>آخر تحديث:</span>
+                          <span dir="ltr">{candidate.updatedAt ? new Date(candidate.updatedAt).toLocaleString('ar-SA') : 'غير متوفر'}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">

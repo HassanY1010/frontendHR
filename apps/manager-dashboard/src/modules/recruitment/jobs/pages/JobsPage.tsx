@@ -403,6 +403,8 @@ const JobsPage: React.FC = () => {
         })
     }, [filteredJobs, sortBy, searchTerm])
 
+    const [submitStatus, setSubmitStatus] = useState<'published' | 'draft'>('published')
+
     const handleCreateJob = async (e: React.FormEvent) => {
         e.preventDefault()
         const form = e.target as HTMLFormElement
@@ -429,6 +431,11 @@ const JobsPage: React.FC = () => {
         const teamSize = formData.get('teamSize') ? parseInt(formData.get('teamSize') as string) : undefined
         const workEnvironment = formData.get('workEnvironment') as any || undefined
 
+        if (submitStatus === 'published' && (!description || !description.trim())) {
+            toast.error('الوصف الوظيفي إلزامي عند نشر الوظيفة')
+            return
+        }
+
         const newJobData: Partial<Job> = {
             title,
             departmentId,
@@ -448,6 +455,7 @@ const JobsPage: React.FC = () => {
             managedTeamBefore,
             teamSize,
             workEnvironment,
+            status: submitStatus as any,
             aiGenerated: false
         }
 
@@ -464,19 +472,19 @@ const JobsPage: React.FC = () => {
         try {
             if (selectedJob) {
                 await updateJob(selectedJob.id, newJobData)
-                console.log('Job updated successfully')
+                toast.success('تم تحديث الوظيفة بنجاح')
             } else {
                 await createJob(newJobData)
-                console.log('Job created successfully')
+                toast.success(submitStatus === 'draft' ? 'تم حفظ الوظيفة كمسودة' : 'تم نشر الوظيفة بنجاح')
             }
             // Refresh jobs list to show updated data
             await fetchJobs()
             setShowCreateModal(false)
             setShowEditModal(false)
             setSelectedJob(null)
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save job', error)
-            alert('فشل في حفظ الوظيفة. يرجى المحاولة مرة أخرى.')
+            toast.error(error?.response?.data?.message || 'فشل في حفظ الوظيفة. يرجى المحاولة مرة أخرى.')
         }
     }
 
@@ -1082,9 +1090,32 @@ const JobsPage: React.FC = () => {
                                 >
                                     إلغاء
                                 </Button>
-                                <Button variant="primary" type="submit" disabled={isLoading} className="w-full sm:w-auto">
-                                    {isLoading ? 'جاري الحفظ...' : (showCreateModal ? 'إنشاء الوظيفة' : 'حفظ التغييرات')}
-                                </Button>
+                                {showCreateModal ? (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            type="submit"
+                                            disabled={isLoading}
+                                            onClick={() => setSubmitStatus('draft')}
+                                            className="w-full sm:w-auto border-gray-300 text-gray-700 dark:text-gray-200"
+                                        >
+                                            {isLoading && submitStatus === 'draft' ? 'جاري الحفظ...' : 'حفظ كمسودة (Save Draft)'}
+                                        </Button>
+                                        <Button
+                                            variant="primary"
+                                            type="submit"
+                                            disabled={isLoading}
+                                            onClick={() => setSubmitStatus('published')}
+                                            className="w-full sm:w-auto"
+                                        >
+                                            {isLoading && submitStatus === 'published' ? 'جاري النشر...' : 'نشر الوظيفة (Publish)'}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button variant="primary" type="submit" disabled={isLoading} className="w-full sm:w-auto">
+                                        {isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                                    </Button>
+                                )}
                             </div>
                         </form>
                     </Modal>

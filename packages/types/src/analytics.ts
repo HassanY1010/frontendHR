@@ -2,7 +2,10 @@
 export interface DashboardStats {
     hr: {
         totalEmployees: number;
-        satisfaction: number;
+        satisfaction: number | null;
+        satisfactionInsufficientData?: boolean;
+        satisfactionSampleCount?: number;
+        satisfactionSource?: string | null;
         stressHigh: number;
         attritionRisk: number;
         trends?: {
@@ -30,7 +33,10 @@ export interface DashboardStats {
         needsTraining: number;
         inProgress: number;
         completionRate: number;
-        impact: number;
+        impact: number | null;
+        impactInsufficientData?: boolean;
+        impactSampleCount?: number;
+        impactSource?: string | null;
         trends?: {
             needsTraining?: string;
             inProgress?: string;
