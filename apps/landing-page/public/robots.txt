@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hr-landing-page.onrender.com/sitemap.xml
