@@ -41,7 +41,34 @@
 </head>
 
 <body class="font-sans antialiased">
-  <div id="root"></div>
+  <div id="root">
+    <!-- Static Accessible & SEO Content for Crawlers / Audits (Hydrated by React on load) -->
+    <main>
+      <header>
+        <nav aria-label="التنقل الرئيسي">
+          <a href="/">HR Minds</a>
+          <a href="/#how-it-works">كيف يعمل؟</a>
+          <a href="/#features">المزايا</a>
+          <a href="/#ai">الذكاء الاصطناعي</a>
+          <a href="/#recruitment">التوظيف الآلي</a>
+          <a href="/#pricing">الأسعار</a>
+          <a href="/#faq">الأسئلة الشائعة</a>
+          <a href="/jobs">الوظائف</a>
+        </nav>
+      </header>
+
+      <section class="hero-initial">
+        <h1 class="text-4xl md:text-5xl lg:text-7xl leading-[1.1] mb-8">
+          ارفع مستوى <br />
+          <span class="premium-gradient-text">إدارة الموظفين</span> <br />
+          إلى آفاق جديدة
+        </h1>
+        <p class="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl">
+          المنصة المتكاملة التي تجمع بين قوة الذكاء الاصطناعي وبساطة التصميم لتحقيق أقصى درجات الكفاءة في إدارة فريقك، التوظيف، والتحليلات البيانية.
+        </p>
+      </section>
+    </main>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
