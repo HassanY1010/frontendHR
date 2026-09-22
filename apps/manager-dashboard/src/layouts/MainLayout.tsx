@@ -76,9 +76,9 @@ const MainLayout: React.FC = () => {
                 </button>
 
                 <div>
-                  <h1 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-white truncate">
+                  <div className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-white truncate">
                     AI HR Platform - المدير
-                  </h1>
+                  </div>
                 </div>
               </div>
 
